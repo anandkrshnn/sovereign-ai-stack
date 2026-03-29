@@ -1,5 +1,4 @@
 
-```markdown
 # Strategic Adoption Pathway — The 6 Levels of Sovereign AI
 
 ## From Proof-of-Concept to Autonomous Sovereign Intelligence
