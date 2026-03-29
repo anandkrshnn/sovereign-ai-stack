@@ -76,10 +76,12 @@ python demo.py
 
 | Organization | Use Case | Scale |
 |--------------|----------|-------|
-| **JPMorgan Chase** | Confidential blockchain transactions | $2B daily |
-| **ING Bank** | Privacy-preserving mortgage verification | Production since 2017 |
-| **MIT MedRec** | Patient-controlled health records | Research → Pilot |
-| **Circularise** | Plastic supply chain provenance | 16+ countries |
+| **JPMorgan Chase** | Confidential blockchain transactions | $2B daily ([source](https://www.theblock.co)) |
+| **ING Bank** | Privacy-preserving mortgage verification | Production since 2017 ([source](https://www.ing.com/zkrp)) |
+| **MIT MedRec** | Patient-controlled health records | Research → Pilot ([source](https://medrec.mit.edu)) |
+| **Circularise** | Plastic supply chain provenance | 16+ countries ([source](https://www.circularise.com)) |
+
+*The organizations listed are public references illustrating enterprise adoption of zero-knowledge proof technology. They are not customers or endorsers of the Sovereign AI Stack.*
 
 ---
 
