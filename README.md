@@ -225,7 +225,7 @@ ZK-proof technology is not theoretical — it is in production at the world's la
 
 | Document | Description | Link |
 |----------|-------------|------|
-| **Whitepaper** | Full technical specification & business case | [Beyond-Data-Gravity-v2.0.pdf](whitepaper/Beyond-Data-Gravity-v2.0.pdf) |
+| **Whitepaper** | Full technical specification & business case | [Beyond-Data-Gravity-v2.0](https://github.com/anandkrshnn/protocol-z-federate/blob/main/WHITEPAPER.md) |
 | **Compliance Mapping** | GDPR/HIPAA/DPDP regulatory requirements mapped to capabilities | [docs/compliance-mapping.md](docs/compliance-mapping.md) |
 | **Strategic Adoption** | 6-Level maturity roadmap with timelines | [docs/strategic-adoption.md](docs/strategic-adoption.md) |
 | **Technical FAQ** | Common implementation questions | [docs/faq.md](docs/faq.md) |
