@@ -2,6 +2,9 @@ import json
 import hashlib
 import uuid
 import time
+import os
+import hmac
+import keyring
 from pathlib import Path
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
@@ -30,6 +33,29 @@ class Principal:
     def to_dict(self):
         return asdict(self)
 
+class ChainSecretManager:
+    """
+    Manages the machine-unique secret for hardware-bound auditing.
+    Stored in the OS Secure Enclave (Windows Credential Manager).
+    """
+    SERVICE_NAME = "sovereign_ai"
+    KEY_NAME = "forensic_anchor_secret"
+
+    @classmethod
+    def get_secret(cls) -> bytes:
+        secret = keyring.get_password(cls.SERVICE_NAME, cls.KEY_NAME)
+        if secret:
+            return secret.encode()
+        
+        # Provision new secret
+        new_secret = os.urandom(32).hex()
+        try:
+            keyring.set_password(cls.SERVICE_NAME, cls.KEY_NAME, new_secret)
+        except Exception:
+            # Fallback for headless/no-enclave environments
+            pass
+        return new_secret.encode()
+
 class AuditChainManager:
     """
     Cryptographic hash chain manager for tamper-evident auditing (v1.0.0-GA).
@@ -49,17 +75,23 @@ class AuditChainManager:
 class SovereignAuditLogger:
     """
     The unified auditor for the Sovereign AI Stack.
-    Supports physical tenant isolation and hash-chaining.
+    Supports physical tenant isolation, hash-chaining, and hardware-bound anchors.
     """
-    def __init__(self, base_dir: str, tenant_id: str):
+    def __init__(self, base_dir: str, tenant_id: str, remote_anchor_config: Optional[Dict[str, Any]] = None):
         self.base_dir = Path(base_dir)
         self.tenant_id = tenant_id
-        self.log_path = self.base_dir / tenant_id / "audit" / "sovereign_audit.jsonl"
-        self.log_path.parent.mkdir(parents=True, exist_ok=True)
+        self.log_dir = self.base_dir / tenant_id / "audit"
+        self.log_path = self.log_dir / "sovereign_audit.jsonl"
+        self.anchor_path = self.log_dir / "sovereign_audit.anchor"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self._last_hash = None
+        
+        # Remote Anchoring (v1.1.0 Roadmap)
+        from .remote_anchor import RemoteAnchorService
+        self.remote_service = RemoteAnchorService(remote_anchor_config)
 
     def log(self, event_type: str, principal: Principal, data: Dict[str, Any], correlation_id: Optional[str] = None):
-        """Log an event to the tenant's chain."""
+        """Log an event to the tenant's chain and update the hardware-bound anchor."""
         if self._last_hash is None:
             self._last_hash = self._get_last_hash()
 
@@ -80,6 +112,11 @@ class SovereignAuditLogger:
             f.write(json.dumps(entry) + "\n")
         
         self._last_hash = curr_hash
+        self.save_anchor(curr_hash)
+        
+        # Async/Background remote anchoring (Optional)
+        self.remote_service.anchor(self.tenant_id, curr_hash)
+        
         return curr_hash
 
     def _get_last_hash(self) -> str:
@@ -106,12 +143,28 @@ class SovereignAuditLogger:
         except Exception:
             return AuditChainManager.GENESIS_HASH
 
+    def save_anchor(self, last_hash: str):
+        """Saves a signed anchor to the filesystem, tied to the machine secret."""
+        secret = ChainSecretManager.get_secret()
+        # HMAC(Secret, LastHash)
+        signature = hmac.new(secret, last_hash.encode(), hashlib.sha256).hexdigest()
+        anchor_data = {
+            "last_hash": last_hash,
+            "signature": signature,
+            "updated_at": time.time()
+        }
+        self.anchor_path.write_text(json.dumps(anchor_data), encoding="utf-8")
+
     def verify_integrity(self) -> bool:
-        """Full chain validation."""
+        """
+        Full chain validation. Checks both internal consistency AND the hardware-bound anchor.
+        Detection: Deletion of the last entry will cause an anchor mismatch.
+        """
         if not self.log_path.exists():
             return True
             
         prev_hash = AuditChainManager.GENESIS_HASH
+        calculated_final_hash = prev_hash
         try:
             with open(self.log_path, "r", encoding="utf-8") as f:
                 for line in f:
@@ -120,6 +173,24 @@ class SovereignAuditLogger:
                     if entry.get("chain_hash") != expected_hash:
                         return False
                     prev_hash = expected_hash
+                    calculated_final_hash = expected_hash
+            
+            # Anchor Verification
+            if self.anchor_path.exists():
+                anchor_data = json.loads(self.anchor_path.read_text(encoding="utf-8"))
+                saved_hash = anchor_data.get("last_hash")
+                saved_sig = anchor_data.get("signature")
+                
+                # 1. Check if the file's final hash matches the anchor's hash
+                if calculated_final_hash != saved_hash:
+                    return False # Deletion detected!
+                
+                # 2. Check if the anchor's signature is valid (Hardware Binding)
+                secret = ChainSecretManager.get_secret()
+                expected_sig = hmac.new(secret, saved_hash.encode(), hashlib.sha256).hexdigest()
+                if saved_sig != expected_sig:
+                    return False # Anchor tampering detected!
+                    
             return True
         except Exception:
             return False
