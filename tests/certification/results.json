@@ -1,0 +1,58 @@
+[
+  {
+    "test_id": "CAC-001",
+    "node_id": "tests/cache/test_semantic_isolation.py::test_semantic_cache_tenant_isolation",
+    "outcome": "passed",
+    "duration": 11.895399700035341,
+    "error": null
+  },
+  {
+    "test_id": "AUD-001",
+    "node_id": "tests/forensic/test_audit_chain_resilience.py::test_audit_chain_mutation_detection",
+    "outcome": "passed",
+    "duration": 0.013517900020815432,
+    "error": null
+  },
+  {
+    "test_id": "AUD-002",
+    "node_id": "tests/forensic/test_audit_chain_resilience.py::test_audit_chain_truncation_detection",
+    "outcome": "passed",
+    "duration": 0.019692900008521974,
+    "error": null
+  },
+  {
+    "test_id": "ISO-001",
+    "node_id": "tests/isolation/test_cross_tenant_leakage.py::test_cross_tenant_query_leakage",
+    "outcome": "passed",
+    "duration": 11.240005499974359,
+    "error": null
+  },
+  {
+    "test_id": "ISO-002",
+    "node_id": "tests/isolation/test_cross_tenant_leakage.py::test_identical_text_collision_scoping",
+    "outcome": "passed",
+    "duration": 27.77658569999039,
+    "error": null
+  },
+  {
+    "test_id": "ISO-004",
+    "node_id": "tests/isolation/test_cross_tenant_leakage.py::test_metadata_poisoning_injection",
+    "outcome": "passed",
+    "duration": 6.015350500005297,
+    "error": null
+  },
+  {
+    "test_id": "POL-001",
+    "node_id": "tests/policy/test_fail_closed_behavior.py::test_policy_fail_closed_missing_roles",
+    "outcome": "passed",
+    "duration": 6.239903200010303,
+    "error": null
+  },
+  {
+    "test_id": "POL-004",
+    "node_id": "tests/policy/test_fail_closed_behavior.py::test_secret_scanner_guardrail",
+    "outcome": "passed",
+    "duration": 0.003493299998808652,
+    "error": null
+  }
+]

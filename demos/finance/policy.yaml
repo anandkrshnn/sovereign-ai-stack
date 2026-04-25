@@ -1,0 +1,11 @@
+version: "1.0.0-GA"
+description: "Finance Sovereignty Policy: Role-based revenue access."
+
+allow:
+  - roles: ["cfo"]
+    classifications: ["confidential", "public"]
+  - roles: ["analyst"]
+    classifications: ["public"]
+
+deny:
+  - classifications: ["restricted", "secret"]

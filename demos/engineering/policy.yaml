@@ -1,0 +1,11 @@
+version: "1.0.0-GA"
+description: "Engineering Sovereignty Policy: Config access control."
+
+allow:
+  - roles: ["admin"]
+    classifications: ["internal", "public"]
+  - roles: ["developer"]
+    classifications: ["public"]
+
+deny:
+  - classifications: ["secret"]

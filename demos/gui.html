@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign RAG Dashboard | Hybrid Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0b0f1a;
+            --card: rgba(23, 29, 45, 0.8);
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --danger: #f43f5e;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        #sidebar {
+            width: 380px;
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        #main {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            height: 100vh;
+        }
+
+        .logo {
+            font-size: 1.5rem; font-weight: 700; color: var(--primary);
+            display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;
+        }
+
+        .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 0.75rem; margin-top: 1rem; }
+
+        .control-group { background: var(--card); border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border); }
+
+        select, input {
+            width: 100%; padding: 0.8rem; background: #0f172a; border: 1px solid var(--border);
+            border-radius: 12px; color: white; font-family: inherit; margin-bottom: 0.75rem;
+        }
+
+        .guidelines { font-size: 0.85rem; line-height: 1.5; }
+        .guide-item { padding: 1rem; border-radius: 16px; background: rgba(255, 255, 255, 0.03); margin-bottom: 1rem; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .guide-item:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--primary); }
+        .guide-item.good { border-left: 4px solid var(--success); }
+        .guide-item.bad { border-left: 4px solid var(--danger); }
+
+        .chat-container { flex: 1; display: flex; flex-direction: column; gap: 1rem; position: relative; overflow-y: auto; padding-right: 1rem; }
+        .message { padding: 1.5rem; border-radius: 20px; max-width: 85%; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .message.user { background: var(--primary); align-self: flex-end; }
+        .message.ai { background: var(--card); border: 1px solid var(--border); align-self: flex-start; }
+
+        .trace { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; margin-top: 1rem; color: var(--text-dim); padding-top: 1rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; }
+
+        .input-area { display: flex; gap: 1rem; padding: 2rem; background: var(--card); border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 -10px 40px rgba(0,0,0,0.2); }
+        .send-btn { background: var(--primary); border: none; color: white; padding: 0 2rem; border-radius: 14px; cursor: pointer; font-weight: 700; transition: 0.2s; }
+        .send-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        .status-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+        .status-badge.allowed { background: var(--success); color: #000; }
+        .status-badge.denied { background: var(--danger); color: white; }
+
+        .quick-tag { font-size: 0.7rem; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 6px; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="logo">🛰️ Sovereign Hybrid</div>
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1rem">Validating RAG Retrieval + Audit Trust</p>
+        
+        <div>
+            <div class="section-title">1. Target Environment</div>
+            <select id="tenant-select">
+                <option value="clinic_a">Healthcare (Clinic A)</option>
+                <option value="acme_corp">Finance (Acme Corp)</option>
+                <option value="eng_team">Engineering (Eng Team)</option>
+            </select>
+
+            <div class="section-title">2. Principal Persona</div>
+            <select id="persona-select">
+                <!-- Personas will be loaded here -->
+            </select>
+        </div>
+
+        <div>
+            <div class="section-title">3. Hybrid Testing Guide</div>
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1rem;">Click a preset to test the pipeline:</p>
+            <div class="guidelines" id="guidelines-container">
+                <!-- Guidelines will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="main">
+        <div class="chat-container" id="chat-box">
+            <div class="message ai">
+                <strong>System Initialized.</strong><br>
+                Welcome to the Sovereign RAG Hybrid Explorer. This dashboard proves that retrieval and security coexist.
+                <br><br>
+                <em>Select a persona on the left or try one of the recommended hybrid queries.</em>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div style="flex: 1">
+                <input type="text" id="query-input" placeholder="Ask about protocols, revenue, or configs..." style="margin-bottom: 0.75rem">
+                <input type="text" id="intent-input" placeholder="Intent (e.g., treatment, planning, auditing)" style="margin-bottom: 0">
+            </div>
+            <button class="send-btn" id="send-btn">Process</button>
+        </div>
+    </div>
+
+    <script>
+        const config = {
+            clinic_a: {
+                personas: [
+                    {name: "Doctor", roles: ["doctor"], classes: ["PHI", "public"], intent: "treatment"},
+                    {name: "Researcher", roles: ["researcher"], classes: ["public"], intent: "analysis"},
+                    {name: "Nurse (Clinic B)", roles: ["nurse"], classes: ["public"], intent: "treatment", tenant: "clinic_b"}
+                ],
+                guidelines: [
+                    {text: "What is Patient_X treatment protocol?", type: "good", intent: "treatment"},
+                    {text: "What are de-identified trends Q1 2026?", type: "good", intent: "analysis"},
+                    {text: "Patient_X full medical history", type: "bad", intent: "analysis"}
+                ]
+            },
+            acme_corp: {
+                personas: [
+                    {name: "CFO", roles: ["cfo"], classes: ["confidential", "public"], intent: "planning"},
+                    {name: "Auditor", roles: ["auditor"], classes: ["public"], intent: "auditing"},
+                    {name: "Analyst", roles: ["analyst"], classes: ["public"], intent: "data_entry"}
+                ],
+                guidelines: [
+                    {text: "APAC vs EMEA revenue breakdown", type: "good", intent: "planning"},
+                    {text: "Q2 revenue audit trail entries", type: "good", intent: "auditing"},
+                    {text: "API keys for Stripe integration", type: "bad", intent: "debugging"}
+                ]
+            },
+            eng_team: {
+                personas: [
+                    {name: "Admin", roles: ["admin"], classes: ["internal", "public"], intent: "deployment"},
+                    {name: "Dev", roles: ["developer"], classes: ["public"], intent: "staging"}
+                ],
+                guidelines: [
+                    {text: "Production Kubernetes deployment image", type: "good", intent: "deployment"},
+                    {text: "Staging deployment helper guide", type: "good", intent: "staging"},
+                    {text: "AWS prod cloud access keys", type: "bad", intent: "emergency"}
+                ]
+            }
+        };
+
+        const tenantSelect = document.getElementById('tenant-select');
+        const personaSelect = document.getElementById('persona-select');
+        const guideContainer = document.getElementById('guidelines-container');
+        const chatBox = document.getElementById('chat-box');
+        const queryInput = document.getElementById('query-input');
+        const intentInput = document.getElementById('intent-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function updateUI() {
+            const tenant = tenantSelect.value;
+            const data = config[tenant];
+            
+            personaSelect.innerHTML = data.personas.map(p => `<option value='${JSON.stringify(p)}'>${p.name}</option>`).join('');
+            guideContainer.innerHTML = data.guidelines.map(g => `
+                <div class='guide-item ${g.type}' onclick='runPreset("${g.text}", "${g.intent}")'>
+                    <div style="font-weight: 600">${g.text}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;">Intent: ${g.intent}</div>
+                </div>
+            `).join('');
+        }
+
+        function runPreset(text, intent) {
+            queryInput.value = text;
+            intentInput.value = intent;
+            sendQuery();
+        }
+
+        tenantSelect.onchange = updateUI;
+        updateUI();
+
+        async function sendQuery() {
+            const query = queryInput.value;
+            if (!query) return;
+
+            const intent = intentInput.value || "general";
+            const persona = JSON.parse(personaSelect.value);
+            const tenant = persona.tenant || tenantSelect.value;
+
+            // Add user message
+            chatBox.innerHTML += `
+                <div class='message user'>
+                    ${query}
+                    <div style='display:flex; gap: 0.5rem; margin-top: 0.5rem'>
+                        <span class="quick-tag">Persona: ${persona.name}</span>
+                        <span class="quick-tag">Intent: ${intent}</span>
+                    </div>
+                </div>`;
+            queryInput.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const res = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tenant_id: tenant,
+                        roles: persona.roles,
+                        classifications: persona.classes,
+                        query: query,
+                        intent: intent
+                    })
+                });
+                const data = await res.json();
+
+                const statusBadge = data.is_denied ? '<span class="status-badge denied">DENIED</span>' : '<span class="status-badge allowed">AUTHORIZED</span>';
+                
+                let sourceEvidence = '';
+                if (data.sources && data.sources.length > 0) {
+                    const ids = data.sources.map(s => s.doc_id).join(', ');
+                    sourceEvidence = `
+                        <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed var(--success); font-size: 0.75rem;">
+                            <span style="color: var(--success); font-weight: 700;">GROUNDED RETRIEVAL:</span> Verified sources [${ids}] retrieved and authorized.
+                        </div>
+                    `;
+                }
+
+                chatBox.innerHTML += `
+                    <div class='message ai'>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem">
+                            ${statusBadge}
+                            <span style="font-size: 0.65rem; color: var(--text-dim); font-weight: 700;">CHUNKS: ${data.sources.length}</span>
+                        </div>
+                        <div style="font-size: 0.95rem; color: #fff;">${data.answer}</div>
+                        ${sourceEvidence}
+                        <div class='trace'>
+                            <span>[Step 1: FTS5+LanceDB Recall]</span>
+                            <span>[Step 2: ABAC Validated]</span>
+                            <span>[Step 3: Qwen2.5 Generated]</span>
+                        </div>
+                    </div>
+                `;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        sendBtn.onclick = sendQuery;
+        queryInput.onkeypress = (e) => { if (e.key === 'Enter') sendQuery(); };
+    </script>
+</body>
+</html>

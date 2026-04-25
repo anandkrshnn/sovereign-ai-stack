@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Hub | local-rag</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0b10;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent-green: #00ff9d;
+            --accent-amber: #ffb300;
+            --accent-red: #ff4d4d;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --glass-blur: blur(12px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo span {
+            color: var(--accent-green);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-green);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn-verify {
+            margin-top: 1.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            background: transparent;
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-verify:hover {
+            background: var(--accent-green);
+            color: var(--bg-deep);
+        }
+
+        .compliance-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .action-allow { color: var(--accent-green); }
+        .action-deny { color: var(--accent-red); }
+
+        .tag {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.7rem;
+        }
+
+        .policy-viewer {
+            margin-top: 2rem;
+            background: #000;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #ccc;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        .loader {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--accent-green);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .health-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span>⚡</span> Sovereign Hub
+            </div>
+            <div class="status-badge">
+                <div class="dot"></div>
+                SYSTEM ONLINE
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Forensic Health Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Forensic Health</div>
+                    <div class="card-icon">🛡️</div>
+                </div>
+                <div id="audit-status" class="health-indicator">
+                    <span class="loader"></span> Loading...
+                </div>
+                <div id="audit-msg" class="stat-label" style="margin-top: 0.5rem;">Connecting to chain...</div>
+                <button class="btn-verify" onclick="verifyAudit()">Verify Integrity</button>
+            </div>
+
+            <!-- Storage Sovereignty Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Storage Sovereignty</div>
+                    <div class="card-icon">🔐</div>
+                </div>
+                <div id="db-status" class="health-indicator">
+                    <span class="loader"></span> Loading...
+                </div>
+                <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 1rem;">
+                    <div>
+                        <div id="doc-count" class="stat-value">0</div>
+                        <div class="stat-label">Documents</div>
+                    </div>
+                    <div>
+                        <div id="chunk-count" class="stat-value">0</div>
+                        <div class="stat-label">Chunks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy Airlock Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Policy Airlock</div>
+                    <div class="card-icon">🚪</div>
+                </div>
+                <div id="policy-info" class="health-indicator">
+                    <span class="accent-green">Deny-by-Default</span>
+                </div>
+                <div id="policy-path" class="stat-label" style="margin-top: 0.5rem;">policy.yaml</div>
+                <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(0,255,157,0.05); border-radius: 0.5rem; font-size: 0.8rem;">
+                    Score: <span id="sovereign-score" style="color: var(--accent-green); font-weight: 700;">93/100</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="compliance-section">
+            <div class="section-header">
+                <h2>Compliance Stream</h2>
+                <div class="stat-label">Auto-polling every 5s</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Principal</th>
+                        <th>Action</th>
+                        <th>Context</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody id="log-body">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 3rem;">
+                            <span class="loader"></span> Stream initializing...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 style="margin-top: 3rem; font-size: 1rem; color: var(--text-muted); text-transform: uppercase;">Active Policy Configuration</h2>
+        <pre class="policy-viewer" id="policy-content"># Loading policy...</pre>
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                // Update Audit
+                const auditDiv = document.getElementById('audit-status');
+                const auditMsg = document.getElementById('audit-msg');
+                if (data.audit.integrity) {
+                    auditDiv.innerHTML = '<span style="color: var(--accent-green)">Chain Intact</span>';
+                    auditDiv.style.color = 'var(--accent-green)';
+                } else {
+                    auditDiv.innerHTML = '<span style="color: var(--accent-red)">TAMPER DETECTED</span>';
+                    auditDiv.style.color = 'var(--accent-red)';
+                }
+                auditMsg.innerText = data.audit.message;
+
+                // Update DB
+                const dbDiv = document.getElementById('db-status');
+                dbDiv.innerHTML = data.db.encrypted ? 
+                    '<span style="color: var(--accent-green)">SQLCipher Encrypted</span>' : 
+                    '<span style="color: var(--accent-amber)">Plaintext SQLite</span>';
+                
+                document.getElementById('doc-count').innerText = data.db.stats.docs;
+                document.getElementById('chunk-count').innerText = data.db.stats.chunks;
+                document.getElementById('sovereign-score').innerText = `${data.sovereignty_score}/100`;
+
+            } catch (err) {
+                console.error("Status fetch failed", err);
+            }
+        }
+
+        async function fetchLogs() {
+            try {
+                const res = await fetch('/api/logs');
+                const logs = await res.json();
+                const tbody = document.getElementById('log-body');
+                
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted)">No audit records yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
+                        <td><span class="tag">${log.principal}</span></td>
+                        <td class="action-${log.decision.action}">${log.decision.action.toUpperCase()}</td>
+                        <td style="color: var(--text-muted)">${log.decision.reason}</td>
+                        <td style="font-size: 0.7rem;">${log.curr_hash ? log.curr_hash.substring(0, 8) : 'N/A'}...</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Log fetch failed", err);
+            }
+        }
+
+        async function fetchPolicy() {
+            try {
+                const res = await fetch('/api/policy');
+                const data = await res.json();
+                const viewer = document.getElementById('policy-content');
+                if (data.error) {
+                    viewer.innerText = data.error;
+                } else {
+                    // Simple YAML highlight/format
+                    viewer.innerText = JSON.stringify(data.content, null, 2);
+                }
+                document.getElementById('policy-path').innerText = data.path;
+            } catch (err) {
+                console.error("Policy fetch failed", err);
+            }
+        }
+
+        async function verifyAudit() {
+            const btn = document.querySelector('.btn-verify');
+            btn.innerText = 'Verifying...';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/verify-audit', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+                fetchStatus();
+            } finally {
+                btn.innerText = 'Verify Integrity';
+                btn.disabled = false;
+            }
+        }
+
+        // Initial fetch
+        fetchStatus();
+        fetchLogs();
+        fetchPolicy();
+
+        // 5-second polling
+        setInterval(() => {
+            fetchStatus();
+            fetchLogs();
+        }, 5000);
+    </script>
+</body>
+</html>

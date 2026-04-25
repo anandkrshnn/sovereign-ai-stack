@@ -1,0 +1,114 @@
+[project]
+name = "sovereign-ai-stack"
+version = "1.0.0"
+description = "Local RAG with Cryptographic Verification - The Sovereign AI Platform"
+authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+
+keywords = [
+    "sovereign-ai",
+    "local-rag",
+    "verification",
+    "governance",
+    "cryptographic-proof",
+    "hipaa",
+    "soc2",
+]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security :: Cryptography",
+]
+
+dependencies = [
+    "pydantic>=2.5.0",
+    "sqlalchemy>=2.0.0",
+    "sentence-transformers>=2.2.0",
+    "lancedb>=0.4.0",
+    "asyncpg>=0.29.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "click>=8.1.0",
+]
+
+[project.optional-dependencies]
+# Core verification (included in default install)
+verify = [
+    "sentence-transformers>=2.2.0",
+    "torch>=2.0.0",
+]
+
+# Gateway features
+bridge = [
+    "httpx>=0.25.0",
+    "redis>=5.0.0",
+    "prometheus-client>=0.19.0",
+]
+
+# Agent workflows
+agent = [
+    "keyring>=24.0.0",
+    "cryptography>=41.0.0",
+]
+
+# Dashboard
+dashboard = [
+    "streamlit>=1.38.0",
+    "plotly>=5.18.0",
+    "pandas>=2.0.0",
+]
+
+# All features
+full = [
+    "sovereign-ai-stack[verify,bridge,agent,dashboard]",
+]
+
+# Development
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/anandkrshnn/sovereign-ai-stack"
+Documentation = "https://github.com/anandkrshnn/sovereign-ai-stack/tree/main/docs"
+Repository = "https://github.com/anandkrshnn/sovereign-ai-stack"
+Issues = "https://github.com/anandkrshnn/sovereign-ai-stack/issues"
+Changelog = "https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/CHANGELOG.md"
+
+[project.scripts]
+sovereign = "sovereign_ai.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sovereign_ai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

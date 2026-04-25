@@ -1,0 +1,12 @@
+version: "1.0.0-GA"
+description: "Healthcare Sovereignty Policy: Dept-aware PHI access."
+
+allow:
+  - roles: ["doctor"]
+    classifications: ["PHI", "public"]
+    intent: ["treatment"]
+  - roles: ["nurse"]
+    classifications: ["public"]
+
+deny:
+  - classifications: ["restricted"]

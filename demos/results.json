@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-04-23T07:47:15.637945",
+  "scenarios": [
+    {
+      "id": "healthcare",
+      "name": "Healthcare",
+      "output": "\n[HEALTHCARE SCENARIO] Clinic Data Isolation\nPASS: Doctor Access: ALLOWED\n   Excerpt: [result]Patient[/result] hypertension [result]trea...\nBLOCK: Nurse Cross-Tenant Access: DENIED (Sovereign Airlock enforced)\n",
+      "status": "PASS"
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "output": "\n[FINANCE SCENARIO] Confidential Recovery & Secret Scanning\nPASS: CFO Access: ALLOWED\nBLOCK: Secret Protection: PROTECTED (Policy + SecretScanner)\n",
+      "status": "PASS"
+    },
+    {
+      "id": "engineering",
+      "name": "Engineering",
+      "output": "\n[ENGINEERING SCENARIO] Config Privacy\nPASS: Admin Access: ALLOWED\nBLOCK: Developer Access: BLOCKED (Sovereign Fail-Closed)\n",
+      "status": "PASS"
+    }
+  ]
+}
