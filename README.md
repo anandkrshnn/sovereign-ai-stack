@@ -39,7 +39,14 @@ sovereign ask "What is the hypertension protocol?" --principal doctor --verify
 ```
 *If the answer is not grounded in your local data, the Airlock will redact it with `[Sovereign Access Denied]`.*
 
-### 3. Unified Audit Inspection
+### 3. One-Command Production Deployment
+Deploy the full stack (Bridge + Local LLM + Prometheus + Jaeger) using Docker:
+```bash
+docker-compose up -d
+```
+*This launches a complete sovereign environment with built-in observability.*
+
+### 4. Unified Audit Inspection
 Every request creates a cryptographically linked chain of events:
 ```bash
 # Check the forensic integrity of your tenant's audit trail

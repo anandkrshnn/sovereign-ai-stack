@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 🛡️ Sovereign Bridge (The Verified Airlock)
+  sovereign-bridge:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - SOVEREIGN_DATA_DIR=/app/data
+      - SOVEREIGN_MODEL=qwen2.5:7b
+      - BACKEND_CLUSTER=http://ollama:11434
+      - OTLP_ENDPOINT=http://jaeger:4318/v1/traces
+      - MASTER_GATEWAY_SECRET=sov-dev-secret
+    depends_on:
+      - ollama
+
+  # 🧠 Local Inference (Ollama)
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ./ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  # 📊 Observability (Prometheus)
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # 🔍 Distributed Tracing (Jaeger)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # UI
+      - "4318:4318"   # OTLP HTTP
+
+volumes:
+  data:
+  ollama_data:

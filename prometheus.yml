@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'sovereign-bridge'
+    static_configs:
+      - targets: ['sovereign-bridge:8000']
+    metrics_path: '/metrics'
+    params:
+      # Use the dev master secret to scrape metrics
+      # In production, this should be a dedicated metrics token
+      X-Admin-Token: ['sov-dev-secret']
