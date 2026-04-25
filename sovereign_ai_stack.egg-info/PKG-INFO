@@ -1,0 +1,123 @@
+Metadata-Version: 2.4
+Name: sovereign-ai-stack
+Version: 1.0.0
+Summary: Local RAG with Cryptographic Verification - The Sovereign AI Platform
+Author-email: Anandakrishnan Damodaran <ananda.krishnan@hotmail.com>
+License: MIT
+Project-URL: Homepage, https://github.com/anandkrshnn/sovereign-ai-stack
+Project-URL: Documentation, https://github.com/anandkrshnn/sovereign-ai-stack/tree/main/docs
+Project-URL: Repository, https://github.com/anandkrshnn/sovereign-ai-stack
+Project-URL: Issues, https://github.com/anandkrshnn/sovereign-ai-stack/issues
+Project-URL: Changelog, https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/CHANGELOG.md
+Keywords: sovereign-ai,local-rag,verification,governance,cryptographic-proof,hipaa,soc2
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Healthcare Industry
+Classifier: Intended Audience :: Financial and Insurance Industry
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Security :: Cryptography
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: sentence-transformers>=2.2.0
+Requires-Dist: lancedb>=0.4.0
+Requires-Dist: asyncpg>=0.29.0
+Requires-Dist: fastapi>=0.104.0
+Requires-Dist: uvicorn>=0.24.0
+Requires-Dist: click>=8.1.0
+Provides-Extra: verify
+Requires-Dist: sentence-transformers>=2.2.0; extra == "verify"
+Requires-Dist: torch>=2.0.0; extra == "verify"
+Provides-Extra: bridge
+Requires-Dist: httpx>=0.25.0; extra == "bridge"
+Requires-Dist: redis>=5.0.0; extra == "bridge"
+Requires-Dist: prometheus-client>=0.19.0; extra == "bridge"
+Provides-Extra: agent
+Requires-Dist: keyring>=24.0.0; extra == "agent"
+Requires-Dist: cryptography>=41.0.0; extra == "agent"
+Provides-Extra: dashboard
+Requires-Dist: streamlit>=1.38.0; extra == "dashboard"
+Requires-Dist: plotly>=5.18.0; extra == "dashboard"
+Requires-Dist: pandas>=2.0.0; extra == "dashboard"
+Provides-Extra: full
+Requires-Dist: sovereign-ai-stack[agent,bridge,dashboard,verify]; extra == "full"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.7.0; extra == "dev"
+
+# 🛡️ Sovereign AI Stack (v1.0.0-GA)
+
+**Local, Governed, Auditable AI — The Trinity of Trust.**
+
+The **Sovereign AI Stack** is the world's first certified local AI platform designed for high-trust environments (Healthcare, Finance, Legal). It provides a full-stack, zero-cloud-leakage orchestration layer that ensures every AI interaction is grounded, governed, and forensically auditable.
+
+---
+
+## 🏗️ The Stack Architecture
+
+The platform consolidates four critical layers into a unified sovereign engine:
+
+| Component | Layer | Purpose |
+| :--- | :--- | :--- |
+| **`local-rag`** | **Knowledge** | Governed, hybrid vector-lexical retrieval with SQLCipher3. |
+| **`local-verify`** | **Integrity** | Local-first grounding & faithfulness judge with crypto-certs. |
+| **`local-bridge`** | **Gateway** | OpenAI-compatible gateway with ABAC policy enforcement. |
+| **`local-agent`** | **Execution** | Forensically auditable tool execution with SHA-256 chaining. |
+
+---
+
+## ⚡ Quickstart
+
+### 1. Unified Installation
+Install the complete stack with all enterprise features:
+```bash
+pip install sovereign-ai-stack[full]
+```
+
+### 2. The 60-Second Sovereign Proof
+Prove grounding and governance in one command:
+```bash
+sovereign ask "What is the patient's hypertension protocol?" --principal doctor --verify
+```
+
+### 3. Launch the Sovereign Dashboard
+Visualize your audit trails and verification scores:
+```bash
+streamlit run demos/verify_dashboard.py
+```
+
+---
+
+## 🛡️ The Trinity of Trust
+
+1. **Retrieve**: Evidence is pulled from siloed, local-only vaults.
+2. **Govern**: Decisions are gated by a fail-closed ABAC engine.
+3. **Verify**: Every output is scored by a local judge model.
+4. **Prove**: Every action is recorded in a tamper-evident forensic audit trail.
+
+---
+
+## 📊 Performance & Compliance
+
+- **Latency**: < 10ms for ABAC enforcement; < 50ms for Audit Hashing.
+- **Privacy**: Zero Cloud Leakage. 100% On-Device.
+- **Compliance**: Designed for HIPAA technical safeguards, GDPR data residency, and SOC 2 Type II auditability.
+
+---
+
+## 📜 Licensing & Standards
+
+- **License**: MIT License
+- **Standards**: Aligned with NIST AI RMF, ISO/IEC 42001, and the 2026 CSA Agentic Trust Framework.
+
+---
+© 2026 Sovereign AI Engineering Team | Developed by [Anandakrishnan Damodaran](https://github.com/anandkrshnn)

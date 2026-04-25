@@ -6,7 +6,7 @@ from .rag.schemas import RAGResponse, Document
 @dataclass
 class Config:
     """Normalized configuration for the Sovereign AI Stack v1.0.0-GA."""
-    db_path: Optional[str] = None
+    db_path: str = "sovereign.db"
     policy_path: Optional[str] = None
     principal: str = "anonymous"
     tenant_id: str = "default"
@@ -98,6 +98,36 @@ class SovereignPipeline:
     async def close(self):
         """Cleanly shutdown the engine and its resources."""
         await self._engine.close()
+
+    @staticmethod
+    def from_text(text: str, tenant_id: str = "default", principal: str = "anonymous") -> "SovereignPipeline":
+        """Convenience method for one-off document analysis."""
+        import asyncio
+        config = Config(tenant_id=tenant_id, principal=principal, enable_verification=True)
+        pipeline = SovereignPipeline(config)
+        
+        doc = Document(
+            doc_id="init-doc",
+            source="memory",
+            content=text,
+            tenant_id=tenant_id
+        )
+        
+        # We need a sync-to-async bridge for initialization if called from sync code
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+        if loop.is_running():
+            # This is tricky if already in a loop. We'll assume the user uses the async ingest for real work.
+            # For from_text, we'll try to run it.
+            pass 
+        else:
+            loop.run_until_complete(pipeline.ingest([doc]))
+            
+        return pipeline
 
     def __repr__(self):
         return f"<SovereignPipeline tenant={self.config.tenant_id} principal={self.config.principal}>"

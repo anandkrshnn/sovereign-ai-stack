@@ -12,8 +12,9 @@ from .memory.memory_service import MemoryService
 from .forensics.trace.decision_trace import DecisionTrace
 from .config import Config
 from .forensics.vault_context import VaultContext
+from ..common.audit import SovereignAuditLogger, Principal
 
-class LocalAgent:
+class AgentCore:
     """The central orchestrator for secure, local tool-use and semantic memory recall."""
 
     VALID_TOOLS = ["read_file", "write_file", "append_to_file", "list_directory", "query_memory", "search_memory"]
@@ -56,8 +57,9 @@ class LocalAgent:
         from .adapters.adapter_registry import AdapterRegistry
         self.adapter_registry = AdapterRegistry()
 
-    def chat(self, user_input: str, override_token: str = None) -> Any:
+    def chat(self, user_input: str, principal: Optional[Principal] = None, override_token: str = None) -> Any:
         """Main entry point: Handle user prompt using ReAct loop and semantic context."""
+        p = principal or Principal(id="anonymous")
         
         # Phase 3: Immediate Top-Level Secret Scan (Defense in Depth)
         try:

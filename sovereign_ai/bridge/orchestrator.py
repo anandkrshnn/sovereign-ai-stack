@@ -3,29 +3,28 @@ import uuid
 import json
 from typing import List, Dict, Any, Optional, Union, AsyncGenerator, Tuple
 
-# Import Sovereign Components
-try:
-    from local_rag.main import AsyncLocalRAG as LocalRAG
-    from local_rag.schemas import RAGResponse
-except ImportError:
-    LocalRAG = None
+# Import Sovereign Components (Unified Monorepo)
+from ..rag.main import AsyncLocalRAG as LocalRAG
+from ..rag.schemas import RAGResponse
+from ..verify.evaluator import SovereignEvaluator
+from ..common.audit import SovereignAuditLogger, Principal
+from ..common.identity import IdentityHub
 
 try:
-    from localagent.core_loop import LocalAgent
+    from ..agent.core_loop import AgentCore as LocalAgent
 except ImportError:
     LocalAgent = None
 
 from opentelemetry import trace
-from local_bridge.schemas import ChatCompletionRequest, ChatCompletionResponse, ChatCompletionResponseChoice, ChatMessage, Usage, BackendType, BackendConfig
-from local_bridge.audit import AuditLogger
-from local_bridge.cache import SovereignSemanticCache
+from .schemas import ChatCompletionRequest, ChatCompletionResponse, ChatCompletionResponseChoice, ChatMessage, Usage, BackendType, BackendConfig
+from .cache import SovereignSemanticCache
 
 import httpx
 import asyncio
 import itertools
 import os
 import tiktoken
-from local_bridge.metrics import metrics
+from .metrics import metrics
 
 tracer = trace.get_tracer(__name__)
 
@@ -59,6 +58,9 @@ class SovereignOrchestrator:
         self.backends = self._parse_cluster(backend_cluster)
         self._round_robin_iter = {} # Priority Tier -> Iterator
         
+        # Internal Verification Judge
+        self.evaluator = SovereignEvaluator()
+        
         # Background Tasks
         self._health_task = None
         self._maintenance_task = None
@@ -66,8 +68,8 @@ class SovereignOrchestrator:
     def _get_tenant_resources(self, tenant_id: str, principal: str = "anonymous") -> Dict[str, Any]:
         """Lazy-load and pool per-tenant silos (v1.3.0)."""
         if tenant_id not in self._tenant_resources:
-            # 1. Scoped Audit
-            audit = AuditLogger(base_dir=self.base_dir, tenant_id=tenant_id)
+            # 1. Scoped Audit (Unified Forensic Chain)
+            audit = SovereignAuditLogger(base_dir=self.base_dir, tenant_id=tenant_id)
             
             # 2. Scoped Semantic Cache
             cache = SovereignSemanticCache(base_dir=self.base_dir, tenant_id=tenant_id)
@@ -250,7 +252,9 @@ class SovereignOrchestrator:
         """
         Execute the sovereign orchestration loop with physical tenant isolation and metrics (v1.0.0).
         """
-        principal = request.sovereign_principal or "anonymous"
+        # Identity Resolution (v1.0.0-GA Hardening)
+        principal_obj = IdentityHub.resolve_mock(request.sovereign_principal or "anonymous", tenant_id=tenant_id)
+        principal = principal_obj.id
         labels = metrics.get_labels(tenant_id, principal)
         
         # 1. TRACK CONCURRENCY
@@ -331,8 +335,8 @@ class SovereignOrchestrator:
                             context_text = f"Warning: RAG Retrieval Error: {e}"
                             rspan.record_exception(e)
             
-                # 2. AUDIT LOGGING
-                audit.log(request_id=request_id, principal=principal, rag_event_id=rag_event_id, outcome="started")
+                # 2. AUDIT LOGGING (Pre-Generation)
+                audit.log("completion_started", principal_obj, {"query": last_message}, correlation_id=request_id)
 
             # 3. EXECUTION OR GENERATION
             async with self._semaphore:
@@ -341,8 +345,8 @@ class SovereignOrchestrator:
                     with tracer.start_as_current_span("sov_agent_execution") as aspan:
                         try:
                             loop = asyncio.get_event_loop()
-                            resp, trace_id = await loop.run_in_executor(None, self._sync_agent_call, last_message, context_text)
-                            audit.log(request_id=request_id, principal=principal, agent_trace_id=trace_id, outcome="agent_executed")
+                            resp, trace_id = await loop.run_in_executor(None, self._sync_agent_call, last_message, context_text, principal_obj)
+                            audit.log("agent_executed", principal_obj, {"trace_id": trace_id}, correlation_id=request_id)
                             
                             metrics.sov_requests_total.labels(status="200", **labels).inc()
                             metrics.sov_request_duration_seconds.labels(tenant_id=labels["tenant_id"]).observe(time.time() - start_time)
@@ -358,6 +362,19 @@ class SovereignOrchestrator:
                     else:
                         with tracer.start_as_current_span("sov_llm_generation_atomic") as lspan:
                             response_text = await self._call_llm_atomic(last_message, context_text, tenant_id)
+                            
+                            # 🛡️ SOVEREIGN VERIFICATION (The Airlock)
+                            if context_text and self.evaluator:
+                                with tracer.start_as_current_span("sov_verification_gate") as vspan:
+                                    eval_res = self.evaluator.evaluate(last_message, context_text, response_text)
+                                    vspan.set_attribute("sov.grounding_score", eval_res["grounding_score"])
+                                    
+                                    if not eval_res["passed"]:
+                                        response_text = "[Sovereign Access Denied] The generated answer failed grounding verification and was redacted for safety."
+                                        audit.log("verification_failed", principal_obj, {"query": last_message, "score": eval_res["grounding_score"]}, correlation_id=request_id)
+                                    else:
+                                        audit.log("verification_passed", principal_obj, {"query": last_message, "score": eval_res["grounding_score"]}, correlation_id=request_id)
+
                             if request.use_cache and not is_agent_query:
                                 cache.store(last_message, response_text, self.default_model, principal)
                             
@@ -370,13 +387,13 @@ class SovereignOrchestrator:
 
     # _sync_rag_call removed in v1.3.0 in favor of async pooling
 
-    def _sync_agent_call(self, query: str, context: str) -> Tuple[Any, str]:
+    def _sync_agent_call(self, query: str, context: str, principal: Principal) -> Tuple[Any, str]:
         """Bridge to local-agent."""
         if not LocalAgent: return "Agent not available", ""
         agent = LocalAgent()
-        # Note: Future work will silo agent workspaces per tenant
-        resp, trace_id = agent.run(query, context=context)
-        return resp, trace_id
+        resp = agent.chat(query, principal=principal)
+        trace_id = getattr(agent, "current_trace", None)
+        return resp, trace_id.trace_id if trace_id else ""
 
     async def _stream_complete(self, request, context, request_id, principal, rag_reason, start_time, tenant_id):
         """Streaming Generator supporting tiered failover, multi-tenant caching/metrics/metering."""

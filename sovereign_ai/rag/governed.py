@@ -1,17 +1,17 @@
 import hashlib
 import uuid
 import asyncio
+import os
 from typing import List, Tuple, Optional
 from datetime import datetime
 
+from ..common.audit import SovereignAuditLogger, Principal, AuditRecord
+from ..common.identity import IdentityHub
 from .retriever import FTS5Retriever, AsyncFTS5Retriever
-from .policy import PolicyEngine
-from .audit import AuditLogger
-from .schemas import SearchResult, PolicyDecision, AuditRecord
+from .policy import PolicyEngine, AccessRequest
 from .reranker import BGEReranker
 from .vector_store import PgVectorStore
-
-from .policy import PolicyEngine, Principal, AccessRequest
+from .schemas import SearchResult, PolicyDecision
 
 class GovernedRetriever:
     """
@@ -34,7 +34,11 @@ class GovernedRetriever:
     ):
         self.retriever = FTS5Retriever(db_path, password=password)
         self.policy_engine = PolicyEngine(policy_path)
-        self.audit_logger = AuditLogger()
+        
+        # Determine base_dir for audit (v1.0.0 consolidation)
+        base_dir = os.path.dirname(os.path.dirname(db_path)) if db_path != ":memory:" else "data"
+        self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id)
+        
         self.principal = Principal(
             id=principal,
             tenant_id=tenant_id,
@@ -62,21 +66,15 @@ class GovernedRetriever:
         else:
             results_to_return = allowed_results[:rerank_top_k]
             
-        # 4. Audit Log
-        audit_record = AuditRecord(
-            event_id=str(uuid.uuid4()),
-            timestamp=datetime.now(),
-            principal=self.principal.id,
-            query_hash=self._hash(query),
-            query_preview=query[:100] + "..." if len(query) > 100 else query,
-            decision=decision,
-            candidate_count=len(candidates),
-            allowed_count=len(results_to_return),
-            denied_count=len(decision.denied_chunks),
-            allowed_doc_ids=list(set([r.doc_id for r in results_to_return])),
-            denied_doc_ids=list(set([r.doc_id for r in candidates if r.chunk_id in decision.denied_chunks]))
-        )
-        self.audit_logger.log(audit_record)
+        # 4. Audit Log (Unified Forensic Chain)
+        audit_data = {
+            "query": query,
+            "decision": decision.dict() if hasattr(decision, "dict") else str(decision),
+            "candidate_count": len(candidates),
+            "allowed_count": len(results_to_return),
+            "denied_count": len(decision.denied_chunks)
+        }
+        self.audit_logger.log("rag_retrieval", self.principal, audit_data)
         return results_to_return, decision
 
     def _hash(self, text: str) -> str:
@@ -104,7 +102,11 @@ class AsyncGovernedRetriever:
     ):
         self.retriever = AsyncFTS5Retriever(db_path, password=password)
         self.policy_engine = PolicyEngine(policy_path)
-        self.audit_logger = AuditLogger()
+        
+        # Determine base_dir for audit (v1.0.0 consolidation)
+        base_dir = os.path.dirname(os.path.dirname(db_path)) if db_path != ":memory:" else "data"
+        self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id)
+        
         self.principal = Principal(
             id=principal,
             tenant_id=tenant_id,
@@ -154,21 +156,15 @@ class AsyncGovernedRetriever:
         else:
             results_to_return = allowed_results[:rerank_top_k]
             
-        # 5. Audit Log
-        audit_record = AuditRecord(
-            event_id=str(uuid.uuid4()),
-            timestamp=datetime.now(),
-            principal=self.principal.id,
-            query_hash=self._hash(query),
-            query_preview=query[:100] + "..." if len(query) > 100 else query,
-            decision=decision,
-            candidate_count=len(candidates),
-            allowed_count=len(results_to_return),
-            denied_count=len(decision.denied_chunks),
-            allowed_doc_ids=list(set([r.doc_id for r in results_to_return])),
-            denied_doc_ids=list(set([r.doc_id for r in candidates if r.chunk_id in decision.denied_chunks]))
-        )
-        await asyncio.to_thread(self.audit_logger.log, audit_record)
+        # 5. Audit Log (Unified Forensic Chain)
+        audit_data = {
+            "query": query,
+            "decision": decision.dict() if hasattr(decision, "dict") else str(decision),
+            "candidate_count": len(candidates),
+            "allowed_count": len(results_to_return),
+            "denied_count": len(decision.denied_chunks)
+        }
+        await asyncio.to_thread(self.audit_logger.log, "async_rag_retrieval", self.principal, audit_data)
         return results_to_return, decision
 
     def _hash(self, text: str) -> str:

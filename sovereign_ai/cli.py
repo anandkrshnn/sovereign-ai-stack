@@ -1,12 +1,20 @@
 import asyncio
 import click
+import uuid
+import sys
 from .pipeline import SovereignPipeline, Config
 from .rag.schemas import Document
 
 @click.group()
 def main():
-    """🛡️ Sovereign AI Stack CLI - Local, Governed, Auditable AI."""
+    """Sovereign AI Stack CLI - Local, Governed, Auditable AI."""
     pass
+
+@main.command()
+def version():
+    """Display the version of the Sovereign AI Stack."""
+    from . import __version__
+    click.echo(f"Sovereign AI Stack v{__version__}")
 
 @main.command()
 @click.argument("query")
@@ -39,16 +47,40 @@ def ingest(path, tenant):
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
     
-    docs = [Document(text=content, metadata={"source": path})]
+    doc = Document(
+        doc_id=str(uuid.uuid4()),
+        source=path,
+        content=content,
+        tenant_id=tenant
+    )
+    
     config = Config(tenant_id=tenant)
     pipeline = SovereignPipeline(config)
     
     async def run():
-        await pipeline.ingest(docs)
-        click.echo(f"✅ Ingested {path} into tenant {tenant}")
+        await pipeline.ingest([doc])
+        click.echo(f"Ingested {path} into tenant {tenant}")
         await pipeline.close()
 
     asyncio.run(run())
+
+@main.group()
+def audit():
+    """Manage the forensic audit chain."""
+    pass
+
+@audit.command()
+@click.option("--tenant", default="default", help="Tenant ID to verify.")
+@click.option("--base-dir", default="data", help="Base directory for logs.")
+def verify(tenant, base_dir):
+    """Verify the integrity of the forensic audit chain."""
+    from .common.audit import SovereignAuditLogger
+    logger = SovereignAuditLogger(base_dir, tenant)
+    if logger.verify_integrity():
+        click.echo(f"Audit chain for tenant '{tenant}' is VALID (100% Integrity).")
+    else:
+        click.echo(f"CRITICAL: Audit chain for tenant '{tenant}' is CORRUPTED or TAMPERED!")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -17,7 +17,7 @@ except ImportError:
     LocalVerify = None
     GroundingJudge = None
 
-from .pipeline import SovereignPipeline
+from .pipeline import SovereignPipeline, Config
 
 # Optional imports (require extra dependencies)
 try:

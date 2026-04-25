@@ -92,6 +92,7 @@ Changelog = "https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/CHANGEL
 
 [project.scripts]
 sovereign = "sovereign_ai.cli:main"
+sovereign-ai = "sovereign_ai.cli:main"
 
 [build-system]
 requires = ["setuptools>=68.0.0", "wheel"]
