@@ -15,6 +15,30 @@ Unlike fragmented tools, the Sovereign AI Stack integrates security at the archi
 3.  **Verify (Integrity)**: A mandatory local judge model scores every answer for grounding and faithfulness.
 4.  **Prove (Forensics)**: Every component logs to a **Unified Forensic Audit Chain** (SHA-256 linked), providing tamper-evident proof of compliance.
 
+---
+
+## 📜 Version History
+
+**v1.0.0-GA** (2026-04-27) - First Public Release
+
+This release represents the culmination of 2+ years of research and development:
+- Internal iterations v1.0-v4.0 (enterprise pilots, protocol development)
+- GAIP-2030 compliance framework
+- PTV protocol integration
+- Production chaos testing
+
+v1.0.0-GA is production-ready, enterprise-certified, and regulatory-compliant.
+
+**Previous Work:**
+- GAIP-2030 Standard (healthcare AI governance)
+- PTV Protocol (Prove-Transform-Verify attestation)
+- Protocol Z-Federate (Zero-knowledge ETL)
+- Multiple enterprise pilots in healthcare and finance
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+---
+
 | Component | Status | Role |
 | :--- | :--- | :--- |
 | **`sovereign-ai[rag]`** | `GA` | **Governed Knowledge**: Multi-tenant RAG with air-gapped retrieval. |
