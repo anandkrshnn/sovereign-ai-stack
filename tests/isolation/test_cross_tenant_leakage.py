@@ -1,7 +1,7 @@
 import pytest
 import asyncio
-from local_rag.pipeline import RAGPipeline, Config
-from local_rag.schemas import Document
+from sovereign_ai.rag.pipeline import SovereignPipeline, Config
+from sovereign_ai.rag.schemas import Document
 
 @pytest.mark.asyncio
 @pytest.mark.sovereign(id="ISO-001")
@@ -9,7 +9,7 @@ async def test_cross_tenant_query_leakage(sovereign_test_env):
     """ISO-001: Query tenant_alpha DB with tenant_beta principal must return zero results."""
     # 1. Setup Data in Alpha
     alpha_cfg = sovereign_test_env["tenants"]["tenant_alpha"]["config"]
-    alpha_pipe = RAGPipeline(alpha_cfg)
+    alpha_pipe = SovereignPipeline(alpha_cfg)
     
     # Ingest document into Alpha's private DB
     doc = Document(
@@ -24,7 +24,7 @@ async def test_cross_tenant_query_leakage(sovereign_test_env):
     beta_cfg = sovereign_test_env["tenants"]["tenant_beta"]["config"]
     # We point Beta's config to Alpha's DB path to simulate an "Airlock Bypass" attempt
     beta_cfg.db_path = alpha_cfg.db_path 
-    beta_pipe = RAGPipeline(beta_cfg)
+    beta_pipe = SovereignPipeline(beta_cfg)
     
     # Query with Beta's principal identity
     results = await beta_pipe.ask("what is the revenue target?", intent="research")
@@ -44,14 +44,14 @@ async def test_identical_text_collision_scoping(sovereign_test_env):
     
     for tid in ["tenant_alpha", "tenant_beta"]:
         cfg = sovereign_test_env["tenants"][tid]["config"]
-        pipe = RAGPipeline(cfg)
+        pipe = SovereignPipeline(cfg)
         doc = Document(doc_id=f"{tid}-doc", source="shared", content=content, metadata={"tenant_id": tid})
         await pipe.ingest([doc])
         await pipe.close()
         
     # 2. Query as Beta
     beta_cfg = sovereign_test_env["tenants"]["tenant_beta"]["config"]
-    beta_pipe = RAGPipeline(beta_cfg)
+    beta_pipe = SovereignPipeline(beta_cfg)
     response = await beta_pipe.ask("what is the target?")
     
     # PASS CRITERION: Sources must strictly belong to Beta
@@ -65,7 +65,7 @@ async def test_identical_text_collision_scoping(sovereign_test_env):
 async def test_metadata_poisoning_injection(sovereign_test_env):
     """ISO-004: Malformed/Poisoned tenant_id in query should be blocked."""
     alpha_cfg = sovereign_test_env["tenants"]["tenant_alpha"]["config"]
-    alpha_pipe = RAGPipeline(alpha_cfg)
+    alpha_pipe = SovereignPipeline(alpha_cfg)
     
     # Attempt SQL Injection through principal tenant_id
     poisoned_cfg = Config(
@@ -74,7 +74,7 @@ async def test_metadata_poisoning_injection(sovereign_test_env):
         principal="attacker",
         use_cache=False
     )
-    poison_pipe = RAGPipeline(poisoned_cfg)
+    poison_pipe = SovereignPipeline(poisoned_cfg)
     
     response = await poison_pipe.ask("get all docs")
     

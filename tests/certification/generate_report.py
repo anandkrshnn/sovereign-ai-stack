@@ -32,7 +32,7 @@ def generate_report(results_path: str = "tests/certification/results.json", outp
     # Generate Markdown
     md = f"""# 🛡️ Sovereign Chaos Certification Report
 
-**local-rag version**: {report.local_rag_version}  
+**local-rag version**: {report.sovereign_ai_version}  
 **Timestamp**: {datetime.fromtimestamp(report.timestamp).isoformat()}  
 **Philosophy**: "Shortcuts may support operations; only full verification supports claims."
 

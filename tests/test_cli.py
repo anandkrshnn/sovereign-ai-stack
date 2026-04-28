@@ -1,85 +1,58 @@
 import pytest
 import json
 from pathlib import Path
-from typer.testing import CliRunner
-from unittest.mock import patch, MagicMock
+from click.testing import CliRunner
+from unittest.mock import patch, MagicMock, AsyncMock
 
-from local_rag.cli import app
-from local_rag.main import LocalRAG
+from sovereign_ai.cli import main as app
 
 runner = CliRunner()
 
 @pytest.fixture
 def mock_docs_file(tmp_path):
-    f = tmp_path / "docs.json"
-    content = [{"doc_id": "d1", "content": "Sample content", "source": "src1"}]
-    f.write_text(json.dumps(content))
+    f = tmp_path / "docs.txt"
+    f.write_text("Sample content for ingestion test.")
     return f
 
-def test_cli_ingest(temp_db, mock_docs_file):
-    with patch("local_rag.cli.LocalRAG") as mock_rag_cls:
-        mock_rag = mock_rag_cls.return_value
-        result = runner.invoke(app, ["ingest", str(mock_docs_file), "--db", temp_db])
-        
-        assert result.exit_code == 0
-        assert "Successfully ingested" in result.stdout
-        mock_rag.retriever.ingest.assert_called_once()
-
-def test_cli_search(temp_db):
-    with patch("local_rag.cli.LocalRAG") as mock_rag_cls:
-        mock_rag = mock_rag_cls.return_value
-        mock_rag.retriever.search.return_value = [] # No hits for test
-        
-        result = runner.invoke(app, ["search", "query", "--db", temp_db])
-        
-        assert result.exit_code == 0
-        assert "No results found" in result.stdout
-        mock_rag.retriever.search.assert_called_once()
-
-def test_cli_stats(temp_db):
-    result = runner.invoke(app, ["stats", "--db", temp_db])
+def test_cli_version():
+    result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "Database:" in result.stdout
+    assert "Sovereign AI Stack v" in result.stdout
 
-def test_cli_ask_no_stream(temp_db):
-    with patch("local_rag.cli.LocalRAG") as mock_rag_cls:
-        mock_rag = mock_rag_cls.return_value
+def test_cli_ingest(mock_docs_file):
+    with patch("sovereign_ai.cli.SovereignPipeline") as mock_pipeline_cls:
+        mock_pipeline = mock_pipeline_cls.return_value
+        mock_pipeline.ingest = AsyncMock()
+        mock_pipeline.close = AsyncMock()
+        
+        result = runner.invoke(app, ["ingest", str(mock_docs_file), "--tenant", "test_tenant"])
+        
+        assert result.exit_code == 0
+        assert "Ingested" in result.stdout
+
+def test_cli_ask():
+    with patch("sovereign_ai.cli.SovereignPipeline") as mock_pipeline_cls:
+        mock_pipeline = mock_pipeline_cls.return_value
+        mock_pipeline.ask = AsyncMock()
+        mock_pipeline.close = AsyncMock()
+        
         mock_response = MagicMock()
-        mock_response.answer = "The answer."
-        mock_response.sources = []
-        mock_rag.ask.return_value = mock_response
+        mock_response.answer = "The sovereign answer."
+        mock_response.metadata = {}
+        mock_pipeline.ask.return_value = mock_response
         
-        result = runner.invoke(app, ["ask", "What is RAG?", "--db", temp_db])
-        
-        assert result.exit_code == 0
-        assert "The answer." in result.stdout
-        mock_rag.ask.assert_called_once()
-
-def test_cli_ask_streaming(temp_db):
-    with patch("local_rag.cli.LocalRAG") as mock_rag_cls:
-        mock_rag = mock_rag_cls.return_value
-        mock_rag.ask.return_value = iter(["Streaming ", "chunk."])
-        
-        result = runner.invoke(app, ["ask", "Streaming question?", "--db", temp_db, "--stream"])
+        result = runner.invoke(app, ["ask", "What is the protocol?", "--principal", "doctor"])
         
         assert result.exit_code == 0
-        # Rich Live output can be tricky to capture exactly, but we check if ask was called
-        mock_rag.ask.assert_called_once()
+        assert "The sovereign answer." in result.stdout
 
-def test_cli_ingest_not_found():
-    result = runner.invoke(app, ["ingest", "nonexistent.json"])
-    assert result.exit_code == 1
-    assert "not found" in result.stdout
-
-def test_cli_search_with_results(temp_db):
-    with patch("local_rag.cli.LocalRAG") as mock_rag_cls:
-        mock_rag = mock_rag_cls.return_value
-        mock_result = MagicMock()
-        mock_result.score = 1.0
-        mock_result.doc_id = "d1"
-        mock_result.text = "Found [result]text[/result]"
-        mock_rag.retriever.search.return_value = [mock_result]
+def test_cli_audit_verify():
+    # Patch where it is DEFINED, since it's imported locally in the function
+    with patch("sovereign_ai.common.audit.SovereignAuditLogger") as mock_logger_cls:
+        mock_logger = mock_logger_cls.return_value
+        mock_logger.verify_integrity.return_value = True
         
-        result = runner.invoke(app, ["search", "query", "--db", temp_db])
+        result = runner.invoke(app, ["audit", "verify", "--tenant", "test_tenant"])
+        
         assert result.exit_code == 0
-        assert "d1" in result.stdout
+        assert "VALID" in result.stdout

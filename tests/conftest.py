@@ -7,12 +7,12 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from local_rag.store import Store
-from local_rag.retriever import FTS5Retriever
-from local_rag.main import LocalRAG
-from local_rag.generator import QwenGenerator
-from local_rag.pipeline import RAGPipeline, Config
-from local_rag.schemas import Document
+from sovereign_ai.rag.store import Store
+from sovereign_ai.rag.retriever import FTS5Retriever
+from sovereign_ai.rag.main import LocalRAG
+from sovereign_ai.rag.generator import QwenGenerator
+from sovereign_ai.rag.pipeline import SovereignPipeline, Config
+from sovereign_ai.rag.schemas import Document
 
 def pytest_addoption(parser):
     parser.addoption("--sovereign-cert", action="store_true", help="Run in GAIP-2030 certification mode")

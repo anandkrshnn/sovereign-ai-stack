@@ -194,3 +194,7 @@ class SovereignAuditLogger:
             return True
         except Exception:
             return False
+
+    def close(self):
+        """No-op for now, satisfies cleanup interface."""
+        pass

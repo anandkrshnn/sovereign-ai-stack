@@ -1,5 +1,5 @@
 import pytest
-from local_rag.utils import RecursiveCharacterTextSplitter, chunk_text
+from sovereign_ai.rag.utils import RecursiveCharacterTextSplitter, chunk_text
 
 def test_basic_chunking():
     text = "Hello world. This is a test of the recursive splitter."

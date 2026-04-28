@@ -26,7 +26,7 @@ class Config:
     grounding_threshold: float = 0.85
     faithfulness_threshold: float = 0.90
 
-class RAGPipeline:
+class SovereignPipeline:
     """
     Sovereign RAG Pipeline Facade (v1.0.0-GA).
     
@@ -53,7 +53,7 @@ class RAGPipeline:
         self._evaluator = None
         if config.enable_verification:
             try:
-                from local_verify import SovereignEvaluator
+                from sovereign_ai.verify import SovereignEvaluator
                 self._evaluator = SovereignEvaluator()
             except ImportError:
                 print("Warning: local-verify not found. Verification disabled.")
@@ -98,4 +98,4 @@ class RAGPipeline:
         await self._engine.close()
 
     def __repr__(self):
-        return f"<RAGPipeline tenant={self.config.tenant_id} principal={self.config.principal}>"
+        return f"<SovereignPipeline tenant={self.config.tenant_id} principal={self.config.principal}>"

@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 import shutil
-from local_rag import RAGPipeline, Config
+from sovereign_ai import RAGPipeline, Config
 
 # Ensure we can find the package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

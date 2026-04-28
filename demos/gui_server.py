@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse
 
 # Add root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from local_rag import RAGPipeline, Config
+from sovereign_ai import RAGPipeline, Config
 
 app = FastAPI(title="Sovereign RAG Dashboard")
 

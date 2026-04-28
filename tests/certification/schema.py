@@ -19,7 +19,7 @@ class CertificationMetric(BaseModel):
 class SovereignCertificationReport(BaseModel):
     version: str = "1.0.0-GA"
     timestamp: float = Field(default_factory=time.time)
-    local_rag_version: str = "1.0.0-GA"
+    sovereign_ai_version: str = "1.0.0-GA"
     python_version: str = "3.10+"
     hardware_profile: Optional[str] = None
     

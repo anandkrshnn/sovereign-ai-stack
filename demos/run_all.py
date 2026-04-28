@@ -6,7 +6,7 @@ import sys
 # Get the directory of the current script
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Add root to path so demos can find local_rag
+# Add root to path so demos can find sovereign_ai
 root_dir = os.path.dirname(base_dir)
 sys.path.append(root_dir)
 

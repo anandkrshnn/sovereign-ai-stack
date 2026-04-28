@@ -2,9 +2,9 @@ import pytest
 import os
 import sqlite3
 from pathlib import Path
-from local_rag.store import Store
-from local_rag.db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
-from local_rag.schemas import Document
+from sovereign_ai.rag.store import Store
+from sovereign_ai.rag.db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
+from sovereign_ai.rag.schemas import Document
 
 try:
     from sqlcipher3 import dbapi2 as sqlcipher
@@ -17,7 +17,7 @@ def plaintext_db(tmp_path):
     # Ensure it's clean
     if db_path.exists(): db_path.unlink()
     
-    from local_rag.retriever import FTS5Retriever
+    from sovereign_ai.rag.retriever import FTS5Retriever
     retriever = FTS5Retriever(str(db_path))
     doc = Document(doc_id="d1", source="test", content="Secret sovereign context.")
     retriever.ingest([doc])
@@ -29,7 +29,7 @@ def test_direct_encrypted_ingestion(tmp_path):
     db_path = tmp_path / "direct_secure.db"
     password = "secure-pass"
     
-    from local_rag.main import LocalRAG
+    from sovereign_ai.rag.main import LocalRAG
     rag = LocalRAG(db_path=str(db_path), password=password)
     
     doc = Document(doc_id="d2", source="test", content="Directly secure content.")
@@ -54,7 +54,7 @@ def test_encryption_migration_and_retrieval(plaintext_db, tmp_path):
     assert encrypted_path.exists()
     
     # 2. Verify SQLCipher can read it with password
-    from local_rag.main import LocalRAG
+    from sovereign_ai.rag.main import LocalRAG
     rag = LocalRAG(db_path=str(encrypted_path), password=password)
     # Give it a moment or ensure commit
     results = rag.retriever.search("sovereign")
@@ -68,7 +68,7 @@ def test_invalid_password_rejection(plaintext_db, tmp_path):
     encrypted_path = tmp_path / "auth_secure.db"
     encrypt_database(plaintext_db, str(encrypted_path), "correct-pass")
     
-    from local_rag.main import LocalRAG
+    from sovereign_ai.rag.main import LocalRAG
     with pytest.raises(PermissionError) as excinfo:
         LocalRAG(db_path=str(encrypted_path), password="wrong-pass")
     assert "Access Denied" in str(excinfo.value)
@@ -85,7 +85,7 @@ def test_key_rotation_rekey(plaintext_db, tmp_path):
     rekey_database(str(encrypted_path), old_pass, new_pass)
     
     # Verify old pass fails, new pass works
-    from local_rag.main import LocalRAG
+    from sovereign_ai.rag.main import LocalRAG
     with pytest.raises(PermissionError):
         LocalRAG(db_path=str(encrypted_path), password=old_pass)
         

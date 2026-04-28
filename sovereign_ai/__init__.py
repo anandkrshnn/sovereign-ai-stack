@@ -4,38 +4,67 @@ Sovereign AI Stack - Local RAG with Cryptographic Verification
 
 __version__ = "1.0.0"
 
-# Core exports
-try:
-    from .rag.main import LocalRAG
-except ImportError:
-    LocalRAG = None
+# RAG Components
+from .rag.main import LocalRAG, AsyncLocalRAG
+from .rag.store import Store
+from .rag.retriever import FTS5Retriever
+from .rag.generator import QwenGenerator
+from .rag.pipeline import SovereignPipeline, Config
+from .rag.schemas import Document, SearchResult, AuditRecord, RAGResponse, PolicyDecision
+from .rag.policy import PolicyEngine, Principal, AccessRequest
+from .rag.audit import AuditLogger, KeyringProvider
+from .rag.governed import GovernedRetriever, AsyncGovernedRetriever
+from .rag.db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
+from .rag.hub import app as hub_app
+from .rag.utils import RecursiveCharacterTextSplitter, chunk_text, contains_secret
+from .rag.reranker import BGEReranker
 
-try:
-    from .verify.evaluator import SovereignEvaluator as LocalVerify
-    from .verify.evaluator import SovereignEvaluator as GroundingJudge
-except ImportError:
-    LocalVerify = None
-    GroundingJudge = None
+# Main Platform Facade
+from .pipeline import SovereignPipeline, Config as SovereignConfig
 
-from .pipeline import SovereignPipeline, Config
-
-# Optional imports (require extra dependencies)
+# Bridge Gateway
 try:
     from .bridge.main import app as SovereignBridge
 except ImportError:
     SovereignBridge = None
 
+# Forensic Agent
 try:
-    # Use the broker or main entry point for the agent
     from .agent.core_loop import AgentCore as SovereignAgent
 except ImportError:
     SovereignAgent = None
 
 __all__ = [
     "LocalRAG",
-    "LocalVerify",
-    "GroundingJudge",
+    "AsyncLocalRAG",
+    "Store",
+    "FTS5Retriever",
+    "QwenGenerator",
     "SovereignPipeline",
+    "Config",
+    "Document",
+    "SearchResult",
+    "AuditRecord",
+    "RAGResponse",
+    "PolicyDecision",
+    "PolicyEngine",
+    "Principal",
+    "AccessRequest",
+    "AuditLogger",
+    "KeyringProvider",
+    "GovernedRetriever",
+    "AsyncGovernedRetriever",
+    "get_db_status",
+    "encrypt_database",
+    "decrypt_database",
+    "rekey_database",
+    "hub_app",
+    "RecursiveCharacterTextSplitter",
+    "chunk_text",
+    "contains_secret",
+    "BGEReranker",
+    "SovereignPipeline",
+    "SovereignConfig",
     "SovereignBridge",
     "SovereignAgent",
 ]

@@ -1,7 +1,7 @@
 import pytest
 import asyncio
-from local_rag.pipeline import RAGPipeline, Config
-from local_rag.schemas import Document
+from sovereign_ai.rag.pipeline import SovereignPipeline, Config
+from sovereign_ai.rag.schemas import Document
 
 @pytest.mark.asyncio
 @pytest.mark.sovereign(id="POL-001")
@@ -23,7 +23,7 @@ async def test_policy_fail_closed_missing_roles(sovereign_test_env, tmp_path):
     alpha_cfg.policy_path = str(policy_path)
     alpha_cfg.roles = ["analyst"] # Missing 'admin'!
     
-    pipe = RAGPipeline(alpha_cfg)
+    pipe = SovereignPipeline(alpha_cfg)
     
     # Ingest secret doc
     doc = Document(doc_id="s1", source="internal", content="The key is 123", metadata={"classification": "secret", "tenant_id": "tenant_alpha"})
@@ -41,7 +41,7 @@ async def test_policy_fail_closed_missing_roles(sovereign_test_env, tmp_path):
 @pytest.mark.sovereign(id="POL-004")
 async def test_secret_scanner_guardrail(sovereign_test_env):
     """POL-004: SecretScanner must detect and flag credentials in chunks."""
-    from local_rag.utils import contains_secret
+    from sovereign_ai.rag.utils import contains_secret
     
     # 1. Test strings with various credentials
     valid_text = "The revenue is $50M."

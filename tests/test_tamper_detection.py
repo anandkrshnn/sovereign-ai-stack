@@ -2,8 +2,8 @@ import pytest
 import json
 import os
 from pathlib import Path
-from local_rag.audit import AuditLogger
-from local_rag.schemas import AuditRecord, PolicyDecision
+from sovereign_ai.rag.audit import AuditLogger
+from sovereign_ai.rag.schemas import AuditRecord, PolicyDecision
 
 @pytest.fixture
 def audit_log(tmp_path):

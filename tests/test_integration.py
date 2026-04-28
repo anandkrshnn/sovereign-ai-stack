@@ -1,8 +1,8 @@
 import os
 import pytest
 from pathlib import Path
-from local_rag.main import LocalRAG
-from local_rag.schemas import Document
+from sovereign_ai.rag.main import LocalRAG
+from sovereign_ai.rag.schemas import Document
 
 # Gated by environment variable
 RUN_SLOW = os.getenv("LOCAL_RAG_RUN_SLOW") == "1"

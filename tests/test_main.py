@@ -1,5 +1,5 @@
 import pytest
-from local_rag.schemas import Document, RAGResponse
+from sovereign_ai.rag.schemas import Document, RAGResponse
 
 def test_ask_with_results(rag_instance):
     doc = Document(doc_id="d1", source="s1", content="SQLite FTS5 is a full-text search engine.")

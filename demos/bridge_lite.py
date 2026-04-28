@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Request
-from local_rag import RAGPipeline, Config
+from sovereign_ai import RAGPipeline, Config
 import os
 
 app = FastAPI(title="Sovereign OpenAI Bridge")

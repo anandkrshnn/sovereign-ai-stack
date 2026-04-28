@@ -14,7 +14,7 @@ from .schemas import AuditRecord
 
 app = FastAPI(title="Sovereign Hub")
 
-# Setup templates (we will put hub.html in local_rag/assets)
+# Setup templates (we will put hub.html in sovereign_ai/assets)
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "assets"))
 

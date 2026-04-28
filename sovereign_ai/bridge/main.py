@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from local_rag import RAGPipeline, Config
+from sovereign_ai.rag import SovereignPipeline, Config
 import asyncio
 import os
 import time
@@ -40,7 +40,7 @@ async def get_pipeline(role: str):
             roles=[role],
             enable_verification=True
         )
-        _pipelines[role] = RAGPipeline(cfg)
+        _pipelines[role] = SovereignPipeline(cfg)
     return _pipelines[role]
 
 @app.get("/health")

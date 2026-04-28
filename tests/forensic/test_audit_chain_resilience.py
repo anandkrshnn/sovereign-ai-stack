@@ -2,8 +2,8 @@ import pytest
 import json
 import os
 from pathlib import Path
-from local_rag.audit import AuditLogger
-from local_rag.schemas import AuditRecord
+from sovereign_ai.rag.audit import AuditLogger
+from sovereign_ai.rag.schemas import AuditRecord
 
 @pytest.fixture
 def audit_logger(tmp_path):
@@ -13,7 +13,7 @@ def audit_logger(tmp_path):
 @pytest.mark.sovereign(id="AUD-001")
 def test_audit_chain_mutation_detection(audit_logger):
     """AUD-001: Mutating a single byte in the audit log must break full verification."""
-    from local_rag.schemas import PolicyDecision
+    from sovereign_ai.rag.schemas import PolicyDecision
     # 1. Log some entries
     for i in range(5):
         record = AuditRecord(
@@ -53,7 +53,7 @@ def test_audit_chain_mutation_detection(audit_logger):
 @pytest.mark.sovereign(id="AUD-002")
 def test_audit_chain_truncation_detection(audit_logger):
     """AUD-002: Truncating the audit chain must break sequence verification."""
-    from local_rag.schemas import PolicyDecision
+    from sovereign_ai.rag.schemas import PolicyDecision
     # 1. Log entries
     for i in range(10):
         record = AuditRecord(

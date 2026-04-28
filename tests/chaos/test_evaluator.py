@@ -1,5 +1,5 @@
 import pytest
-from local_verify import SovereignEvaluator, Config
+from sovereign_ai.verify import SovereignEvaluator, Config
 
 def test_config_defaults():
     config = Config()

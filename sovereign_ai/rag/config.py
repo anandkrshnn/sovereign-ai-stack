@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Paths
-DEFAULT_DB_PATH = "local_rag.db"
+DEFAULT_DB_PATH = "sovereign_ai.db"
 PROJECT_ROOT = Path(__file__).parent.parent
 
 # Models

@@ -1,6 +1,6 @@
 import pytest
-from local_rag.schemas import Document
-from local_rag.retriever import FTS5Retriever
+from sovereign_ai.rag.schemas import Document
+from sovereign_ai.rag.retriever import FTS5Retriever
 
 def test_ingestion_and_counts(retriever, temp_db):
     doc = Document(doc_id="test1", source="test", content="This is a long test document about sovereign agents and RAG.")

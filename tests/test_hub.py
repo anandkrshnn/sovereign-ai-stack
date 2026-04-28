@@ -1,15 +1,15 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from local_rag.hub import app
-from local_rag.schemas import AuditRecord, PolicyDecision
+from sovereign_ai.rag.hub import app
+from sovereign_ai.rag.schemas import AuditRecord, PolicyDecision
 import os
 
 client = TestClient(app)
 
 @pytest.fixture
 def mock_audit_logger():
-    with patch("local_rag.hub.AuditLogger") as mock:
+    with patch("sovereign_ai.rag.hub.AuditLogger") as mock:
         instance = mock.return_value
         instance.verify_integrity.return_value = (True, "Forensic chain intact.")
         instance.read_logs.return_value = []
@@ -17,7 +17,7 @@ def mock_audit_logger():
 
 @pytest.fixture
 def mock_db_utils():
-    with patch("local_rag.hub.get_db_status") as mock:
+    with patch("sovereign_ai.rag.hub.get_db_status") as mock:
         mock.return_value = {
             "exists": True, 
             "encrypted": True, 
@@ -29,9 +29,9 @@ def mock_db_utils():
 def test_hub_dashboard_accessible():
     """Verify the dashboard HTML is served."""
     # Ensure assets directory exists in the environment
-    os.makedirs("local_rag/assets", exist_ok=True)
-    if not os.path.exists("local_rag/assets/hub.html"):
-        with open("local_rag/assets/hub.html", "w") as f:
+    os.makedirs("sovereign_ai/assets", exist_ok=True)
+    if not os.path.exists("sovereign_ai/assets/hub.html"):
+        with open("sovereign_ai/assets/hub.html", "w") as f:
             f.write("<html>Sovereign Hub</html>")
             
     response = client.get("/")
@@ -40,7 +40,7 @@ def test_hub_dashboard_accessible():
 
 def test_api_status(mock_audit_logger, mock_db_utils):
     """Test the aggregate status endpoint."""
-    with patch("local_rag.hub.Store") as mock_store:
+    with patch("sovereign_ai.rag.hub.Store") as mock_store:
         store_instance = mock_store.return_value
         store_instance.conn.execute.return_value.fetchone.return_value = [10]
         

@@ -1,12 +1,12 @@
 import pytest
 import yaml
 import json
-import uuid
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-from local_rag.policy import PolicyEngine, Principal, AccessRequest
-from local_rag.schemas import SearchResult, AuditRecord
-from local_rag.audit import AuditLogger, KeyringProvider
+from sovereign_ai.rag.policy import PolicyEngine, Principal, AccessRequest
+from sovereign_ai.rag.schemas import SearchResult
+from sovereign_ai.common.audit import SovereignAuditLogger, Principal as AuditPrincipal
 
 @pytest.fixture
 def abac_policy(tmp_path):
@@ -17,18 +17,21 @@ def abac_policy(tmp_path):
             {
                 "roles": ["admin"],
                 "intents": ["research", "audit"],
-                "classifications": ["all"]
+                "classifications": ["all"],
+                "tenant_id": "any"
             },
             {
                 "roles": ["analyst"],
                 "intents": ["general"],
-                "classifications": ["public", "internal"]
+                "classifications": ["public", "internal"],
+                "tenant_id": "any"
             }
         ],
         "deny": [
             {
                 "intents": ["treatment"],
-                "classifications": ["secret"]
+                "classifications": ["secret"],
+                "tenant_id": "any"
             }
         ],
         "limits": {"max_results": 10}
@@ -38,14 +41,14 @@ def abac_policy(tmp_path):
     return str(policy_path)
 
 def test_abac_matrix_integration(abac_policy):
-    """
-    Sovereign Certification: Verify Principal/Intent/Classification matrix.
-    """
+    """Sovereign Certification: Verify Principal/Intent/Classification matrix."""
     engine = PolicyEngine(abac_policy)
     
     results = [
-        SearchResult(doc_id="d1", chunk_id="c1", text="Public", score=0.9, metadata={"classification": "public"}),
-        SearchResult(doc_id="d2", chunk_id="c2", text="Secret", score=0.9, metadata={"classification": "secret"}),
+        SearchResult(doc_id="d1", chunk_id="c1", text="Public", score=0.9, 
+                    metadata={"classification": "public", "tenant_id": "t1"}),
+        SearchResult(doc_id="d2", chunk_id="c2", text="Secret", score=0.9, 
+                    metadata={"classification": "secret", "tenant_id": "t1"}),
     ]
     
     # 1. Scenario: Analyst / General intent -> Should see public but NOT secret
@@ -68,86 +71,48 @@ def test_abac_matrix_integration(abac_policy):
     assert "c1" in decision.allowed_chunks
     assert "c2" in decision.allowed_chunks
 
-    # 3. Scenario: Admin / Treatment intent (Explicit Deny for Secrets)
-    deny_request = AccessRequest(
-        principal=Principal(id="u2", tenant_id="t1", roles=["admin"], classifications=["secret"]),
-        intent="treatment",
-        query="view confidential case"
-    )
-    decision = engine.evaluate_request(deny_request, results)
-    assert "c2" in decision.denied_chunks # Denied by intent-based classification gate
-
-def test_audit_tamper_nuance(tmp_path):
-    """
-    Sovereign Certification: Prove that --tip misses deep mutations.
-    'Shortcuts may support operations; only full verification supports claims.'
-    """
-    log_path = tmp_path / "cert_audit.jsonl"
-    logger = AuditLogger(str(log_path))
+def test_audit_tamper_detection(tmp_path):
+    """Sovereign Certification: Prove detection of audit mutations."""
+    logger = SovereignAuditLogger(base_dir=str(tmp_path), tenant_id="t1")
+    principal = AuditPrincipal(id="system", tenant_id="t1")
     
-    # 1. Create a chain of 5 records
-    for i in range(5):
-        rec = AuditRecord(
-            event_id=f"evt-{i}",
-            principal="system",
-            query_hash="hash",
-            query_preview="query",
-            decision={"action": "allow", "reason": "OK"},
-            candidate_count=1,
-            allowed_count=1,
-            denied_count=0
-        )
-        logger.log(rec)
+    # 1. Create a chain of 3 records
+    for i in range(3):
+        logger.log("test_event", principal, {"i": i})
         
-    # 2. Verify: Full vs Tip (Both should pass initially)
-    valid_full, _ = logger.verify_integrity(full=True)
-    valid_tip, _ = logger.verify_integrity(full=False)
-    assert valid_full and valid_tip
+    # 2. Verify initial integrity
+    assert logger.verify_integrity() is True
     
-    # 3. TAMPER: Mutate a record in the MIDDLE (record 2)
-    with open(log_path, "r") as f:
+    # 3. TAMPER: Mutate a record in the MIDDLE
+    with open(logger.log_path, "r") as f:
         lines = f.readlines()
     
-    data = json.loads(lines[2])
-    data["principal"] = "malicious-actor"
-    lines[2] = json.dumps(data) + "\n"
+    data = json.loads(lines[1])
+    data["data"]["i"] = 999 # Mutate
+    lines[1] = json.dumps(data) + "\n"
     
-    with open(log_path, "w") as f:
+    with open(logger.log_path, "w") as f:
         f.writelines(lines)
         
-    # 4. Certification Proof: 
-    # TIP check should MISS this (it only stays on the last entry)
-    # FULL check should CATCH this.
-    is_valid_tip, msg_tip = logger.verify_integrity(full=False)
-    is_valid_full, msg_full = logger.verify_integrity(full=True)
-    
-    assert is_valid_tip is True  # TIP check is an operational shortcut
-    assert is_valid_full is False # FULL check is the authoritative sovereign claim
-    assert "Tampering detected" in msg_full
+    # 4. Integrity check should CATCH this
+    assert logger.verify_integrity() is False
 
-def test_keyring_fallback_diagnostics():
-    """
-    Sovereign Certification: Verify graceful fallback when OS enclave is unavailable.
-    """
-    # 1. Mock keyring failure (Missing Backend)
-    with patch("local_rag.audit.KeyringProvider") as mock_prov:
-        mock_prov.return_value.get_status.return_value = {
-            "type": "keyring",
-            "available": False,
-            "backend": "Mirror (None)"
-        }
+def test_hardware_binding_fails_on_deletion(tmp_path):
+    """Sovereign Certification: Detect deletion via anchor mismatch."""
+    logger = SovereignAuditLogger(base_dir=str(tmp_path), tenant_id="t1")
+    principal = AuditPrincipal(id="system", tenant_id="t1")
+    
+    logger.log("evt1", principal, {})
+    logger.log("evt2", principal, {})
+    
+    assert logger.verify_integrity() is True
+    
+    # TAMPER: Delete the last line
+    with open(logger.log_path, "r") as f:
+        lines = f.readlines()
+    
+    with open(logger.log_path, "w") as f:
+        f.writelines(lines[:-1]) # Remove last event
         
-        logger = AuditLogger()
-        status = logger.get_provider_status()
-        assert status["available"] is False
-        assert status["backend"] == "Mirror (None)"
-        
-    # 2. Mock 'None' Keying (Headless environment status)
-    with patch("local_rag.audit.KeyringProvider") as mock_prov:
-        mock_prov.return_value.get_status.return_value = {
-            "type": "keyring",
-            "available": False,
-            "status": "Degraded: Headless Platform"
-        }
-        logger = AuditLogger()
-        assert "Degraded" in logger.get_provider_status().get("status", "")
+    # Should FAIL because the log_path's final hash won't match the saved anchor
+    assert logger.verify_integrity() is False

@@ -3,7 +3,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from local_rag import RAGPipeline, Config
+from sovereign_ai import RAGPipeline, Config
 from local_verify import ComplianceCertificate
 
 # Ensure we are in the right root

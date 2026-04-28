@@ -1,7 +1,7 @@
 import asyncio
 import os
-from local_rag import RAGPipeline, Config
-from local_rag.schemas import Document
+from sovereign_ai import RAGPipeline, Config
+from sovereign_ai.schemas import Document
 
 # Get the directory of the current script
 base_dir = os.path.dirname(os.path.abspath(__file__))

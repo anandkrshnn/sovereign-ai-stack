@@ -1,5 +1,5 @@
 import asyncio
-from local_rag import RAGPipeline, Config
+from sovereign_ai import RAGPipeline, Config
 
 async def run_demo():
     print("\n[HEALTHCARE SCENARIO] Clinic Data Isolation")

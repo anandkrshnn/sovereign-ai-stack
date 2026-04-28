@@ -20,7 +20,7 @@ class Store:
     
     v0.4.0: Supports full-database encryption via SQLCipher if a password is provided.
     """
-    def __init__(self, db_path: str = "local_rag.db", password: Optional[str] = None):
+    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None):
         self.db_path = Path(db_path)
         self.password = password
         self.conn = None
@@ -135,7 +135,7 @@ class AsyncStore:
     Asynchronous Sovereign Storage Layer using aiosqlite.
     Provides non-blocking database operations for high-concurrency loops.
     """
-    def __init__(self, db_path: str = "local_rag.db", password: Optional[str] = None):
+    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None):
         self.db_path = Path(db_path)
         self.password = password
         self.conn: Optional[aiosqlite.Connection] = None
