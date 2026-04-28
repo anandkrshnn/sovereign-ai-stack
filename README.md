@@ -2,15 +2,16 @@
 
 [![PyPI version](https://badge.fury.io/py/sovereign-ai-stack.svg)](https://pypi.org/project/sovereign-ai-stack/)
 [![Sovereign CI](https://github.com/anandkrshnn/sovereign-ai-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/anandkrshnn/sovereign-ai-stack/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/anandkrshnn/sovereign-ai-stack?color=success)](https://github.com/anandkrshnn/sovereign-ai-stack/releases/tag/v1.0.0-GA)
+[![IETF Draft](https://img.shields.io/badge/IETF-PTV_Protocol-blue)](https://www.ietf.org/archive/id/draft-anandakrishnan-rats-ptv-agent-identity-00.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Status](https://img.shields.io/badge/status-production_ready-success.svg)](#)
 
 **The Verified Airlock for Local AI — Retrieve. Verify. Gate. Prove.**
 
 ---
 
-## 🚀 What is Live Today? (v1.0.0-GA Status)
+## 🚀 Launch Checklist & Status (v1.0.0-GA)
 
 - [x] **Verified Airlock Engine**: Mandatory grounding verification for all responses.
 - [x] **Unified Audit Chain**: SHA-256 linked, hardware-anchored forensic logging.
@@ -151,11 +152,14 @@ sovereign audit verify --tenant default
 
 ---
 
-## 🔗 Key Resources
+## 🔗 Public Proofs & Standards
 
+- 📜 **IETF Draft**: [PTV Agent Identity (draft-anandakrishnan-rats-ptv-agent-identity)](https://www.ietf.org/archive/id/draft-anandakrishnan-rats-ptv-agent-identity-00.html)
+- 💬 **Community Discussion**: [Hacker News Thread (47920787)](https://news.ycombinator.com/item?id=47920787)
+- 🏛️ **Affiliations**: Referenced via [github.com/anandkrshnn](https://github.com/anandkrshnn)
 - 📖 [Documentation & FAQs](docs/FAQ.md)
 - ⚖️ [Compliance Framework (COMMERCIAL.md)](COMMERCIAL.md)
-- 🗺️ [Roadmap & PTV Protocol](ROADMAP.md)
+- 🗺️ [Roadmap & GAIP-2030](ROADMAP.md)
 
 ---
 
