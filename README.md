@@ -5,9 +5,18 @@
 [![Release](https://img.shields.io/github/v/release/anandkrshnn/sovereign-ai-stack?color=success)](https://github.com/anandkrshnn/sovereign-ai-stack/releases/tag/v1.0.0-GA)
 [![IETF Draft](https://img.shields.io/badge/IETF-PTV_Protocol-blue)](https://www.ietf.org/archive/id/draft-anandakrishnan-rats-ptv-agent-identity-00.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-**The Verified Airlock for Local AI — Retrieve. Verify. Gate. Prove.**
+> **The Verified Airlock for Local AI — Retrieve. Verify. Gate. Prove.**
+
+---
+
+### ⚡ First Look: The Sovereign Standard
+
+| **What is it?** | **Why trust it?** | **What can I verify?** |
+| :--- | :--- | :--- |
+| A production-grade, 100% on-device RAG & Gateway stack that intercepts every AI response to prevent hallucinations and data leaks. | **Mathematically Proven Sovereignty.** Uses SHA-256 linked audit chains and IETF-aligned PTV protocols to anchor every interaction to hardware. | **Run the Proof.** Install and execute `sovereign audit verify` right now to prove your local audit trail is untampered and compliant. |
+
+---
 
 ---
 
@@ -24,10 +33,6 @@
 
 ![Sovereign Demo](https://raw.githubusercontent.com/anandkrshnn/sovereign-ai-stack/main/docs/assets/demo.gif)
 *(Above: The Verified Airlock in action — redacting ungrounded responses in real-time)*
-
----
-
-The **Sovereign AI Stack** is a production-grade orchestration platform designed for high-trust environments (Healthcare, Finance, Legal). It provides a cryptographic "Verified Airlock" between your data and your users, ensuring that no unverified or unauthorized AI interaction ever leaves the stack.
 
 ---
 
