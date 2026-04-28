@@ -1,11 +1,11 @@
 import pytest
 import yaml
 import json
+import os
 from pathlib import Path
-from local_rag.policy import PolicyEngine
-from local_rag.schemas import SearchResult
-from local_rag.audit import AuditLogger
-from local_rag.governed import GovernedRetriever
+from sovereign_ai.rag.policy import PolicyEngine, Principal, AccessRequest
+from sovereign_ai.rag.schemas import SearchResult, PolicyDecision
+from sovereign_ai.common.audit import SovereignAuditLogger, Principal as AuditPrincipal
 
 @pytest.fixture
 def mock_results():
@@ -37,15 +37,18 @@ def mock_results():
 def policy_file(tmp_path):
     policy_path = tmp_path / "test_policy.yaml"
     policy_data = {
-        "version": "1",
-        "principal": "test-analyst",
-        "allow": {
-            "classifications": ["public"],
-            "tenants": ["tenant-a"]
-        },
-        "deny": {
-            "departments": ["hr"]
-        },
+        "version": "1.0.0-GA",
+        "allow": [
+            {
+                "classifications": ["public"],
+                "roles": ["analyst"]
+            }
+        ],
+        "deny": [
+            {
+                "departments": ["hr"]
+            }
+        ],
         "limits": {
             "max_results": 2,
             "min_score": 0.5
@@ -57,12 +60,15 @@ def policy_file(tmp_path):
 
 def test_policy_engine_enforcement(policy_file, mock_results):
     engine = PolicyEngine(policy_file)
-    decision = engine.enforce("test query", mock_results)
+    principal = Principal(id="test-analyst", tenant_id="tenant-a", roles=["analyst"], classifications=["public"])
+    request = AccessRequest(principal=principal, intent="research", query="test query")
+    
+    decision = engine.evaluate_request(request, mock_results)
     
     # Expected: 
-    # c1: ALLOW (public, tenant-a, not hr)
-    # c2: DENY (secret, also hr)
-    # c3: DENY (tenant-b)
+    # c1: ALLOW (public, tenant-a, analyst role)
+    # c2: DENY (secret, not in allowed classifications)
+    # c3: DENY (tenant-b mismatch)
     
     assert decision.action == "allow"
     assert "c1" in decision.allowed_chunks
@@ -70,66 +76,46 @@ def test_policy_engine_enforcement(policy_file, mock_results):
     assert "c3" in decision.denied_chunks
     assert len(decision.allowed_chunks) == 1
 
-def test_audit_logging(tmp_path, policy_file, mock_results):
-    audit_file = tmp_path / "audit.jsonl"
-    logger = AuditLogger(str(audit_file))
+def test_audit_logging(tmp_path):
+    # SovereignAuditLogger uses base_dir/tenant_id/audit structure
+    logger = SovereignAuditLogger(base_dir=str(tmp_path), tenant_id="tenant_alpha")
     
-    # Create a GovernedRetriever manually or use its logic
-    # Here we test logger directly for isolation
-    from local_rag.schemas import AuditRecord, PolicyDecision
-    import uuid
-    from datetime import datetime
+    principal = AuditPrincipal(id="test-user", tenant_id="tenant_alpha")
+    data = {"query": "hello", "decision": "allow"}
     
-    decision = PolicyDecision(action="allow", reason="Tested", allowed_chunks=["c1"], denied_chunks=["c2"])
-    record = AuditRecord(
-        event_id=str(uuid.uuid4()),
-        principal="test-user",
-        query_hash="hash123",
-        query_preview="hello",
-        decision=decision,
-        candidate_count=2,
-        allowed_count=1,
-        denied_count=1
-    )
-    
-    logger.log(record)
+    logger.log("test_event", principal, data)
     
     # Verify file content
-    assert audit_file.exists()
-    logs = logger.read_logs()
-    assert len(logs) == 1
-    assert logs[0].principal == "test-user"
-    assert logs[0].decision.action == "allow"
+    log_file = tmp_path / "tenant_alpha" / "audit" / "sovereign_audit.jsonl"
+    assert log_file.exists()
+    
+    with open(log_file, "r") as f:
+        log_entry = json.loads(f.readline())
+        assert log_entry["event_type"] == "test_event"
+        assert log_entry["principal"]["id"] == "test-user"
+        assert log_entry["data"]["query"] == "hello"
 
 def test_governed_retriever_airlock(tmp_path, policy_file):
     # Setup a dummy DB for the retriever
-    db_path = tmp_path / "test_airlock.db"
+    db_path = tmp_path / "data" / "tenant-a" / "vault" / "sovereign.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # We can't easily ingest into real FTS5 without a real DB setup,
-    # but we can mock the internal FTS5Retriever to test the Airlock wrapper
-    from unittest.mock import MagicMock
+    from unittest.mock import MagicMock, patch
     
-    with MagicMock() as mock_fts:
+    with patch("sovereign_ai.rag.governed.FTS5Retriever") as mock_fts_cls:
+        mock_fts = mock_fts_cls.return_value
         mock_fts.search.return_value = [
-            SearchResult(doc_id="d1", chunk_id="c1", text="text", score=0.9, metadata={"classification": "secret"})
+            SearchResult(doc_id="d1", chunk_id="c1", text="secret text", score=0.9, 
+                        metadata={"classification": "secret", "tenant_id": "tenant-a"})
         ]
         
-        # Patch the FTS5Retriever inside GovernedRetriever
-        from local_rag.governed import GovernedRetriever
-        import local_rag.governed
+        from sovereign_ai.rag.governed import GovernedRetriever
         
-        # patches the FTS5Retriever inside GovernedRetriever to avoid real DB init
-        original_init = local_rag.governed.FTS5Retriever.__init__
-        local_rag.governed.FTS5Retriever.__init__ = lambda *args, **kwargs: None
-        
-        retriever = GovernedRetriever(str(db_path), policy_file, principal="attacker")
-        retriever.retriever = mock_fts # Inject mock
+        # Policy in policy_file only allows "public" for "analyst" role
+        retriever = GovernedRetriever(str(db_path), policy_file, principal="analyst", tenant_id="tenant-a", roles=["analyst"])
         
         results, decision = retriever.search("gimme secrets")
         
-        # Policy in policy_file only allows "public"
         assert len(results) == 0
         assert decision.action == "deny"
-        
-        # Restore init
-        local_rag.governed.FTS5Retriever.__init__ = original_init
+        assert "c1" in decision.denied_chunks

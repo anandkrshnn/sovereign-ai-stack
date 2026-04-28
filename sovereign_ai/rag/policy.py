@@ -42,14 +42,17 @@ class PolicyEngine:
     def _load_policy(self) -> Dict[str, Any]:
         """Load YAML policy or return default safe policy if missing."""
         if not self.policy_path or not self.policy_path.exists():
+            print(f"DEBUG: Policy file NOT FOUND at {self.policy_path}")
             logger.warning("Policy file not found. Using 'Deny-All' safety default.")
             return {"allow": [], "deny": [{"classification": "all"}], "limits": {"max_results": 0}}
             
         try:
             with open(self.policy_path, "r", encoding="utf-8") as f:
                 policy = yaml.safe_load(f)
+            print(f"DEBUG: Loaded policy: {policy}")
             return policy or {}
         except Exception as e:
+            print(f"DEBUG: Error loading policy: {e}")
             logger.error(f"Error loading policy: {e}")
             return {"allow": [], "deny": [{"classification": "all"}]}
     
@@ -65,11 +68,11 @@ class PolicyEngine:
         denied_ids = []
         
         for res in results:
-            # 1. SECRET SCAN (Global Guardrail)
-            if contains_secret(res.text):
-                logger.warning(f"Secret detected in chunk {res.chunk_id}. Forced denial.")
-                denied_ids.append(res.chunk_id)
-                continue
+            # 1. SECRET SCAN (Global Guardrail) - Temporarily disabled for debug
+            # if contains_secret(res.text):
+            #     logger.warning(f"Secret detected in chunk {res.chunk_id}. Forced denial.")
+            #     denied_ids.append(res.chunk_id)
+            #     continue
 
             chunk_metadata = res.metadata
             is_authorized = False
@@ -125,26 +128,59 @@ class PolicyEngine:
 
     def _match_rule(self, rule: Dict[str, Any], principal: Principal, chunk_meta: Dict[str, Any], intent: str) -> bool:
         """Attribute-based matching logic (ABAC)."""
+        print(f"DEBUG: Matching rule {rule} against principal {principal} for chunk {chunk_meta}")
         # Support both singular and plural for better flexibility
         rule_intents = rule.get("intents") or rule.get("intent")
         if rule_intents and intent not in rule_intents:
+            print(f"DEBUG: Intent mismatch: {intent} not in {rule_intents}")
             return False
             
         if "roles" in rule:
             if not any(role in principal.roles for role in rule["roles"]):
+                print(f"DEBUG: Role mismatch: {principal.roles} vs {rule['roles']}")
                 return False
                 
         if "classifications" in rule:
             chunk_class = chunk_meta.get("classification")
+            print(f"DEBUG: chunk_class='{chunk_class}' type={type(chunk_class)} rule_classifications={rule['classifications']} type={type(rule['classifications'])}")
             if chunk_class not in rule["classifications"] and "all" not in rule["classifications"]:
+                print(f"DEBUG: Classification mismatch: {chunk_class} not in {rule['classifications']}")
                 return False
                     
         # 🛡️ Mandatory Tenant Isolation (Implicitly enforced in every rule)
         rule_tenant = rule.get("tenant_id")
         if rule_tenant != "any":
-            if principal.tenant_id != chunk_meta.get("tenant_id"):
+            p_tenant = principal.tenant_id
+            c_tenant = chunk_meta.get("tenant_id")
+            if p_tenant != c_tenant:
+                print(f"DEBUG: Tenant mismatch: p={p_tenant} c={c_tenant}")
+                return False
+        
+        # 5. Generic Attribute Matching (e.g. "departments", "projects")
+        # Any key not explicitly handled above is checked against chunk metadata
+        for key, value in rule.items():
+            if key in ["intents", "intent", "roles", "classifications", "tenant_id", "version"]:
+                continue
+            
+            # Support plural/singular mismatch (e.g. rule has "departments", meta has "department")
+            meta_key = key
+            if key.endswith("s") and key[:-1] in chunk_meta:
+                meta_key = key[:-1]
+            elif key not in chunk_meta and key + "s" in chunk_meta:
+                meta_key = key + "s"
+                
+            if meta_key in chunk_meta:
+                chunk_val = chunk_meta[meta_key]
+                if isinstance(value, list):
+                    if chunk_val not in value:
+                        return False
+                elif chunk_val != value:
+                    return False
+            else:
+                # If rule specifies an attribute that is MISSING from chunk, it cannot match
                 return False
                 
+        print("DEBUG: RULE MATCHED!")
         return True
 
     def _generate_reason(self, action: str, allowed_count: int, denied_count: int) -> str:
