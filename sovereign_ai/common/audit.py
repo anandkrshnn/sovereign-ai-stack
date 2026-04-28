@@ -40,12 +40,17 @@ class ChainSecretManager:
     """
     SERVICE_NAME = "sovereign_ai"
     KEY_NAME = "forensic_anchor_secret"
+    _cached_secret = None
 
     @classmethod
     def get_secret(cls) -> bytes:
+        if cls._cached_secret:
+            return cls._cached_secret
+        
         secret = keyring.get_password(cls.SERVICE_NAME, cls.KEY_NAME)
         if secret:
-            return secret.encode()
+            cls._cached_secret = secret.encode()
+            return cls._cached_secret
         
         # Provision new secret
         new_secret = os.urandom(32).hex()
@@ -54,7 +59,9 @@ class ChainSecretManager:
         except Exception:
             # Fallback for headless/no-enclave environments
             pass
-        return new_secret.encode()
+        
+        cls._cached_secret = new_secret.encode()
+        return cls._cached_secret
 
 class AuditChainManager:
     """
