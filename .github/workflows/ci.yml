@@ -1,5 +1,8 @@
 name: Sovereign CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [ main, master ]
@@ -24,5 +27,7 @@ jobs:
         python -m pip install pytest pytest-asyncio
         
     - name: Run Tests
+      env:
+        PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
       run: |
         python -m pytest tests/ --verbose

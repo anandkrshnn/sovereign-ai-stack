@@ -7,6 +7,14 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
+# Force NullKeyring for CI/headless environments
+try:
+    import keyring
+    from keyring.backends.null import Keyring as NullKeyring
+    keyring.set_keyring(NullKeyring())
+except Exception:
+    pass
+
 from sovereign_ai.rag.store import Store
 from sovereign_ai.rag.retriever import FTS5Retriever
 from sovereign_ai.rag.main import LocalRAG
