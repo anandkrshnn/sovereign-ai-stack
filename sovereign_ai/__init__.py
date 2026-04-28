@@ -9,7 +9,6 @@ from .rag.main import LocalRAG, AsyncLocalRAG
 from .rag.store import Store
 from .rag.retriever import FTS5Retriever
 from .rag.generator import QwenGenerator
-from .rag.pipeline import SovereignPipeline, Config
 from .rag.schemas import Document, SearchResult, AuditRecord, RAGResponse, PolicyDecision
 from .rag.policy import PolicyEngine, Principal, AccessRequest
 from .rag.audit import AuditLogger, KeyringProvider
@@ -20,7 +19,7 @@ from .rag.utils import RecursiveCharacterTextSplitter, chunk_text, contains_secr
 from .rag.reranker import BGEReranker
 
 # Main Platform Facade
-from .pipeline import SovereignPipeline, Config as SovereignConfig
+from .pipeline import SovereignPipeline, Config
 
 # Bridge Gateway
 try:
@@ -63,8 +62,6 @@ __all__ = [
     "chunk_text",
     "contains_secret",
     "BGEReranker",
-    "SovereignPipeline",
-    "SovereignConfig",
     "SovereignBridge",
     "SovereignAgent",
 ]

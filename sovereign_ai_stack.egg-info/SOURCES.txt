@@ -45,6 +45,9 @@ sovereign_ai/bridge/orchestrator.py
 sovereign_ai/bridge/schemas.py
 sovereign_ai/bridge/security.py
 sovereign_ai/bridge/server.py
+sovereign_ai/common/audit.py
+sovereign_ai/common/identity.py
+sovereign_ai/common/remote_anchor.py
 sovereign_ai/rag/__init__.py
 sovereign_ai/rag/audit.py
 sovereign_ai/rag/cache.py

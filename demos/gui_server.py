@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse
 
 # Add root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 
 app = FastAPI(title="Sovereign RAG Dashboard")
 
@@ -58,7 +58,7 @@ async def ask_rag(req: RAGRequest):
             classifications=req.classifications,
             use_reranker=False
         )
-        pipelines[pipe_key] = RAGPipeline(cfg)
+        pipelines[pipe_key] = SovereignPipeline(cfg)
     
     pipe = pipelines[pipe_key]
     res = await pipe.ask(req.query, intent=req.intent)

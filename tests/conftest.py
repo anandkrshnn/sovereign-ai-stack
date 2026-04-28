@@ -11,7 +11,7 @@ from sovereign_ai.rag.store import Store
 from sovereign_ai.rag.retriever import FTS5Retriever
 from sovereign_ai.rag.main import LocalRAG
 from sovereign_ai.rag.generator import QwenGenerator
-from sovereign_ai.rag.pipeline import SovereignPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 from sovereign_ai.rag.schemas import Document
 
 def pytest_addoption(parser):

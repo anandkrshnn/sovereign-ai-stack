@@ -1,5 +1,5 @@
 import asyncio
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 
 async def run_demo():
     print("\n[HEALTHCARE SCENARIO] Clinic Data Isolation")
@@ -16,7 +16,7 @@ async def run_demo():
         roles=["doctor"],
         classifications=["PHI", "public"]
     )
-    pipe_doctor = RAGPipeline(cfg_doctor)
+    pipe_doctor = SovereignPipeline(cfg_doctor)
     res_doctor = await pipe_doctor.ask("Patient treatment protocol", intent="treatment")
     print(f"PASS: Doctor Access: {'ALLOWED' if res_doctor.sources else 'DENIED'}")
     if res_doctor.sources:
@@ -32,7 +32,7 @@ async def run_demo():
         roles=["nurse"],
         classifications=["public"] # Narrow classifications
     )
-    pipe_nurse = RAGPipeline(cfg_nurse)
+    pipe_nurse = SovereignPipeline(cfg_nurse)
     res_nurse = await pipe_nurse.ask("Patient treatment protocol", intent="treatment")
     print(f"BLOCK: Nurse Cross-Tenant Access: {'ALLOWED' if res_nurse.sources else 'DENIED (Sovereign Airlock enforced)'}")
     await pipe_nurse.close()

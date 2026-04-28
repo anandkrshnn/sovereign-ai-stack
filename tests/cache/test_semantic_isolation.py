@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from sovereign_ai.rag.pipeline import SovereignPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 from sovereign_ai.rag.schemas import Document, RAGResponse
 
 @pytest.mark.asyncio

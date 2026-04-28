@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 import shutil
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 
 # Ensure we can find the package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -68,7 +68,7 @@ async def interactive_demo():
         classifications=classifications,
         use_reranker=False 
     )
-    pipe = RAGPipeline(cfg)
+    pipe = SovereignPipeline(cfg)
 
     print("\n[READY] Type your query (or 'exit' to quit)")
     print("-" * 60)

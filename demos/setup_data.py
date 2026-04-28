@@ -1,6 +1,6 @@
 import asyncio
 import os
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 from sovereign_ai.schemas import Document
 
 # Get the directory of the current script
@@ -10,7 +10,7 @@ async def setup_healthcare():
     print("[Healthcare] Setting up Data...")
     # Clinic A: Cardiology
     cfg_a = Config(db_path=os.path.join(base_dir, "healthcare", "clinic_a.db"), tenant_id="clinic_a")
-    pipe_a = RAGPipeline(cfg_a)
+    pipe_a = SovereignPipeline(cfg_a)
     await pipe_a.ingest([
         Document(doc_id="PROTOCOL-1", source="EHR", 
                  content="Patient_X Treatment Protocol: Diagnosis=Hypertension. Rx: Lisinopril 10mg daily. Follow-up 4 weeks.", 
@@ -26,7 +26,7 @@ async def setup_healthcare():
 
     # Clinic B: Orthopedics (Isolated)
     cfg_b = Config(db_path=os.path.join(base_dir, "healthcare", "clinic_b.db"), tenant_id="clinic_b")
-    pipe_b = RAGPipeline(cfg_b)
+    pipe_b = SovereignPipeline(cfg_b)
     await pipe_b.ingest([
         Document(doc_id="SURGERY-1", source="EHR", 
                  content="Patient_Y Knee Surgery Roadmap: Post-op physio 3x/week for 12 weeks.", 
@@ -37,7 +37,7 @@ async def setup_healthcare():
 async def setup_finance():
     print("[Finance] Setting up Data...")
     cfg = Config(db_path=os.path.join(base_dir, "finance", "finance.db"), tenant_id="acme_corp")
-    pipe = RAGPipeline(cfg)
+    pipe = SovereignPipeline(cfg)
     await pipe.ingest([
         Document(doc_id="REV-Q2", source="Internal", 
                  content="Q2 Revenue Breakdown: APAC: $12.4M | EMEA: $8.7M | Americas: $21.5M. Growth: +8% YoY.", 
@@ -54,7 +54,7 @@ async def setup_finance():
 async def setup_engineering():
     print("[Engineering] Setting up Data...")
     cfg = Config(db_path=os.path.join(base_dir, "engineering", "eng.db"), tenant_id="eng_team")
-    pipe = RAGPipeline(cfg)
+    pipe = SovereignPipeline(cfg)
     await pipe.ingest([
         Document(doc_id="K8S-CONFIG", source="Git", 
                  content="Production Kubernetes Config: image: myapp:v1.2.3 | replicas: 3 | resources: limit-cpu: '2'.", 

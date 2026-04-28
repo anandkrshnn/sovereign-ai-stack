@@ -1,5 +1,5 @@
 import asyncio
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 
 async def run_demo():
     print("\n[ENGINEERING SCENARIO] Config Privacy")
@@ -15,7 +15,7 @@ async def run_demo():
         tenant_id="eng_team",
         roles=["admin"]
     )
-    pipe_admin = RAGPipeline(cfg_admin)
+    pipe_admin = SovereignPipeline(cfg_admin)
     res_admin = await pipe_admin.ask("Production image version?")
     print(f"PASS: Admin Access: {'ALLOWED' if res_admin.sources else 'DENIED'}")
     await pipe_admin.close()
@@ -27,7 +27,7 @@ async def run_demo():
         tenant_id="eng_team",
         roles=["developer"]
     )
-    pipe_dev = RAGPipeline(cfg_dev)
+    pipe_dev = SovereignPipeline(cfg_dev)
     res_dev = await pipe_dev.ask("AWS production credentials?")
     print(f"BLOCK: Developer Access: {'LEAKED' if res_dev.sources else 'BLOCKED (Sovereign Fail-Closed)'}")
     await pipe_dev.close()

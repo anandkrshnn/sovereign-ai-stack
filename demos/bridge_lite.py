@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Request
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 import os
 
 app = FastAPI(title="Sovereign OpenAI Bridge")
@@ -14,7 +14,7 @@ cfg = Config(
     roles=["doctor"],
     enable_verification=True
 )
-pipeline = RAGPipeline(cfg)
+pipeline = SovereignPipeline(cfg)
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):

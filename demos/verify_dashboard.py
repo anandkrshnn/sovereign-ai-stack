@@ -3,7 +3,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from sovereign_ai import RAGPipeline, Config
+from sovereign_ai import SovereignPipeline, Config
 from local_verify import ComplianceCertificate
 
 # Ensure we are in the right root
@@ -77,7 +77,7 @@ with tab1:
                         faithfulness_threshold=f_threshold
                     )
                     
-                    pipe = RAGPipeline(cfg)
+                    pipe = SovereignPipeline(cfg)
                     
                     # Execute
                     async def run():
@@ -194,7 +194,7 @@ with tab2:
                         roles=[test_role],
                         enable_verification=True
                     )
-                    pipe = RAGPipeline(cfg)
+                    pipe = SovereignPipeline(cfg)
                     
                     async def run_internal():
                         return await pipe.ask(test_query)
