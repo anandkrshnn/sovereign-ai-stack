@@ -1,7 +1,7 @@
 [project]
 name = "sovereign-ai-stack"
-version = "1.0.0"
-description = "Local RAG with Cryptographic Verification - The Sovereign AI Platform"
+version = "0.1.0a1"
+description = "Local-first RAG with policy gating and audit-friendly logging — reference implementation"
 authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
@@ -10,15 +10,15 @@ requires-python = ">=3.10"
 keywords = [
     "sovereign-ai",
     "local-rag",
-    "verification",
+    "policy-gating",
+    "audit-logging",
+    "abac",
     "governance",
-    "cryptographic-proof",
-    "hipaa",
-    "soc2",
+    "local-llm",
 ]
 
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Healthcare Industry",
     "Intended Audience :: Financial and Insurance Industry",
@@ -41,6 +41,7 @@ dependencies = [
     "click>=8.1.0",
     "aiosqlite>=0.19.0",
     "accelerate>=0.25.0",
+    "nest-asyncio>=1.5.0",
 ]
 
 [project.optional-dependencies]

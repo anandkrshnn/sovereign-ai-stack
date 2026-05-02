@@ -1,33 +1,44 @@
-# 🛡️ Sovereign AI Stack (v1.0.0-GA)
+# 🛡️ Sovereign AI Stack (v0.1.0-preview · Reference Implementation)
 
 [![PyPI version](https://badge.fury.io/py/sovereign-ai-stack.svg)](https://pypi.org/project/sovereign-ai-stack/)
 [![Sovereign CI](https://github.com/anandkrshnn/sovereign-ai-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/anandkrshnn/sovereign-ai-stack/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/anandkrshnn/sovereign-ai-stack?color=success)](https://github.com/anandkrshnn/sovereign-ai-stack/releases/tag/v1.0.0-GA)
+[![Release](https://img.shields.io/github/v/release/anandkrshnn/sovereign-ai-stack?color=blue)](https://github.com/anandkrshnn/sovereign-ai-stack/releases/tag/v0.1.0-preview)
 [![IETF Draft](https://img.shields.io/badge/IETF-PTV_Protocol-blue)](https://www.ietf.org/archive/id/draft-anandakrishnan-rats-ptv-agent-identity-00.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **The Verified Airlock for Local AI — Retrieve. Verify. Gate. Prove.**
+> **A local-first RAG and policy-gating scaffold for AI systems that need auditability — no cloud required.**
+
+> [!NOTE]
+> **This project is a reference implementation and alpha preview (`0.1.0a1` on PyPI / `v0.1.0-preview` on GitHub).**
+> Earlier release naming suggested a higher maturity level than the codebase currently supports.
+> Versioning and documentation have been updated to better reflect the current state.
 
 ---
 
-### ⚡ First Look: The Sovereign Standard
+### ⚡ First Look
 
-| **What is it?** | **Why trust it?** | **What can I verify?** |
+| **What is it?** | **What works today?** | **What's next?** |
 | :--- | :--- | :--- |
-| A production-grade, 100% on-device RAG & Gateway stack that intercepts every AI response to prevent hallucinations and data leaks. | **Mathematically Proven Sovereignty.** Uses SHA-256 linked audit chains and IETF-aligned PTV protocols to anchor every interaction to hardware. | **Run the Proof.** Install and execute `sovereign audit verify` right now to prove your local audit trail is untampered and compliant. |
+| A local-first reference scaffold for policy-gated, auditable RAG pipelines. No cloud, no telemetry. | Hybrid retrieval (SQLite FTS5 + LanceDB), ABAC identity gating, SHA-256 audit logging, OpenAI-compatible bridge. | Signed audit chains, a real grounding judge, adversarial blocking tests. See [ROADMAP.md](ROADMAP.md). |
 
 ---
 
 ---
 
-## 🚀 Launch Checklist & Status (v1.0.0-GA)
+## Current Status (v0.1.0-preview)
 
-- [x] **Verified Airlock Engine**: Mandatory grounding verification for all responses.
-- [x] **Unified Audit Chain**: SHA-256 linked, hardware-anchored forensic logging.
-- [x] **Hybrid Retrieval**: Parallel SQLite FTS5 + LanceDB vector store fusion.
-- [x] **OpenAI Compatibility**: Drop-in replacement for `/v1/chat/completions`.
-- [x] **Multi-Tenant ABAC**: Policy-based data isolation for regulated domains.
-- [x] **Enterprise Observability**: Prometheus metrics and Jaeger tracing out-of-the-box.
+**Implemented and running:**
+- [x] **Hybrid Retrieval**: SQLite FTS5 + LanceDB vector store fusion
+- [x] **ABAC Gateway**: Identity-aware policy enforcement before retrieval
+- [x] **Audit Logging**: SHA-256-linked event chain (JSONL + SQLite)
+- [x] **OpenAI Bridge**: Drop-in `/v1/chat/completions` compatibility
+- [x] **CLI + Docker**: `sovereign` CLI and `docker-compose` deployment
+
+**In progress / roadmap:**
+- [ ] **Grounding Judge**: Real hallucination detection (current: reranker score proxy)
+- [ ] **Signed Audit Chain**: Cryptographic signing for non-repudiation
+- [ ] **Hardware Attestation**: TPM / Secure Enclave integration
+- [ ] **Compliance Certification**: HIPAA / SOC 2 external audit
 
 ---
 
@@ -70,23 +81,24 @@ flowchart TD
 
 ## 📜 Version History
 
-**v1.0.0-GA** (2026-04-27) - First Public Release
+**v0.1.0-preview** (2026-04-27) — First public release
 
-This release represents the culmination of 2+ years of research and development:
-- Internal iterations v1.0-v4.0 (enterprise pilots, protocol development)
-- GAIP-2030 compliance framework
-- PTV protocol integration
-- Production chaos testing
+This is the initial public release of a personal R&D project exploring local-first RAG, policy gating, and audit-friendly logging for AI pipelines.
 
-v1.0.0-GA is production-ready, enterprise-certified, and regulatory-compliant.
+**Implemented and running:**
+- Hybrid retrieval: SQLite FTS5 + LanceDB
+- ABAC gateway: identity-aware access control
+- Audit logging: SHA-256 hashed event chain (JSONL + SQLite)
+- OpenAI-compatible bridge (`/v1/chat/completions`)
+- CLI + Docker deployment
 
-**Previous Work:**
-- GAIP-2030 Standard (healthcare AI governance)
-- PTV Protocol (Prove-Transform-Verify attestation)
-- Protocol Z-Federate (Zero-knowledge ETL)
-- Multiple enterprise pilots in healthcare and finance
+**In progress / roadmap:**
+- Cryptographically signed (non-repudiable) audit chains
+- Production-grade grounding judge with adversarial test coverage
+- Hardware attestation (TPM / Secure Enclave)
+- External compliance certification (HIPAA, SOC 2)
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ---
 
@@ -141,19 +153,20 @@ sovereign audit verify --tenant default
 | **Privacy Guarantee** | ❌ | ❌ | ✅ **Zero Cloud Leakage** |
 
 ### Key Differentiators
-- **The Verified Airlock**: We don't just retrieve data; we gate it. A local judge model intercepts every answer, ensuring zero hallucinations and preventing unauthorized data egress.
-- **Hardware-Anchored Forensics**: Our cryptographic audit trails are 'stapled' to the OS Secure Enclave (TPM/Keyring), making log deletion or truncation mathematically impossible to hide.
-- **Hybrid Retrieval Precision**: By fusing parallel SQLite FTS5 (lexical) and LanceDB (vector) streams through a BGE-Reranker, we achieve the accuracy of `grep` with the intelligence of semantics.
+- **Policy-Gated Retrieval**: Every query passes through an ABAC identity check before retrieval runs. Role-based rules (e.g., `--principal doctor`) control what data a principal can access.
+- **Audit-Friendly Logging**: Every step — retrieval, gating, response — is written to an append-only, SHA-256-linked log you can inspect locally. *Cryptographic signing and non-repudiation are roadmap items, not yet implemented.*
+- **Hybrid Retrieval Precision**: SQLite FTS5 (lexical) + LanceDB (vector) fused through a BGE reranker. Fast, local, no cloud index.
 
 ---
 
-## 📊 Performance & Compliance
+## 📊 Performance & Status
 
-- **Throughput**: 124 QPS (Bridge Tester).
-- **Latency**: 4.88ms p50 for ABAC gates; < 50ms for forensic hashing.
-- **Verification Accuracy**: 98.2% Verification Pass Rate with 0.92 Average Grounding Score.
-- **Privacy**: No telemetry, no cloud dependencies, 100% offline.
-- **Compliance**: Designed for HIPAA Technical Safeguards, SOC 2 Type II, and the 2026 CSA Agentic Trust Framework.
+- **ABAC Gate Latency**: ~5ms on localhost (single-node, development setup)
+- **Forensic Hashing**: <50ms per event on commodity hardware
+- **Privacy**: No telemetry, no cloud dependencies, 100% offline
+- **Compliance**: *Designed* to support HIPAA Technical Safeguard patterns and SOC 2 audit log requirements — not independently certified
+
+> Benchmarks are from a local development environment. Production results will vary by hardware, load, and model size.
 
 ---
 
@@ -175,15 +188,14 @@ sovereign audit verify --tenant default
 
 ---
 
-## ✅ Release Verification
+## ✅ Status
 
-This release (v1.0.0-GA) has been certified for production use following rigorous internal audit and chaos testing.
+**v0.1.0-preview — Reference Implementation. Not production-certified.**
 
-- **Last Full-Stack Verification**: 2026-04-27
-- **Test Coverage**: 94.2%
-- **Chaos Resilience**: Passed (100% recovery rate on service failure)
-- **Grounding Accuracy (BAAI/bge-reranker-base)**: 0.92 Average Score
+- **Test Coverage**: Core retrieval and ABAC gating pipeline. Adversarial and chaos tests are in progress — see [ROADMAP.md](ROADMAP.md).
+- **Grounding**: Uses BAAI/bge-reranker-base scores as a proxy signal. A dedicated grounding judge is a roadmap item.
+- **Audit Chain**: SHA-256 event hashing is implemented. Cryptographic signing is not yet implemented.
 
 ---
-© 2026 Sovereign AI Engineering Team | Developed by [Anandakrishnan Damodaran](https://github.com/anandkrshnn)
+© 2026 [Anandakrishnan Damodaran](https://github.com/anandkrshnn) — Personal R&D project
 🛰️ *Sovereignty is the new safety.*
