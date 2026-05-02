@@ -12,7 +12,7 @@ async def test_policy_fail_closed_missing_roles(sovereign_test_env, tmp_path):
     import yaml
     with open(policy_path, "w") as f:
         yaml.dump({
-            "version": "1.0.0-GA",
+            "version": "0.1.0-preview",
             "allow": [
                 {"roles": ["admin"], "classifications": ["secret"]}
             ],

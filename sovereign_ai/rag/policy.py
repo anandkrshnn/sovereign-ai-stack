@@ -26,7 +26,7 @@ class AccessRequest:
 
 class PolicyEngine:
     """
-    Sovereign ABAC Policy Engine for RAG authorization (v1.0.0-GA).
+    Sovereign ABAC Policy Engine for RAG authorization (v0.1.0-preview).
     
     Acts as the 'Sovereign Airlock', filtering chunks based on principal attributes.
     """
@@ -37,22 +37,19 @@ class PolicyEngine:
         else:
             self.policy_path = None
         self.policy = self._load_policy()
-        self.version = self.policy.get("version", "1.0.0-GA")
+        self.version = self.policy.get("version", "0.1.0-preview")
     
     def _load_policy(self) -> Dict[str, Any]:
         """Load YAML policy or return default safe policy if missing."""
         if not self.policy_path or not self.policy_path.exists():
-            print(f"DEBUG: Policy file NOT FOUND at {self.policy_path}")
-            logger.warning("Policy file not found. Using 'Deny-All' safety default.")
+            logger.warning(f"Policy file NOT FOUND at {self.policy_path}. Using 'Deny-All' safety default.")
             return {"allow": [], "deny": [{"classification": "all"}], "limits": {"max_results": 0}}
             
         try:
             with open(self.policy_path, "r", encoding="utf-8") as f:
                 policy = yaml.safe_load(f)
-            print(f"DEBUG: Loaded policy: {policy}")
             return policy or {}
         except Exception as e:
-            print(f"DEBUG: Error loading policy: {e}")
             logger.error(f"Error loading policy: {e}")
             return {"allow": [], "deny": [{"classification": "all"}]}
     
@@ -68,11 +65,11 @@ class PolicyEngine:
         denied_ids = []
         
         for res in results:
-            # 1. SECRET SCAN (Global Guardrail) - Temporarily disabled for debug
-            # if contains_secret(res.text):
-            #     logger.warning(f"Secret detected in chunk {res.chunk_id}. Forced denial.")
-            #     denied_ids.append(res.chunk_id)
-            #     continue
+            # 1. SECRET SCAN (Global Guardrail)
+            if contains_secret(res.text):
+                logger.warning(f"Secret detected in chunk {res.chunk_id}. Forced denial.")
+                denied_ids.append(res.chunk_id)
+                continue
 
             chunk_metadata = res.metadata
             is_authorized = False
@@ -85,7 +82,6 @@ class PolicyEngine:
                     break
             
             if is_denied:
-                logger.debug(f"Chunk {res.chunk_id} explicitly DENIED by rule.")
                 denied_ids.append(res.chunk_id)
                 continue
                 
@@ -128,23 +124,18 @@ class PolicyEngine:
 
     def _match_rule(self, rule: Dict[str, Any], principal: Principal, chunk_meta: Dict[str, Any], intent: str) -> bool:
         """Attribute-based matching logic (ABAC)."""
-        print(f"DEBUG: Matching rule {rule} against principal {principal} for chunk {chunk_meta}")
         # Support both singular and plural for better flexibility
         rule_intents = rule.get("intents") or rule.get("intent")
         if rule_intents and intent not in rule_intents:
-            print(f"DEBUG: Intent mismatch: {intent} not in {rule_intents}")
             return False
             
         if "roles" in rule:
             if not any(role in principal.roles for role in rule["roles"]):
-                print(f"DEBUG: Role mismatch: {principal.roles} vs {rule['roles']}")
                 return False
                 
         if "classifications" in rule:
             chunk_class = chunk_meta.get("classification")
-            print(f"DEBUG: chunk_class='{chunk_class}' type={type(chunk_class)} rule_classifications={rule['classifications']} type={type(rule['classifications'])}")
             if chunk_class not in rule["classifications"] and "all" not in rule["classifications"]:
-                print(f"DEBUG: Classification mismatch: {chunk_class} not in {rule['classifications']}")
                 return False
                     
         # 🛡️ Mandatory Tenant Isolation (Implicitly enforced in every rule)
@@ -153,7 +144,6 @@ class PolicyEngine:
             p_tenant = principal.tenant_id
             c_tenant = chunk_meta.get("tenant_id")
             if p_tenant != c_tenant:
-                print(f"DEBUG: Tenant mismatch: p={p_tenant} c={c_tenant}")
                 return False
         
         # 5. Generic Attribute Matching (e.g. "departments", "projects")
@@ -180,7 +170,6 @@ class PolicyEngine:
                 # If rule specifies an attribute that is MISSING from chunk, it cannot match
                 return False
                 
-        print("DEBUG: RULE MATCHED!")
         return True
 
     def _generate_reason(self, action: str, allowed_count: int, denied_count: int) -> str:

@@ -12,7 +12,7 @@ from sovereign_ai.common.audit import SovereignAuditLogger, Principal as AuditPr
 def abac_policy(tmp_path):
     policy_path = tmp_path / "v100_policy.yaml"
     policy_data = {
-        "version": "1.0.0-GA",
+        "version": "0.1.0-preview",
         "allow": [
             {
                 "roles": ["admin"],

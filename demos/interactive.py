@@ -13,7 +13,7 @@ async def interactive_demo():
     else: os.system('clear')
 
     print("\n" + "="*60)
-    print("[SOVEREIGN LOCAL RAG] INTERACTIVE DEMO (v1.0.0-GA)")
+    print("[SOVEREIGN LOCAL RAG] INTERACTIVE DEMO (v0.1.0-preview)")
     print("="*60)
     
     # Get the directory of the current script

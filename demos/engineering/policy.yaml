@@ -1,4 +1,4 @@
-version: "1.0.0-GA"
+version: "0.1.0-preview"
 description: "Engineering Sovereignty Policy: Config access control."
 
 allow:

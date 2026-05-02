@@ -29,7 +29,7 @@ def verify(
     log_path: str = typer.Option("rag_audit.jsonl", "--log-path", help="Path to audit JSONL file"),
     full: bool = typer.Option(True, "--full/--tip", help="Full forensic scan or fast tip check")
 ):
-    """Verify the integrity of a cryptographic audit trail (v1.0.0-GA)."""
+    """Verify the integrity of a cryptographic audit trail (v0.1.0-preview)."""
     logger = AuditLogger(log_path)
     mode = "Forensic (Full)" if full else "Operational (Tip)"
     with console.status(f"Running {mode} integrity check..."):
@@ -88,7 +88,7 @@ def score(
         f"[bold {color}]Score: {score_val}/10.0[/bold {color}]\n\n" + 
         "\n".join([f"• {r}" for r in result["recommendations"]]),
         title="Sovereign AI Readiness Score",
-        subtitle="v1.0.0-GA Assessment"
+        subtitle="v0.1.0-preview Assessment"
     ))
     
     table = Table(show_header=False, border_style="dim")

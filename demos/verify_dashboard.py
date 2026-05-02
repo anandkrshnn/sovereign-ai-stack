@@ -231,4 +231,4 @@ with tab2:
 
 
 st.divider()
-st.caption(f"Sovereign AI Stack v1.0.0-GA | {datetime.now().year}")
+st.caption(f"Sovereign AI Stack v0.1.0-preview | {datetime.now().year}")

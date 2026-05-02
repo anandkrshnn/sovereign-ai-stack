@@ -68,3 +68,17 @@ class RAGResponse(BaseModel):
     sources: List[SearchResult]
     model_name: str
     metadata: Dict = Field(default_factory=dict)
+
+    @property
+    def verification_passed(self) -> bool:
+        return self.metadata.get("verification", {}).get("passed", False)
+
+    @property
+    def verification_score(self) -> float:
+        return self.metadata.get("verification", {}).get("overall_score", 0.0)
+    
+    @property
+    def certificate_hash(self) -> str:
+        # For demo purposes, we return a hash based on the answer and metadata
+        import hashlib
+        return hashlib.sha256(self.answer.encode()).hexdigest()

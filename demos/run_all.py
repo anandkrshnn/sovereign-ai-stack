@@ -27,7 +27,7 @@ async def run_scenario(name):
     await module.run_demo()
 
 async def main():
-    print("[Sovereign AI Stack] Production-Ready Demos (v1.0.0-GA)")
+    print("[Sovereign AI Stack] Production-Ready Demos (v0.1.0-preview)")
     print("==========================================================")
     
     await run_setup()

@@ -47,7 +47,7 @@ dependencies = [
 [project.optional-dependencies]
 # Core verification (included in default install)
 verify = [
-    "sentence-transformers>=2.2.0",
+    "sentence-transformers>=3.0.0",
     "torch>=2.0.0",
 ]
 

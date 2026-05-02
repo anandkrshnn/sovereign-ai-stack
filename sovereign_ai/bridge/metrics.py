@@ -34,7 +34,7 @@ class SovereignMetrics:
             registry=self.registry
         )
         
-        # 4. Token Metering (v1.0.0 Phase 3)
+        # 4. Token Metering (v0.1.0-preview Phase 3)
         self.sov_tokens_total = Counter(
             "sov_tokens_total",
             "Total tokens consumed per tenant/model",

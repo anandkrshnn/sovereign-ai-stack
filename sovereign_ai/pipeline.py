@@ -5,7 +5,7 @@ from .rag.schemas import RAGResponse, Document
 
 @dataclass
 class Config:
-    """Normalized configuration for the Sovereign AI Stack v1.0.0-GA."""
+    """Normalized configuration for the Sovereign AI Stack v0.1.0-preview."""
     db_path: str = "sovereign.db"
     policy_path: Optional[str] = None
     principal: str = "anonymous"
@@ -28,7 +28,7 @@ class Config:
 
 class SovereignPipeline:
     """
-    Sovereign AI Stack Pipeline Facade (v1.0.0-GA).
+    Sovereign AI Stack Pipeline Facade (v0.1.0-preview).
     
     A stable public interface that orchestrates:
     1. Retrieval (local-rag)
@@ -128,6 +128,24 @@ class SovereignPipeline:
             loop.run_until_complete(pipeline.ingest([doc]))
             
         return pipeline
+
+    def ask_sync(self, query: str, intent: str = "general", top_k: int = 5) -> RAGResponse:
+        """Synchronous wrapper for ask()."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+        if loop.is_running():
+            # If we're already in a loop, we can't use run_until_complete easily.
+            # But for a simple script, this is fine.
+            import nest_asyncio
+            nest_asyncio.apply()
+            return loop.run_until_complete(self.ask(query, intent, top_k))
+        else:
+            return loop.run_until_complete(self.ask(query, intent, top_k))
 
     def __repr__(self):
         return f"<SovereignPipeline tenant={self.config.tenant_id} principal={self.config.principal}>"

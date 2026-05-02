@@ -37,7 +37,7 @@ def mock_results():
 def policy_file(tmp_path):
     policy_path = tmp_path / "test_policy.yaml"
     policy_data = {
-        "version": "1.0.0-GA",
+        "version": "0.1.0-preview",
         "allow": [
             {
                 "classifications": ["public"],

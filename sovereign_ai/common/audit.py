@@ -65,7 +65,7 @@ class ChainSecretManager:
 
 class AuditChainManager:
     """
-    Cryptographic hash chain manager for tamper-evident auditing (v1.0.0-GA).
+    Cryptographic hash chain manager for tamper-evident auditing (v0.1.0-preview).
     """
     GENESIS_HASH = "genesis"
 

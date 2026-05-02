@@ -16,7 +16,7 @@ from .security import SovereignIdentityHub
 OTLP_ENDPOINT = os.getenv("OTLP_ENDPOINT") # e.g. http://localhost:4318/v1/traces
 resource = Resource(attributes={
     "service.name": "local-bridge",
-    "version": "1.0.0-GA"
+    "version": "0.1.0-preview"
 })
 
 provider = TracerProvider(resource=resource)
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="local-bridge",
     description="GAIP-2030 Enterprise Platform — Multi-tenant sovereign AI control plane",
-    version="1.0.0-GA",
+    version="0.1.0-preview",
     lifespan=lifespan
 )
 
@@ -69,7 +69,7 @@ identity_hub = SovereignIdentityHub(master_secret=MASTER_SECRET, base_dir=BASE_D
 
 @app.get("/health")
 def health():
-    return {"status": "sovereign", "version": "1.0.0-GA", "multitenant": True}
+    return {"status": "sovereign", "version": "0.1.0-preview", "multitenant": True}
 
 @app.get("/metrics")
 async def get_metrics(request: Request):
@@ -96,7 +96,7 @@ async def provision_tenant(tenant_id: str, request: Request):
     """
     Provison a new tenant silo (Admin Only).
     """
-    # Simple Admin-Token check for v1.0.0 Pilot
+    # Simple Admin-Token check for v0.1.0-preview Pilot
     admin_token = request.headers.get("X-Admin-Token")
     if admin_token != MASTER_SECRET: # For pilot, master secret acts as admin token
         raise HTTPException(status_code=401, detail="Unauthorized Admin access")

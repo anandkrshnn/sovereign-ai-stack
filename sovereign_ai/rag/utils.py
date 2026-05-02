@@ -51,7 +51,7 @@ class RecursiveCharacterTextSplitter:
         # Fallback to hard cut at chunk_size
         return self.chunk_size
 
-# --- Secret Training & Privacy Guardrails (v1.0.0-GA) ---
+# --- Secret Training & Privacy Guardrails (v0.1.0-preview) ---
 
 SECRET_PATTERNS = {
     "Generic API Key": r"(?i)(api[_-]?key|secret|token|auth)\s*[:=]\s*['\"]([a-zA-Z0-9_\-]{16,64})['\"]",

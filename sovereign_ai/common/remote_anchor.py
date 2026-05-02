@@ -63,7 +63,7 @@ class RemoteAnchorService:
                 tenant_id=tenant_id
             )
         except Exception as e:
-            # For v1.0.0, we fail gracefully to ensure local availability isn't blocked
+            # For v0.1.0-preview, we fail gracefully to ensure local availability isn't blocked
             print(f"Warning: Remote Git Anchor failed: {e}")
             return None
 

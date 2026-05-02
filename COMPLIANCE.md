@@ -1,5 +1,8 @@
 # Compliance & Governance Mappings
 
+> [!IMPORTANT]
+> This document is for **reference and architectural guidance only**. The Sovereign AI Stack is currently a **research preview (v0.1.0-preview)**. It provides the *technical building blocks* for compliance but has not been independently audited or certified for HIPAA, GDPR, SOC 2, or ISO 42001.
+
 This document outlines how the **Sovereign AI Stack** maps to major regulatory and auditing standards.
 
 ## 🏛️ Regulatory Mappings

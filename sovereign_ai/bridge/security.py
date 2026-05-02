@@ -11,7 +11,7 @@ from local_bridge.schemas import TenantContext
 
 class SovereignIdentityHub:
     """
-    Identity Hub for local-bridge v1.0.0.
+    Identity Hub for local-bridge v0.1.0-preview.
     Handles JWT (Keycloak) and Signed API Keys.
     Enforces 'No Default Tenant' policy.
     """

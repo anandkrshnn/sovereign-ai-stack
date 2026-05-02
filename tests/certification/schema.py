@@ -17,9 +17,9 @@ class CertificationMetric(BaseModel):
     evidence_hash: Optional[str] = None
 
 class SovereignCertificationReport(BaseModel):
-    version: str = "1.0.0-GA"
+    version: str = "0.1.0-preview"
     timestamp: float = Field(default_factory=time.time)
-    sovereign_ai_version: str = "1.0.0-GA"
+    sovereign_ai_version: str = "0.1.0-preview"
     python_version: str = "3.10+"
     hardware_profile: Optional[str] = None
     

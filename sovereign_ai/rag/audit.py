@@ -67,7 +67,7 @@ class AuditLogger:
     """
     Append-only, tamper-evident audit log with cryptographic hash chains.
     
-    v1.0.0-GA: Supports pluggable KeyProviders and full-chain non-repudiation.
+    v0.1.0-preview: Supports pluggable KeyProviders and full-chain non-repudiation.
     """
     
     def __init__(self, log_path: str = "rag_audit.jsonl", key_provider: Optional[KeyProvider] = None):
