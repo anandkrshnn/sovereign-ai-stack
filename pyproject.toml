@@ -108,6 +108,11 @@ include = ["sovereign_ai*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "requires_model: tests that load real LLM/NLI models (slow, requires network/disk)",
+    "slow: marks tests as slow",
+    "sovereign: marks tests as part of the sovereign certification suite",
+]
 
 [tool.black]
 line-length = 100

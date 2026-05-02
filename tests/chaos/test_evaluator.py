@@ -3,16 +3,17 @@ from sovereign_ai.verify import SovereignEvaluator, Config
 
 def test_config_defaults():
     config = Config()
-    assert config.model_name == "Qwen/Qwen2.5-1.5B-Instruct"
-    assert config.temperature == 0.0
+    assert config.model_name == "cross-encoder/nli-deberta-v3-base"
+    assert config.grounding_threshold == 0.85
 
-@pytest.mark.skip(reason="Requires GPU/Model download")
+@pytest.mark.requires_model
 def test_evaluation_flow():
     evaluator = SovereignEvaluator()
-    query = "Test query"
-    context = "Test context"
-    answer = "Test answer"
+    query = "Is aspirin safe for children?"
+    context = "Aspirin should not be given to children under 16 due to Reye's syndrome risk."
+    answer = "No, aspirin is not safe for children under 16."
     
     result = evaluator.evaluate(query, context, answer)
     assert "grounding_score" in result
     assert "passed" in result
+    assert result["passed"] is True
