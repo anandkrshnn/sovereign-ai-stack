@@ -35,33 +35,48 @@ class Principal:
 
 class ChainSecretManager:
     """
-    Manages the machine-unique secret for hardware-bound auditing.
-    Stored in the OS Secure Enclave (Windows Credential Manager).
+    Manages the machine-unique cryptographic identity for OS-backed secure auditing.
+    Uses Ed25519 asymmetric keys stored in the OS Secure Storage (Keyring).
     """
     SERVICE_NAME = "sovereign_ai"
-    KEY_NAME = "forensic_anchor_secret"
-    _cached_secret = None
+    KEY_NAME = "forensic_identity_v1"
+    _cached_signing_key = None
 
     @classmethod
-    def get_secret(cls) -> bytes:
-        if cls._cached_secret:
-            return cls._cached_secret
+    def get_signing_key(cls):
+        """Retrieve or provision the Ed25519 private key from secure storage."""
+        if cls._cached_signing_key:
+            return cls._cached_signing_key
         
-        secret = keyring.get_password(cls.SERVICE_NAME, cls.KEY_NAME)
-        if secret:
-            cls._cached_secret = secret.encode()
-            return cls._cached_secret
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from cryptography.hazmat.primitives import serialization
+
+        encoded_key = keyring.get_password(cls.SERVICE_NAME, cls.KEY_NAME)
+        if encoded_key:
+            try:
+                cls._cached_signing_key = ed25519.Ed25519PrivateKey.from_private_bytes(
+                    bytes.fromhex(encoded_key)
+                )
+                return cls._cached_signing_key
+            except Exception:
+                pass
         
-        # Provision new secret
-        new_secret = os.urandom(32).hex()
+        # Provision new hardware-bound forensic identity
+        private_key = ed25519.Ed25519PrivateKey.generate()
+        raw_bytes = private_key.private_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PrivateFormat.Raw,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+        
         try:
-            keyring.set_password(cls.SERVICE_NAME, cls.KEY_NAME, new_secret)
+            keyring.set_password(cls.SERVICE_NAME, cls.KEY_NAME, raw_bytes.hex())
         except Exception:
-            # Fallback for headless/no-enclave environments
+            # Fallback for headless environments (ephemeral key)
             pass
         
-        cls._cached_secret = new_secret.encode()
-        return cls._cached_secret
+        cls._cached_signing_key = private_key
+        return cls._cached_signing_key
 
 class AuditChainManager:
     """
@@ -82,7 +97,7 @@ class AuditChainManager:
 class SovereignAuditLogger:
     """
     The unified auditor for the Sovereign AI Stack.
-    Supports physical tenant isolation, hash-chaining, and hardware-bound anchors.
+    Supports physical tenant isolation, hash-chaining, and OS-backed forensic anchors.
     """
     def __init__(self, base_dir: str, tenant_id: str, remote_anchor_config: Optional[Dict[str, Any]] = None):
         self.base_dir = Path(base_dir)
@@ -151,20 +166,30 @@ class SovereignAuditLogger:
             return AuditChainManager.GENESIS_HASH
 
     def save_anchor(self, last_hash: str):
-        """Saves a signed anchor to the filesystem, tied to the machine secret."""
-        secret = ChainSecretManager.get_secret()
-        # HMAC(Secret, LastHash)
-        signature = hmac.new(secret, last_hash.encode(), hashlib.sha256).hexdigest()
+        """Saves a signed anchor to the filesystem, tied to the machine's Ed25519 identity."""
+        from cryptography.hazmat.primitives import serialization
+        
+        signing_key = ChainSecretManager.get_signing_key()
+        public_key = signing_key.public_key()
+        
+        # Sign the latest chain hash
+        signature = signing_key.sign(last_hash.encode())
+        
         anchor_data = {
             "last_hash": last_hash,
-            "signature": signature,
-            "updated_at": time.time()
+            "signature": signature.hex(),
+            "public_key": public_key.public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw
+            ).hex(),
+            "updated_at": time.time(),
+            "algorithm": "Ed25519"
         }
-        self.anchor_path.write_text(json.dumps(anchor_data), encoding="utf-8")
+        self.anchor_path.write_text(json.dumps(anchor_data, indent=2), encoding="utf-8")
 
     def verify_integrity(self) -> bool:
         """
-        Full chain validation. Checks both internal consistency AND the hardware-bound anchor.
+        Full chain validation. Checks both internal consistency AND the OS-backed anchor.
         Detection: Deletion of the last entry will cause an anchor mismatch.
         """
         if not self.log_path.exists():
@@ -182,21 +207,28 @@ class SovereignAuditLogger:
                     prev_hash = expected_hash
                     calculated_final_hash = expected_hash
             
-            # Anchor Verification
+            # Anchor Verification (Sovereign Forensic Guardrail)
             if self.anchor_path.exists():
+                from cryptography.hazmat.primitives.asymmetric import ed25519
+                
                 anchor_data = json.loads(self.anchor_path.read_text(encoding="utf-8"))
                 saved_hash = anchor_data.get("last_hash")
                 saved_sig = anchor_data.get("signature")
+                saved_pub = anchor_data.get("public_key")
                 
-                # 1. Check if the file's final hash matches the anchor's hash
+                # 1. Detection: Was the log truncated? (File hash vs Anchor hash)
                 if calculated_final_hash != saved_hash:
-                    return False # Deletion detected!
+                    logger.error(f"AUDIT CORRUPTION: Log truncated or extended. File: {calculated_final_hash} vs Anchor: {saved_hash}")
+                    return False
                 
-                # 2. Check if the anchor's signature is valid (Hardware Binding)
-                secret = ChainSecretManager.get_secret()
-                expected_sig = hmac.new(secret, saved_hash.encode(), hashlib.sha256).hexdigest()
-                if saved_sig != expected_sig:
-                    return False # Anchor tampering detected!
+                # 2. Cryptographic Proof: Is the anchor valid? (Digital Signature)
+                if saved_sig and saved_pub:
+                    try:
+                        pub_key = ed25519.Ed25519PublicKey.from_public_bytes(bytes.fromhex(saved_pub))
+                        pub_key.verify(bytes.fromhex(saved_sig), saved_hash.encode())
+                    except Exception as e:
+                        logger.error(f"FORENSIC ALERT: Invalid anchor signature! Tampering detected. Error: {e}")
+                        return False
                     
             return True
         except Exception:

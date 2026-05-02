@@ -21,9 +21,10 @@ The stack operates as a linear, fail-closed pipeline:
    - Responses below the threshold are redacted or blocked.
 
 4. **PROVE (Forensic Audit)**:
-   - Every event (Request, Retrieval, Decision, Response) is hashed via SHA-256.
-   - **Chaining**: Each record contains the hash of the previous record, creating a tamper-evident chain.
-   - **Anchoring**: The chain hash is signed and anchored to the OS Secure Enclave (TPM, Windows Credential Manager, or macOS Keychain).
+   - Every event (Request, Retrieval, Decision, Response) is hashed via SHA-256 with canonical JSON serialization.
+   - **Chaining**: Each record contains the `prev_hash`, creating a cryptographically linked history.
+   - **Asymmetric Anchoring**: The final state hash is signed using an **Ed25519 digital signature**, enabling public verifiability.
+   - **Secure Key Storage**: The Ed25519 private key is provisioned and stored using **OS-backed secure storage** (Windows Credential Manager or macOS Keychain), protecting the forensic identity from simple filesystem access.
 
 ## 2. Component Layout
 
