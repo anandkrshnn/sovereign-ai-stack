@@ -31,7 +31,7 @@ def sovereign_cert(request):
 
 @pytest.fixture(scope="function")
 def sovereign_test_env(tmp_path):
-    """Create isolated test environment with multi-tenant setup (v1.0.0-GA)."""
+    """Create isolated test environment with multi-tenant setup (v0.1.0-preview)."""
     env = {
         "base_dir": tmp_path,
         "tenants": {},
@@ -50,7 +50,7 @@ def sovereign_test_env(tmp_path):
         # Default "Allow-Self" policy
         with open(policy_path, "w") as f:
             f.write(f"""
-version: "1.0.0-GA"
+version: "0.1.0-preview"
 allow:
   - tenant_id: "{tenant_id}"
     roles: ["user", "admin", "analyst"]
