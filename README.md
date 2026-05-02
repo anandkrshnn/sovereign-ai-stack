@@ -160,12 +160,22 @@ sovereign audit verify --tenant default
 
 ## 📊 Performance & Status
 
-- **ABAC Gate Latency**: ~5ms on localhost (single-node, development setup)
+> **Methodology**: Run [`benchmark.py`](benchmark.py) to generate reproducible
+> latency numbers on your own hardware. The script prints full environment details
+> (CPU, RAM, OS, Python version, corpus size) alongside results so comparisons
+> are meaningful. Numbers cited here are indicative only until a CI-linked
+> baseline is published — see [ROADMAP.md v0.2.0](ROADMAP.md).
+
+- **ABAC Gate Latency**: ~5ms (single-node localhost; retrieval + gating path only, no LLM inference)
 - **Forensic Hashing**: <50ms per event on commodity hardware
+- **Throughput**: Single-threaded baseline — concurrent QPS not yet benchmarked
 - **Privacy**: No telemetry, no cloud dependencies, 100% offline
 - **Compliance**: *Designed* to support HIPAA Technical Safeguard patterns and SOC 2 audit log requirements — not independently certified
 
-> Benchmarks are from a local development environment. Production results will vary by hardware, load, and model size.
+```bash
+# Run the benchmark yourself and share your results
+python benchmark.py --queries 50 --principal analyst
+```
 
 ---
 

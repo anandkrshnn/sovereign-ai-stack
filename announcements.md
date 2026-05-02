@@ -1,102 +1,177 @@
-# 🚀 Sovereign AI Stack Launch Announcements
+# Sovereign AI Stack — Public Announcements
+
+> **Note**: This file contains announcement copy for social/community channels.
+> All copy reflects the current `v0.1.0-preview` framing as of 2026-05-02.
+> Do not use the v1 / GA / enterprise-certified language from earlier drafts.
+
+---
 
 ## 1. HackerNews (Show HN)
-**Title:** Show HN: Sovereign AI Stack – Local RAG with Cryptographic Verification (GA)
+
+**Title:** Show HN: Sovereign AI Stack – local-first RAG with policy gating and audit logging (alpha)
 
 **Body:**
+
 Hi HN,
 
-I’m launching the **Sovereign AI Stack**, a Layer 3 orchestration engine designed for high-trust environments (Healthcare, Finance, Legal) where cloud leakage is a dealbreaker.
+I'm sharing an early alpha of the **Sovereign AI Stack** — a personal R&D project
+to build a local-first RAG pipeline where every step (retrieval, access control,
+response logging) is policy-gated and audit-friendly. No cloud, no telemetry.
 
-While many tools focus on making agents smarter, we focused on making them **governable and auditable**.
+**What's implemented and running today:**
+- Hybrid retrieval: SQLite FTS5 + LanceDB, fused via a BGE reranker
+- ABAC policy gateway: role-based access control before any retrieval runs
+- SHA-256-linked audit log, inspectable locally with one CLI command
+- OpenAI-compatible bridge (`/v1/chat/completions`) for local model drop-in
+- Docker: `docker-compose up` single-command deployment
 
-**Key Features:**
-- **Zero Cloud Leakage**: 100% on-device inference and retrieval.
-- **ABAC Airlock**: Identity-aware policy enforcement before tool execution.
-- **Forensic Integrity**: SHA-256 hash-chaining of every AI decision for tamper-evident auditing.
-- **Local Judge**: Automated grounding and faithfulness scoring via local LLMs.
+**What's explicitly not done yet (in the roadmap):**
+- A real grounding judge — currently the "verification" is a reranker score proxy,
+  not a trained NLI classifier
+- Cryptographically signed audit chains — hashing is there, signing is not
+- Hardware attestation — references to TPM/Secure Enclave are roadmap items
 
-We’re moving from a "tooling" phase to a "platform" phase. Everything is consolidated into a single monorepo for easy deployment.
+I'm sharing now because the retrieval + gating scaffold is useful as-is, and I
+think honest "here's where I am" posts are more valuable than GA launch announcements.
+
+The IETF draft on PTV Agent Identity
+(draft-anandakrishnan-rats-ptv-agent-identity-00) is the conceptual framework
+I'm building toward. The code is the first concrete step.
+
+Would love feedback on the retrieval architecture and the audit logging approach.
 
 **GitHub**: https://github.com/anandkrshnn/sovereign-ai-stack
-**Install**: `pip install sovereign-ai-stack[full]`
-
-Would love your feedback on the forensic audit trails!
+**Install**: `pip install sovereign-ai-stack`
 
 ---
 
-## 2. Twitter (Launch Thread)
-**Tweet 1:**
-🚀 Big day! Introducing the Sovereign AI Stack v1.0.0-GA. 
+## 2. LinkedIn
 
-The world's first certified local AI platform for regulated industries.
+**Headline:** Building a local-first AI governance scaffold — and being honest about what's done
 
-Retrieve → Govern → Verify → Prove. 🛡️
+**Body:**
 
-Thread below 🧵 #SovereignAI #LocalLLM #AgenticAI
+A few weeks ago I published the first public release of the Sovereign AI Stack.
 
-**Tweet 2:**
-Why "Sovereign"? 
-Cloud AI is great until you hit HIPAA or SOC2. The Sovereign AI Stack provides "Zero Cloud Leakage" by design. 100% offline, 100% local. 🛰️
+The pitch I originally made: a fully verified, cryptographically sealed,
+enterprise-grade AI control plane. 100% offline. HIPAA-ready.
 
-**Tweet 3:**
-The Trinity of Trust:
-1️⃣ Retrieve (local-rag): SQLCipher3 + LanceDB
-2️⃣ Govern (local-bridge): Fail-closed ABAC gate
-3️⃣ Verify (local-verify): Local grounding judge
-4️⃣ Prove (local-agent): SHA-256 forensic audit chain
+The honest version: it's a solid scaffold with real retrieval and gating logic —
+and several of the bigger claims were roadmap items presented as shipped features.
 
-**Tweet 4:**
-Get started in 60 seconds:
-`pip install sovereign-ai-stack[full]`
-`sovereign ask "Hypertension protocol" --verify`
+So I've reframed the project.
 
-Check it out on GitHub: https://github.com/anandkrshnn/sovereign-ai-stack
+**What actually works today:**
 
----
+✅ Hybrid local RAG — SQLite FTS5 + LanceDB vector store, fused via a BGE reranker.
+   Fast, private, no cloud index.
 
-## 3. LinkedIn (Professional)
-**Headline**: Redefining AI Governance: Launching the Sovereign AI Stack v1.0.0-GA
+✅ ABAC policy gateway — identity-aware rules gate what each principal can retrieve
+   before any query runs.
 
-**Body**:
-I am proud to announce the General Availability of the **Sovereign AI Stack**.
+✅ Audit logging — every step is recorded in an append-only SHA-256-linked chain
+   you can inspect locally with one CLI command.
 
-In the race to build autonomous agents, we often overlook the most critical component: **Accountability.** For enterprises in Healthcare and Finance, "hallucination" isn't just a bug—it's a liability. 
+✅ OpenAI-compatible bridge — drop it in front of any local model.
 
-The Sovereign AI Stack is a Layer 3 middleware that ensures every AI interaction is grounded in local evidence and cryptographically verifiable. 
+**What I'm still building (explicit roadmap):**
 
-**What’s inside?**
-✅ High-performance local RAG
-✅ Identity-aware ABAC policy enforcement
-✅ Forensic Audit Trails (SHA-256)
-✅ Automated Compliance Scoring
+🔧 May 2026: Reproducible benchmark script with hardware and dataset methodology
+🔧 June 2026: Real grounding judge with adversarial test suite
+🔧 July 2026: Cryptographically signed audit chain
+🔧 Q3 2026: Hardware attestation (TPM / Secure Enclave, platform-specific)
 
-This platform is the culmination of months of research into "Post-Application Era" orchestration. 
+The IETF draft I submitted (PTV Agent Identity) is the architectural vision.
+The repo is the first concrete implementation step.
 
-Join the movement for Sovereign AI:
-https://github.com/anandkrshnn/sovereign-ai-stack
+If you're exploring local AI pipelines for privacy-sensitive workloads,
+the scaffold might be useful — with the explicit caveat that it's a reference
+implementation and alpha preview, not a production-certified control plane.
 
-#AI #Governance #CyberSecurity #HealthTech #FinTech #OpenSource
+Building it in the open.
+
+🔗 GitHub: https://github.com/anandkrshnn/sovereign-ai-stack
+📜 IETF Draft: https://www.ietf.org/archive/id/draft-anandakrishnan-rats-ptv-agent-identity-00.html
+
+#LocalAI #OpenSource #AIGovernance #BuildingInPublic #RAG
 
 ---
 
-## 4. Reddit (r/LocalLLaMA)
-**Title**: [Project] Sovereign AI Stack: A production-grade framework for local RAG with forensic audit trails
+## 3. Reddit (r/LocalLLaMA)
 
-**Body**:
+**Title:** [Project] Sovereign AI Stack – local RAG + ABAC policy gating + audit logging (alpha, honest about what's done)
+
+**Body:**
+
 Hey everyone,
 
-I’ve been working on a stack that bridges the gap between "Ollama running on my laptop" and "Enterprise-grade local AI infrastructure."
+Sharing an early alpha of a stack I've been building: local-first RAG with
+policy gating and an audit-friendly logging layer. No cloud, no telemetry.
 
-The **Sovereign AI Stack** is designed to give you the privacy of local LLMs with the governance of a modern enterprise platform.
+**Tech stack:**
+- Python (FastAPI / Pydantic / Click)
+- SQLite FTS5 + LanceDB for hybrid retrieval
+- BAAI/bge-reranker-base for fusion
+- JSONL + SQLite for audit logging
 
-It includes a built-in ABAC (Attribute-Based Access Control) engine and a forensic layer that hashes every request/response into a chain, making it impossible to tamper with audit logs.
+**What works:**
+- Retrieval pipeline runs locally end-to-end
+- ABAC gateway: `--principal doctor` restricts retrieval to authorized data
+- Audit log: every step SHA-256-linked, inspectable with `sovereign audit verify`
+- OpenAI-compatible bridge for local model drop-in
 
-**Tech Stack:**
-- Python (FastAPI/Pydantic)
-- SQLCipher3 / LanceDB
-- Streamlit (Governance Dashboard)
+**What's explicitly not done yet:**
+- Grounding judge is currently a reranker score threshold, not a real NLI classifier.
+  I call this out in the README — don't rely on it for production hallucination detection.
+- Audit chain hashing is implemented, signing is not.
+- Hardware attestation (TPM / Secure Enclave) is a roadmap item, not shipped.
+- Benchmark methodology is being formalized — current numbers are laptop-only.
 
-Check it out: https://github.com/anandkrshnn/sovereign-ai-stack
+The IETF draft on PTV Agent Identity is the conceptual direction I'm building toward.
 
-Looking for contributors who are interested in the intersection of ZK-proofs and Agentic workflows!
+Would appreciate feedback on the retrieval architecture, the ABAC design,
+and the audit log format before I go deeper on the grounding judge.
+
+GitHub: https://github.com/anandkrshnn/sovereign-ai-stack
+
+---
+
+## 4. Twitter / X
+
+**Tweet 1:**
+Building a local-first RAG + policy-gating scaffold in the open.
+
+What works today: hybrid retrieval, ABAC gating, SHA-256 audit logging, OpenAI bridge.
+
+What's still roadmap: real grounding judge, signed audit chain, hardware attestation.
+
+Honest alpha. 🧵
+
+**Tweet 2:**
+The retrieval stack:
+- SQLite FTS5 (lexical) + LanceDB (vector)
+- Fused via BAAI/bge-reranker-base
+- ABAC role check before any retrieval runs
+- Every step logged to an append-only chain
+
+100% local. No cloud. No telemetry.
+
+**Tweet 3:**
+What I'm not claiming:
+❌ "enterprise-certified"
+❌ "cryptographically blocking" hallucinations (that's the roadmap)
+❌ hardware TPM attestation (also roadmap)
+
+What I am: one engineer, building in public, calling out what's missing.
+
+**Tweet 4:**
+Roadmap milestones with "done when" criteria, not just feature bullets:
+- May: reproducible benchmark script
+- June: real grounding judge + adversarial tests
+- July: signed audit chain
+- Q3: hardware attestation
+
+GitHub: https://github.com/anandkrshnn/sovereign-ai-stack
+IETF: draft-anandakrishnan-rats-ptv-agent-identity-00
+
+#LocalAI #BuildingInPublic
