@@ -142,20 +142,19 @@ sovereign audit verify --tenant default
 
 ---
 
-## 🛡️ Why Sovereign? (What Makes Us Different)
+## 🛡️ Capabilities
 
-| Feature | OpenAI | LangChain | **Sovereign Stack** |
-| :--- | :--- | :--- | :--- |
-| **Local Execution** | ❌ | ⚠️ | ✅ **100% On-Device** |
-| **Mandatory Verification**| ❌ | ❌ | ✅ **The Airlock Gate** |
-| **Forensic Audit Chain** | ❌ | ❌ | ✅ **SHA-256 Linked** |
-| **Identity Sync** | ❌ | ❌ | ✅ **Cross-Component** |
-| **Privacy Guarantee** | ❌ | ❌ | ✅ **Zero Cloud Leakage** |
-
-### Key Differentiators
-- **Policy-Gated Retrieval**: Every query passes through an ABAC identity check before retrieval runs. Role-based rules (e.g., `--principal doctor`) control what data a principal can access.
-- **Audit-Friendly Logging**: Every step — retrieval, gating, response — is written to an append-only, SHA-256-linked log you can inspect locally. *Cryptographic signing and non-repudiation are roadmap items, not yet implemented.*
-- **Hybrid Retrieval Precision**: SQLite FTS5 (lexical) + LanceDB (vector) fused through a BGE reranker. Fast, local, no cloud index.
+| Capability | Status | Notes |
+| :--- | :--- | :--- |
+| **Local Execution** | ✅ Implemented | 100% on-device, no telemetry |
+| **Hybrid Retrieval** | ✅ Implemented | SQLite FTS5 + LanceDB + BGE reranker |
+| **ABAC Policy Gateway** | ✅ Implemented | Role-based access control before retrieval |
+| **Audit Logging** | ✅ Implemented | SHA-256-linked JSONL + SQLite; append-only |
+| **OpenAI-Compatible Bridge** | ✅ Implemented | `/v1/chat/completions` drop-in |
+| **Grounding Judge** | 🔧 Roadmap | Currently: reranker score proxy, not a true hallucination detector |
+| **Signed Audit Chain** | 🔧 Roadmap | Hashing is present; cryptographic signing is not |
+| **Hardware Attestation** | 🔧 Roadmap | TPM / Secure Enclave integration not yet implemented |
+| **Compliance Certification** | 🔧 Roadmap | Designed to support HIPAA/SOC2 patterns; no external audit |
 
 ---
 
