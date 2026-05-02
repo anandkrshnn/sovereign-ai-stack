@@ -6,6 +6,9 @@ asyncpg>=0.29.0
 fastapi>=0.104.0
 uvicorn>=0.24.0
 click>=8.1.0
+aiosqlite>=0.19.0
+accelerate>=0.25.0
+nest-asyncio>=1.5.0
 
 [agent]
 keyring>=24.0.0
@@ -33,5 +36,5 @@ mypy>=1.7.0
 sovereign-ai-stack[agent,bridge,dashboard,verify]
 
 [verify]
-sentence-transformers>=2.2.0
+sentence-transformers>=3.0.0
 torch>=2.0.0

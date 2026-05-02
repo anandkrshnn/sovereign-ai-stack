@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 sovereign_ai/__init__.py
@@ -48,6 +49,7 @@ sovereign_ai/bridge/server.py
 sovereign_ai/common/audit.py
 sovereign_ai/common/identity.py
 sovereign_ai/common/remote_anchor.py
+sovereign_ai/common/secure_key.py
 sovereign_ai/rag/__init__.py
 sovereign_ai/rag/audit.py
 sovereign_ai/rag/cache.py
@@ -58,7 +60,6 @@ sovereign_ai/rag/generator.py
 sovereign_ai/rag/governed.py
 sovereign_ai/rag/hub.py
 sovereign_ai/rag/main.py
-sovereign_ai/rag/pipeline.py
 sovereign_ai/rag/policy.py
 sovereign_ai/rag/prompts.py
 sovereign_ai/rag/reranker.py
