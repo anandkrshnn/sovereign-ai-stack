@@ -10,7 +10,7 @@ import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -314,9 +314,9 @@ class Principal:
     """Unified identity principal for the Sovereign AI Stack."""
     id: str
     tenant_id: str = "default"
-    roles: List[str] = __import__('dataclasses').field(default_factory=lambda: ["user"])
-    classifications: List[str] = __import__('dataclasses').field(default_factory=lambda: ["public"])
-    metadata: Dict[str, Any] = __import__('dataclasses').field(default_factory=dict)
+    roles: List[str] = field(default_factory=lambda: ["user"])
+    classifications: List[str] = field(default_factory=lambda: ["public"])
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self):
         return asdict(self)

@@ -11,9 +11,9 @@ from ..common.audit import SovereignAuditLogger, Principal
 from ..common.identity import IdentityHub
 
 try:
-    from ..agent.core_loop import AgentCore as Sovereign AI Agent
+    from ..agent.core_loop import AgentCore as SovereignAIAgent
 except ImportError:
-    Sovereign AI Agent = None
+    SovereignAIAgent = None
 
 from opentelemetry import trace
 from .schemas import ChatCompletionRequest, ChatCompletionResponse, ChatCompletionResponseChoice, ChatMessage, Usage, BackendType, BackendConfig
@@ -340,7 +340,7 @@ class SovereignOrchestrator:
 
             # 3. EXECUTION OR GENERATION
             async with self._semaphore:
-                if Sovereign AI Agent and is_agent_query:
+                if SovereignAIAgent and is_agent_query:
                     # Agent execution logic... (remaining from v1.1.0a2)
                     with tracer.start_as_current_span("sov_agent_execution") as aspan:
                         try:
@@ -389,8 +389,8 @@ class SovereignOrchestrator:
 
     def _sync_agent_call(self, query: str, context: str, principal: Principal) -> Tuple[Any, str]:
         """Bridge to local-agent."""
-        if not Sovereign AI Agent: return "Agent not available", ""
-        agent = Sovereign AI Agent()
+        if not SovereignAIAgent: return "Agent not available", ""
+        agent = SovereignAIAgent()
         resp = agent.chat(query, principal=principal)
         trace_id = getattr(agent, "current_trace", None)
         return resp, trace_id.trace_id if trace_id else ""

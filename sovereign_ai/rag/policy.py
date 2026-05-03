@@ -8,14 +8,7 @@ from .schemas import SearchResult, PolicyDecision
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class Principal:
-    """Identity and attributes of the requester for ABAC."""
-    id: str
-    tenant_id: str
-    roles: List[str]
-    classifications: List[str]
-    metadata: Dict[str, Any] = None
+from ..common.audit import Principal
 
 @dataclass
 class AccessRequest:
