@@ -1,6 +1,6 @@
 # 🗺️ Sovereign AI Stack — Roadmap
 
-> **Current release**: `v0.1.0-preview` (alpha) — a reference implementation.
+> **Current release**: `v1.1.0a2` (alpha) — a reference implementation.
 > This roadmap is a dated, scoped commitment list, not a vision document.
 > Each milestone will be marked complete only when the associated tests pass and
 > the implementation is publicly verifiable in the repository.
