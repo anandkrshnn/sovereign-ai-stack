@@ -47,11 +47,17 @@ ENV/
 Thumbs.db
 
 # Project-specific junk
-launch_demo_fail.txt
-launch_demo_success.txt
+launch_demo_*.txt
 scratch/
 q3_targets.txt
 *.log
+*.jsonl
 *.txn
 *.manifest
 *.lance
+vaults/
+.localagent/
+.sovereign_ai/
+*.key
+*.sig
+!sovereign_ai/verify/models/

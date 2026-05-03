@@ -1,3 +1,0 @@
-[console_scripts]
-sovereign = sovereign_ai.cli:main
-sovereign-ai = sovereign_ai.cli:main
