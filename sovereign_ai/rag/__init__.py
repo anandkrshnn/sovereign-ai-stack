@@ -40,7 +40,7 @@ def embed_documents(documents, model_name: str = "BAAI/bge-small-en-v1.5"):
     return model.encode(texts)
 
 
-def query(rag_pipeline: "RAGPipeline", question: str, **kwargs):
+def query(rag_pipeline: RAGPipeline, question: str, **kwargs):
     """Run a query against a :class:`RAGPipeline` instance.
 
     A thin convenience wrapper so callers can do::

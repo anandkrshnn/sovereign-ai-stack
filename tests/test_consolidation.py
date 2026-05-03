@@ -34,7 +34,7 @@ def test_agent_sign_payload_missing_key(tmp_path):
         pytest.skip(f"sovereign_ai.agent not importable: {exc}")
 
     try:
-        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey  # noqa: F401
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     except ImportError:
         pytest.skip("cryptography package not installed")
 
