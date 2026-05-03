@@ -10,9 +10,11 @@ from .broker.engine import LocalPermissionBroker
 from .sandbox.chroot import SandboxPath
 from .memory.memory_service import MemoryService
 from .forensics.trace.decision_trace import DecisionTrace
+from .forensics.audit_chain import AuditChainManager
 from .config import Config
 from .forensics.vault_context import VaultContext
 from ..common.audit import SovereignAuditLogger, Principal
+
 
 class AgentCore:
     """The central orchestrator for secure, local tool-use and semantic memory recall."""
@@ -23,7 +25,7 @@ class AgentCore:
         """Initialize agent with optional isolated and encrypted vault."""
         self.config = config or Config.default()
         self.model = model or self.config.default_model
-        
+
         if vault_root is None:
             self.vault = VaultContext.default()
         else:
@@ -60,7 +62,7 @@ class AgentCore:
     def chat(self, user_input: str, principal: Optional[Principal] = None, override_token: str = None) -> Any:
         """Main entry point: Handle user prompt using ReAct loop and semantic context."""
         p = principal or Principal(id="anonymous")
-        
+
         # Phase 3: Immediate Top-Level Secret Scan (Defense in Depth)
         try:
             violations = self.broker.scanner_manager.scan(user_input)
@@ -82,13 +84,13 @@ class AgentCore:
 
         # 1. Governed Semantic Recall
         self.current_trace = DecisionTrace(user_input)
-        
+
         # Record user message in legacy memory for retrieval
         self.memory_service.legacy_memory.remember("user_message", {"content": user_input})
-        
+
         try:
             gov_context = self.memory_service.get_governed_context(user_input, {"session_id": "current"})
-            
+
             context = ""
             if gov_context.get("reason") == "authorized":
                 memories = gov_context.get("memories", [])
@@ -96,10 +98,12 @@ class AgentCore:
                     self.current_trace.add_retrieved_memory(m)
                 context = "\nRELEVANT MEMORIES (Authorized):\n" + "\n".join([f"- {m['body']}" for m in memories])
             else:
-                context = "\n⚠️ MEMORY ACCESS RESTRICTED by LPB.\n"
+                context = "\n\u26a0\ufe0f MEMORY ACCESS RESTRICTED by LPB.\n"
 
             # 2. System Prompt
-            system_prompt = f"""You are 'localagent', a secure AI assistant.
+            # NOTE: Identity is 'sovereign_ai_agent' — canonical monorepo namespace.
+            # Previously 'localagent' in local-agent-v0.2 satellite (now deprecated).
+            system_prompt = f"""You are 'sovereign_ai_agent', a secure AI assistant.
 You have access to a local sandbox and a semantic memory.
 Available Tools: {', '.join(self.VALID_TOOLS)}
 
@@ -114,11 +118,11 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
 
 {context}
 """
-            
+
             # 3. Execution Loop (ReAct)
             current_prompt = f"{system_prompt}\nUser: {user_input}\n"
             response = ""
-            
+
             for i in range(self.max_iterations):
                 try:
                     response = self._call_llm(current_prompt)
@@ -141,19 +145,22 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
                 else:
                     try:
                         tool_args = json.loads(tool_args_str)
-                        
+
                         # Tool Execution with Broker
                         observation = self._execute_tool(tool_name, tool_args, override_token)
-                        
+
                         # Reset override_token after first use in the loop to prevent reuse
                         override_token = None
-                        
+
                         # Check for Gated Response
                         if isinstance(observation, dict) and observation.get("requires_confirmation"):
                             # If gated, finalize trace and return dict
                             if self.current_trace:
-                                self.current_trace.save_to_jsonl(str(self.vault.decision_traces), key_manager=self.vault.key_manager)
-                            return observation 
+                                self.current_trace.save_to_jsonl(
+                                    str(self.vault.decision_traces),
+                                    key_manager=self.vault.key_manager
+                                )
+                            return observation
 
                     except Exception as e:
                         observation = f"Error executing tool: {str(e)}"
@@ -169,7 +176,22 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
         # Finalize and save trace to vault-specific file
         if self.current_trace:
             self.current_trace.set_final_outcome(str(response))
-            self.current_trace.save_to_jsonl(str(self.vault.decision_traces), key_manager=self.vault.key_manager)
+            trace_path = self.current_trace.save_to_jsonl(
+                str(self.vault.decision_traces),
+                key_manager=self.vault.key_manager
+            )
+            # --- Ed25519 Audit Chain: anchor the chain after every trace write ---
+            # This makes the decision_traces.jsonl tamper-evident and non-repudiable.
+            # Any offline verifier can call AuditChainManager.verify_chain() against the anchor.
+            try:
+                trace_log_path = Path(self.vault.decision_traces)
+                AuditChainManager.save_anchor(
+                    log_path=trace_log_path,
+                    key_manager=self.vault.key_manager
+                )
+            except Exception as anchor_err:
+                # Non-fatal: log the failure but do not block the response
+                print(f"[CoreLoop] WARNING: Audit chain anchor save failed: {anchor_err}")
 
         # 4. Record the final response episode
         res_episode_id = self.memory_service.lancedb_store.append_episode({
@@ -180,7 +202,7 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
         })
 
         # 5. TRIGGER ASYNC PROMOTION (Milestone 4: Governed Memory)
-        # In a real system, this would be a separate background task. 
+        # In a real system, this would be a separate background task.
         # For simplicity in v0.2, we trigger it synchronously but logically as a final step.
         self.memory_service.promotion_pipeline.run_cycle(res_episode_id, str(response))
 
@@ -190,24 +212,24 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
         """Securely execute a tool using the Permission Broker."""
         # Normalize keys to lowercase to handle model variance (e.g., 'Path' instead of 'path')
         norm_args = {k.lower(): v for k, v in args.items()}
-        
+
         # Robust resource extraction
         resource = None
         for key in ["path", "filename", "file", "target", "resource", "directory", "folder", "query", "key", "text"]:
             if key in norm_args and norm_args[key]:
                 resource = str(norm_args[key])
                 break
-        
+
         if not resource:
             resource = "unknown"
-            
+
         intent = name
 
         # 1. If no token provided, request permission
         if not token:
             trace_id = self.current_trace.trace_id if self.current_trace else None
             perm = self.broker.request_permission(intent, resource, trace_id=trace_id)
-            
+
             # M3: Record which policy rule fired in the decision trace
             if self.current_trace and perm.get("rule_id"):
                 self.current_trace.add_applied_policy({
@@ -217,7 +239,7 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
                     "effect": "auto-approved" if perm.get("granted") else "blocked",
                     "source": perm.get("reason", "")
                 })
-            
+
             if not perm["granted"]:
                 # Inject tool metadata for resumption bridge
                 perm["tool_name"] = name
@@ -235,7 +257,7 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
             if name == "read_file":
                 path = self.sandbox.resolve(args["path"])
                 result = path.read_text()
-            
+
             elif name == "write_file":
                 path = self.sandbox.resolve(args["path"])
                 self.sandbox.ensure_parent(path)
@@ -315,11 +337,10 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
         try:
             if hasattr(self, 'memory_service') and self.memory_service is not None:
                 self.memory_service.close()
-        except:
+        except Exception:
             pass
         try:
             if hasattr(self, 'broker') and self.broker is not None:
-                # Optional: close any open DB connections in broker if needed
                 pass
-        except:
+        except Exception:
             pass
