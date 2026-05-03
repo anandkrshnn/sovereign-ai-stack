@@ -126,8 +126,10 @@ class SignedAuditChain:
         
         This creates the chain link for the next event.
         """
+        event_copy = event.copy()
+        event_copy.pop("curr_hash", None)
         # Hash the complete event (including signature)
-        canonical = json.dumps(event, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        canonical = json.dumps(event_copy, sort_keys=True, separators=(',', ':')).encode('utf-8')
         return hashlib.sha256(canonical).hexdigest()
     
     def log_event(

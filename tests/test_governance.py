@@ -91,9 +91,9 @@ def test_audit_logging(tmp_path):
     
     with open(log_file, "r") as f:
         log_entry = json.loads(f.readline())
-        assert log_entry["event_type"] == "test_event"
-        assert log_entry["principal"]["id"] == "test-user"
-        assert log_entry["data"]["query"] == "hello"
+        assert log_entry["action"] == "test_event"
+        assert log_entry["principal"] == "test-user"
+        assert log_entry["event_data"]["query"] == "hello"
 
 def test_governed_retriever_airlock(tmp_path, policy_file):
     # Setup a dummy DB for the retriever
