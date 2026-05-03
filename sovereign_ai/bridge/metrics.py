@@ -21,7 +21,7 @@ class SovereignMetrics:
         # 2. Policy Denies (GAIP-2030 Invariant)
         self.sov_policy_denies_total = Counter(
             "sov_policy_denies_total", 
-            "Requests denied by local-rag/local-agent policies", 
+            "Requests denied by sovereign-ai rag/local-agent policies", 
             ["tenant_id"], # Dropped principal to prevent cardinality bloat
             registry=self.registry
         )
@@ -34,7 +34,7 @@ class SovereignMetrics:
             registry=self.registry
         )
         
-        # 4. Token Metering (v0.1.0-preview Phase 3)
+        # 4. Token Metering (v1.1.0a2 Phase 3)
         self.sov_tokens_total = Counter(
             "sov_tokens_total",
             "Total tokens consumed per tenant/model",

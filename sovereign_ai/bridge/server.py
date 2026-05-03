@@ -15,8 +15,8 @@ from .security import SovereignIdentityHub
 # OpenTelemetry Setup (Sovereign Observability)
 OTLP_ENDPOINT = os.getenv("OTLP_ENDPOINT") # e.g. http://localhost:4318/v1/traces
 resource = Resource(attributes={
-    "service.name": "local-bridge",
-    "version": "0.1.0-preview"
+    "service.name": "sovereign-ai bridge",
+    "version": "1.1.0a2"
 })
 
 provider = TracerProvider(resource=resource)
@@ -37,9 +37,9 @@ async def lifespan(app: FastAPI):
     await orchestrator.close()
 
 app = FastAPI(
-    title="local-bridge",
+    title="sovereign-ai bridge",
     description="GAIP-2030 Enterprise Platform — Multi-tenant sovereign AI control plane",
-    version="0.1.0-preview",
+    version="1.1.0a2",
     lifespan=lifespan
 )
 
@@ -69,7 +69,7 @@ identity_hub = SovereignIdentityHub(master_secret=MASTER_SECRET, base_dir=BASE_D
 
 @app.get("/health")
 def health():
-    return {"status": "sovereign", "version": "0.1.0-preview", "multitenant": True}
+    return {"status": "sovereign", "version": "1.1.0a2", "multitenant": True}
 
 @app.get("/metrics")
 async def get_metrics(request: Request):
@@ -96,7 +96,7 @@ async def provision_tenant(tenant_id: str, request: Request):
     """
     Provison a new tenant silo (Admin Only).
     """
-    # Simple Admin-Token check for v0.1.0-preview Pilot
+    # Simple Admin-Token check for v1.1.0a2 Pilot
     admin_token = request.headers.get("X-Admin-Token")
     if admin_token != MASTER_SECRET: # For pilot, master secret acts as admin token
         raise HTTPException(status_code=401, detail="Unauthorized Admin access")
@@ -146,7 +146,7 @@ def main():
         os.makedirs(BASE_DIR, exist_ok=True)
         
     port = int(os.getenv("PORT", 8000))
-    print(f"🚀 Launching local-bridge (GAIP-2030 Enterprise) on port {port}...")
+    print(f"🚀 Launching sovereign-ai bridge (GAIP-2030 Enterprise) on port {port}...")
     print(f"🛡️  Data Root: {BASE_DIR}")
     print(f"🔐 Identity: Signed API Keys + Keycloak OIDC")
     

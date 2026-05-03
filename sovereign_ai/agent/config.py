@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    sandbox_root: Path = Path.home() / "LocalAgentSandbox"
+    sandbox_root: Path = Path.home() / "Sovereign AI AgentSandbox"
     default_model: str = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
     ollama_endpoint: str = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
     audit_db: str = "lpb_audit.db"
@@ -21,7 +21,7 @@ class Config:
     jitter_local_ms_range: tuple = (0.0, 0.02)
     jitter_bridge_ms_range: tuple = (0.05, 0.20)
     
-    # Secret Scanner Hardening (v0.2.0-RELEASE)
+    # Secret Scanner Hardening (v1.1.0a2)
     scanner_max_payload_kb: int = 100
     scanner_timeout_ms: int = 500
     scanner_fail_open_on_timeout: bool = False

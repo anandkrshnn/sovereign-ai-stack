@@ -33,7 +33,7 @@ def compute_sovereign_score(config: Any, metrics: Dict[str, Any]) -> Dict[str, A
     compliance_score = min(10.0, rules_count * 2.5)
     
     # 5. Portability Scan
-    portability_score = 10.0 # Default local-rag is highly portable
+    portability_score = 10.0 # Default sovereign-ai rag is highly portable
     
     scores = {
         "isolation": isolation_base,

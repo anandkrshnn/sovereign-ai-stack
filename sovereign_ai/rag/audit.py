@@ -25,7 +25,7 @@ class KeyProvider(ABC):
 
 class KeyringProvider(KeyProvider):
     """OS-backed key management via keyring (Windows/macOS/Linux)."""
-    def __init__(self, service_name: str = "local-rag"):
+    def __init__(self, service_name: str = "sovereign-ai rag"):
         self.service_name = service_name
         try:
             import keyring
@@ -67,7 +67,7 @@ class RAGAuditLogger:
     """
     Append-only, tamper-evident audit log with cryptographic hash chains.
     
-    v0.1.0-preview: Supports pluggable KeyProviders and full-chain non-repudiation.
+    v1.1.0a2: Supports pluggable KeyProviders and full-chain non-repudiation.
     """
     
     def __init__(self, log_path: str = "rag_audit.jsonl", key_provider: Optional[KeyProvider] = None):

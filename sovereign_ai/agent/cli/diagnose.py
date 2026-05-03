@@ -11,10 +11,10 @@ console = Console()
 
 def run_diagnose():
     """
-    Standard LocalAgent v0.2 Diagnosis suite.
+    Standard Sovereign AI Agent v0.2 Diagnosis suite.
     Checks environment, daemon health, and isolation boundaries.
     """
-    console.print(f"[bold cyan]--- LocalAgent v{__version__} Multi-Point Diagnosis ---[/bold cyan]\n")
+    console.print(f"[bold cyan]--- Sovereign AI Agent v{__version__} Multi-Point Diagnosis ---[/bold cyan]\n")
     
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")

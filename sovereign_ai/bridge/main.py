@@ -4,7 +4,7 @@ import asyncio
 import os
 import time
 
-app = FastAPI(title="local-bridge-demo", version="1.1.0")
+app = FastAPI(title="sovereign-ai bridge-demo", version="1.1.0")
 
 # Local Anchors: Simulated audit tip
 def get_audit_tip():
@@ -27,9 +27,9 @@ _pipelines = {}
 
 async def get_pipeline(role: str):
     if role not in _pipelines:
-        # Resolve paths relative to where this is run (assume local-bridge root)
+        # Resolve paths relative to where this is run (assume sovereign-ai bridge root)
         # For demo, we default to the healthcare scenario
-        base_path = os.path.join(os.getcwd(), "..", "local-rag", "demos", "healthcare")
+        base_path = os.path.join(os.getcwd(), "..", "sovereign-ai rag", "demos", "healthcare")
         db_path = os.path.join(base_path, "clinic_a.db")
         policy_path = os.path.join(base_path, "policy.yaml")
         

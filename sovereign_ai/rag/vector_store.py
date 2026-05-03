@@ -117,7 +117,7 @@ class LanceVectorStore:
 class PgVectorStore:
     """
     Production-grade Vector Storage using Postgres + pgvector.
-    Evolves local-rag from lexical-only to true Hybrid Retrieval.
+    Evolves sovereign-ai rag from lexical-only to true Hybrid Retrieval.
     """
     def __init__(
         self, 

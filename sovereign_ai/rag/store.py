@@ -35,7 +35,7 @@ class Store:
             if sqlcipher is None:
                 raise ImportError(
                     "sqlcipher3-wheels is required for encrypted databases. "
-                    "Install it with: pip install local-rag[secure]"
+                    "Install it with: pip install sovereign-ai rag[secure]"
                 )
             self.conn = sqlcipher.connect(str(self.db_path))
             # Must set key immediately. PRAGMA key doesn't support parameterized queries in some drivers.
@@ -47,7 +47,7 @@ class Store:
                 # Nudge user toward encryption for fresh sovereign deployments
                 logger.warning(
                     "⚠️  Creating unencrypted database. For sovereign deployments, use --password "
-                    "or 'local-rag db encrypt' after creation."
+                    "or 'sovereign-ai rag db encrypt' after creation."
                 )
 
         # 2. Verify Access (Unlock Check)
@@ -71,7 +71,7 @@ class Store:
         except (sqlite3.OperationalError, sqlite3.DatabaseError) as e:
             raise RuntimeError(
                 "FTS5 is not enabled in your local SQLite/SQLCipher build. "
-                "local-rag requires FTS5 for lexical indexing."
+                "sovereign-ai rag requires FTS5 for lexical indexing."
             ) from e
             
         self._create_tables()

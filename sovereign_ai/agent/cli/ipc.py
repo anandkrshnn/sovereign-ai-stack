@@ -62,7 +62,7 @@ def _handle_ipc_message(msg: Any) -> Dict[str, Any]:
 
     command = msg.get("command")
     if command == "ping":
-        return {"status": "ok", "version": "0.2.0-RELEASE"}
+        return {"status": "ok", "version": "1.1.0a2"}
     elif command == "get_status":
         from sovereign_ai.agent.api.app import current_agent
         return {

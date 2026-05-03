@@ -39,7 +39,7 @@ def interact_repl(timeout: int = None):
     while True:
         try:
             # 1. Prompt for user input
-            text = session.prompt([('class:prompt', 'LocalAgent > ')]).strip()
+            text = session.prompt([('class:prompt', 'Sovereign AI Agent > ')]).strip()
             
             if not text:
                 continue

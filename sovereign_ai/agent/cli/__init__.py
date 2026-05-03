@@ -19,18 +19,18 @@ console = Console()
 
 @app.command()
 def start(
-    daemon: bool = typer.Option(False, "--daemon", "-d", help="Run LocalAgent in the background as a daemon"),
+    daemon: bool = typer.Option(False, "--daemon", "-d", help="Run Sovereign AI Agent in the background as a daemon"),
     api_token: str = typer.Option(None, "--api-token", help="Specify a static API token for the daemon"),
     port: int = typer.Option(8000, "--port", "-p", help="Port to bind the API to"),
 ):
-    """Start the LocalAgent core and dashboard."""
+    """Start the Sovereign AI Agent core and dashboard."""
     from sovereign_ai.agent.cli.daemon import start_daemon_process
     if daemon:
         start_daemon_process(token=api_token, port=port)
     else:
         # Foreground mode
         from sovereign_ai.agent.api.app import run_serve
-        console.print(Panel("[bold green]Starting LocalAgent in foreground mode...[/bold green]"))
+        console.print(Panel("[bold green]Starting Sovereign AI Agent in foreground mode...[/bold green]"))
         run_serve(host="127.0.0.1", port=port)
 
 @app.command()

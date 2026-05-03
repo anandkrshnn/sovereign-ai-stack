@@ -26,7 +26,7 @@ class AccessRequest:
 
 class PolicyEngine:
     """
-    Sovereign ABAC Policy Engine for RAG authorization (v0.1.0-preview).
+    Sovereign ABAC Policy Engine for RAG authorization (v1.1.0a2).
     
     Acts as the 'Sovereign Airlock', filtering chunks based on principal attributes.
     """
@@ -37,7 +37,7 @@ class PolicyEngine:
         else:
             self.policy_path = None
         self.policy = self._load_policy()
-        self.version = self.policy.get("version", "0.1.0-preview")
+        self.version = self.policy.get("version", "1.1.0a2")
     
     def _load_policy(self) -> Dict[str, Any]:
         """Load YAML policy or return default safe policy if missing."""

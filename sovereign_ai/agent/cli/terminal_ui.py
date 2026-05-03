@@ -51,6 +51,6 @@ def render_error_json(code: int, error: str, detail: str):
 def print_banner():
     """Premium startup banner for the sovereign engine."""
     console.print(Panel.fit(
-        "[bold cyan]LocalAgent v0.2-RELEASE[/bold cyan]\n[dim]Sovereign Zero-Trust AI Control Surface[/dim]",
+        "[bold cyan]Sovereign AI Agent v0.2-RELEASE[/bold cyan]\n[dim]Sovereign Zero-Trust AI Control Surface[/dim]",
         border_style="cyan"
     ))

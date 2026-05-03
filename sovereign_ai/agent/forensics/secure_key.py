@@ -38,14 +38,14 @@ class SecureKeyManager:
         print("\n" + "="*60)
         print("SECURE KEY PROVISIONING REQUIRED")
         print("="*60)
-        print("LocalAgent needs a session passphrase to encrypt your audit logs.")
+        print("Sovereign AI Agent needs a session passphrase to encrypt your audit logs.")
         print("This passphrase will be stored in the Windows Credential Manager.")
         print("="*60)
         
         passphrase = getpass.getpass("Enter master passphrase: ")
         
         # Derive a 32-byte key from the passphrase
-        salt = b'SovereignLocalAgentV0.2' # Static salt for session persistence
+        salt = b'SovereignSovereign AI AgentV0.2' # Static salt for session persistence
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,

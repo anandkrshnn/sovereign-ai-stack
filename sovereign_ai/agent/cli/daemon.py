@@ -11,7 +11,7 @@ from rich.console import Console
 console = Console()
 
 def get_daemon_dir() -> Path:
-    """Standard global state directory for LocalAgent (cross-platform home)."""
+    """Standard global state directory for Sovereign AI Agent (cross-platform home)."""
     env_home = os.environ.get("SOVEREIGN_AI_HOME")
     if env_home:
         path = Path(env_home)
@@ -28,7 +28,7 @@ def get_log_file() -> Path:
     return get_daemon_dir() / "localagent_daemon.log"
 
 def start_daemon_process(token: Optional[str] = None, port: int = 8000) -> None:
-    """Launch LocalAgent as a background daemon using DETACHED_PROCESS on Windows."""
+    """Launch Sovereign AI Agent as a background daemon using DETACHED_PROCESS on Windows."""
     pid_file = get_pid_file()
     log_file = get_log_file()
     

@@ -17,7 +17,7 @@ from .audit import RAGAuditLogger
 from .db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
 from .sovereign_score import compute_sovereign_score, ScoreConfig
 
-app = typer.Typer(help="local-rag — Simple offline vectorless RAG")
+app = typer.Typer(help="sovereign-ai rag — Local-first vectorless RAG")
 console = Console()
 
 # --- Audit Management ---
@@ -29,7 +29,7 @@ def verify(
     log_path: str = typer.Option("rag_audit.jsonl", "--log-path", help="Path to audit JSONL file"),
     full: bool = typer.Option(True, "--full/--tip", help="Full forensic scan or fast tip check")
 ):
-    """Verify the integrity of a cryptographic audit trail (v0.1.0-preview)."""
+    """Verify the integrity of a cryptographic audit trail (v1.1.0a2)."""
     logger = RAGAuditLogger(log_path)
     mode = "Forensic (Full)" if full else "Operational (Tip)"
     with console.status(f"Running {mode} integrity check..."):
@@ -88,7 +88,7 @@ def score(
         f"[bold {color}]Score: {score_val}/10.0[/bold {color}]\n\n" + 
         "\n".join([f"• {r}" for r in result["recommendations"]]),
         title="Sovereign AI Readiness Score",
-        subtitle="v0.1.0-preview Assessment"
+        subtitle="v1.1.0a2 Assessment"
     ))
     
     table = Table(show_header=False, border_style="dim")
@@ -369,7 +369,7 @@ def hub(
         from .hub import start_hub
     except ImportError:
         console.print("[red]Error: Hub dependencies not found.[/red]")
-        console.print("Please install them with: [bold]pip install local-rag[hub][/bold]")
+        console.print("Please install them with: [bold]pip install sovereign-ai rag[hub][/bold]")
         raise typer.Exit(1)
 
     resolved_pass = resolve_password(password, db)

@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 
 class IdentityHub:
     """
-    Central hub for resolving principals and their attributes (v0.1.0-preview).
+    Central hub for resolving principals and their attributes (v1.1.0a2).
     In a production env, this would connect to Keycloak/OIDC.
     """
     

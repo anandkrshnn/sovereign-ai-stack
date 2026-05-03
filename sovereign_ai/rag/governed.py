@@ -17,7 +17,7 @@ class GovernedRetriever:
     """
     The Sovereign Airlock: Wraps FTS5Retriever with Policy Enforcement and Auditing.
     
-    v0.1.0-preview: Supports Attribute-Based Access Control (ABAC).
+    v1.1.0a2: Supports Attribute-Based Access Control (ABAC).
     """
     
     def __init__(
@@ -35,7 +35,7 @@ class GovernedRetriever:
         self.retriever = FTS5Retriever(db_path, password=password)
         self.policy_engine = PolicyEngine(policy_path)
         
-        # Determine base_dir for audit (v0.1.0-preview consolidation)
+        # Determine base_dir for audit (v1.1.0a2 consolidation)
         base_dir = os.path.dirname(os.path.dirname(db_path)) if db_path != ":memory:" else "data"
         self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id)
         
@@ -85,7 +85,7 @@ class GovernedRetriever:
         self.audit_logger.close()
 
 class AsyncGovernedRetriever:
-    """Asynchronous Sovereign Airlock with ABAC support (v0.1.0-preview)."""
+    """Asynchronous Sovereign Airlock with ABAC support (v1.1.0a2)."""
     def __init__(
         self, 
         db_path: str, 
@@ -103,7 +103,7 @@ class AsyncGovernedRetriever:
         self.retriever = AsyncFTS5Retriever(db_path, password=password)
         self.policy_engine = PolicyEngine(policy_path)
         
-        # Determine base_dir for audit (v0.1.0-preview consolidation)
+        # Determine base_dir for audit (v1.1.0a2 consolidation)
         base_dir = os.path.dirname(os.path.dirname(db_path)) if db_path != ":memory:" else "data"
         self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id)
         

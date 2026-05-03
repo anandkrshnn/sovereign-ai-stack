@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sovereign_ai.agent.core_loop import LocalAgent
+from sovereign_ai.agent.core_loop import Sovereign AI Agent
 from sovereign_ai.agent.forensics.vault_context import VaultContext
 from sovereign_ai.agent.api.bridge import BridgeSecurityManager
 import uvicorn
@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
         print("Embedding model ready.")
         
         # Proactively load default agent in background to warm up first interaction
-        asyncio.create_task(asyncio.to_thread(LocalAgent))
+        asyncio.create_task(asyncio.to_thread(Sovereign AI Agent))
         
         # Phase 4: Start IPC Bridge Listener for CLI Comms
         from sovereign_ai.agent.cli.ipc import start_ipc_bridge
@@ -119,14 +119,14 @@ async def get_agent_async():
     async with transition_lock:
         if current_agent is None:
             # Load default agent in a separate thread
-            current_agent = await asyncio.to_thread(LocalAgent)
+            current_agent = await asyncio.to_thread(Sovereign AI Agent)
         return current_agent
 
 def get_agent():
     """Sync fallback for legacy calls (should be minimized)."""
     global current_agent
     if current_agent is None:
-        current_agent = LocalAgent()
+        current_agent = Sovereign AI Agent()
     return current_agent
 
 @app.get("/", response_class=HTMLResponse)
@@ -182,7 +182,7 @@ async def create_vault(request: Request):
             current_agent = None
 
         current_agent = await asyncio.to_thread(
-            LocalAgent, vault_root=vault_path, password=password
+            Sovereign AI Agent, vault_root=vault_path, password=password
         )
         current_vault_name = name
         return {"status": "created", "vault": name}
@@ -208,7 +208,7 @@ async def unlock_vault(request: Request):
             current_agent = None
 
         current_agent = await asyncio.to_thread(
-            LocalAgent, vault_root=vault_path, password=password
+            Sovereign AI Agent, vault_root=vault_path, password=password
         )
         current_vault_name = name
         return {"status": "unlocked", "vault": name}
@@ -723,7 +723,7 @@ async def health_check():
     """Basic health check for monitoring."""
     return {
         "status": "healthy",
-        "version": "0.2.0-RELEASE",
+        "version": "1.1.0a2",
         "timestamp": datetime.now().isoformat(),
         "vault_active": (current_agent is not None)
     }
@@ -755,8 +755,8 @@ async def bridge_chat(request: Request):
     Headless remote entry point with HMAC security.
     """
     # 1. Security Verification
-    signature = request.headers.get("X-LocalAgent-Signature")
-    timestamp = request.headers.get("X-LocalAgent-Timestamp")
+    signature = request.headers.get("X-Sovereign AI Agent-Signature")
+    timestamp = request.headers.get("X-Sovereign AI Agent-Timestamp")
     body_bytes = await request.body()
     body_str = body_bytes.decode('utf-8')
     
@@ -806,8 +806,8 @@ async def bridge_confirm(request: Request):
     """
     Remote confirmation for gated tools.
     """
-    signature = request.headers.get("X-LocalAgent-Signature")
-    timestamp = request.headers.get("X-LocalAgent-Timestamp")
+    signature = request.headers.get("X-Sovereign AI Agent-Signature")
+    timestamp = request.headers.get("X-Sovereign AI Agent-Timestamp")
     body_bytes = await request.body()
     body_str = body_bytes.decode('utf-8')
     
@@ -846,9 +846,9 @@ async def bridge_confirm(request: Request):
         return {"success": False, "message": str(e)}
 
 def main():
-    """CLI entry point for starting the LocalAgent Dashboard."""
+    """CLI entry point for starting the Sovereign AI Agent Dashboard."""
     import argparse
-    parser = argparse.ArgumentParser(description="Start the LocalAgent Dashboard")
+    parser = argparse.ArgumentParser(description="Start the Sovereign AI Agent Dashboard")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
     parser.add_argument("--daemon-mode", action="store_true", help="Run in headless daemon mode")
@@ -860,7 +860,7 @@ def main():
         os.environ["LOCALAGENT_API_TOKEN"] = args.api_token
     
     if args.daemon_mode:
-        print(f"Starting LocalAgent Daemon on port {args.port}...")
+        print(f"Starting Sovereign AI Agent Daemon on port {args.port}...")
     
     uvicorn.run("localagent.api.app:app", host=args.host, port=args.port, reload=False)
 

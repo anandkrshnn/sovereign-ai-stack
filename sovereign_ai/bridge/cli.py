@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.panel import Panel
 from .audit import BridgeAuditLogger
 
-app = typer.Typer(help="local-bridge — GAIP-2030 Developer Gateway Control Plane")
+app = typer.Typer(help="sovereign-ai bridge — GAIP-2030 Developer Gateway Control Plane")
 console = Console()
 
 @app.command()

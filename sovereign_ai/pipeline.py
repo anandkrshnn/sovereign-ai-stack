@@ -5,7 +5,7 @@ from .rag.schemas import RAGResponse, Document
 
 @dataclass
 class Config:
-    """Normalized configuration for the Sovereign AI Stack v0.1.0-preview."""
+    """Normalized configuration for the Sovereign AI Stack v1.1.0a2."""
     db_path: str = "sovereign.db"
     policy_path: Optional[str] = None
     principal: str = "anonymous"
@@ -28,11 +28,11 @@ class Config:
 
 class SovereignPipeline:
     """
-    Sovereign AI Stack Pipeline Facade (v0.1.0-preview).
+    Sovereign AI Stack Pipeline Facade (v1.1.0a2).
     
     A stable public interface that orchestrates:
-    1. Retrieval (local-rag)
-    2. Governance (local-rag.policy)
+    1. Retrieval (sovereign-ai rag)
+    2. Governance (sovereign-ai rag.policy)
     3. Verification (local-verify)
     """
     def __init__(self, config: Config):

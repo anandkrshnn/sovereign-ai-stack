@@ -11,9 +11,9 @@ from ..common.audit import SovereignAuditLogger, Principal
 from ..common.identity import IdentityHub
 
 try:
-    from ..agent.core_loop import AgentCore as LocalAgent
+    from ..agent.core_loop import AgentCore as Sovereign AI Agent
 except ImportError:
-    LocalAgent = None
+    Sovereign AI Agent = None
 
 from opentelemetry import trace
 from .schemas import ChatCompletionRequest, ChatCompletionResponse, ChatCompletionResponseChoice, ChatMessage, Usage, BackendType, BackendConfig
@@ -30,7 +30,7 @@ tracer = trace.get_tracer(__name__)
 
 class SovereignOrchestrator:
     """
-    The 'Brain' of local-bridge v0.1.0-preview. 
+    The 'Brain' of Sovereign Bridge v1.1.0a2. 
     Manages physical tenant isolation and resource pooling.
     Supports Tiered Failover and High Availability.
     """
@@ -92,7 +92,7 @@ class SovereignOrchestrator:
         return res
 
     async def _get_rag_instance(self, tenant_id: str, principal: str) -> Optional[Any]:
-        """Get or initialize a pooled RAG instance with LRU protection (v0.1.0-preview)."""
+        """Get or initialize a pooled RAG instance with LRU protection (v1.1.0a2)."""
         if not LocalRAG: return None
         
         res = self._get_tenant_resources(tenant_id, principal)
@@ -250,9 +250,9 @@ class SovereignOrchestrator:
 
     async def complete(self, request: ChatCompletionRequest, tenant_id: str) -> Union[ChatCompletionResponse, AsyncGenerator[str, None]]:
         """
-        Execute the sovereign orchestration loop with physical tenant isolation and metrics (v0.1.0-preview).
+        Execute the sovereign orchestration loop with physical tenant isolation and metrics (v1.1.0a2).
         """
-        # Identity Resolution (v0.1.0-preview Hardening)
+        # Identity Resolution (v1.1.0a2 Hardening)
         principal_obj = IdentityHub.resolve_mock(request.sovereign_principal or "anonymous", tenant_id=tenant_id)
         principal = principal_obj.id
         labels = metrics.get_labels(tenant_id, principal)
@@ -266,7 +266,7 @@ class SovereignOrchestrator:
                 last_message = request.messages[-1].content
                 request_id = f"sov-{uuid.uuid4()}"
                 
-                # FETCH SCOPED RESOURCES (v0.1.0-preview)
+                # FETCH SCOPED RESOURCES (v1.1.0a2)
                 res = self._get_tenant_resources(tenant_id)
                 audit = res["audit"]
                 cache = res["cache"]
@@ -297,7 +297,7 @@ class SovereignOrchestrator:
                             return self._create_response(request, resp_text, request_id, principal, "cached", None, start_time, True)
                         cspan.set_attribute("sov.cache_hit", False)
                 
-                # 1. KNOWLEDGE RETRIEVAL (local-rag)
+                # 1. KNOWLEDGE RETRIEVAL (sovereign-ai rag)
                 use_reranker = request.use_reranker if request.use_reranker is not None else True
                 results = []
                 rag_event_id = None
@@ -340,8 +340,8 @@ class SovereignOrchestrator:
 
             # 3. EXECUTION OR GENERATION
             async with self._semaphore:
-                if LocalAgent and is_agent_query:
-                    # Agent execution logic... (remaining from v0.1.0-preview)
+                if Sovereign AI Agent and is_agent_query:
+                    # Agent execution logic... (remaining from v1.1.0a2)
                     with tracer.start_as_current_span("sov_agent_execution") as aspan:
                         try:
                             loop = asyncio.get_event_loop()
@@ -389,8 +389,8 @@ class SovereignOrchestrator:
 
     def _sync_agent_call(self, query: str, context: str, principal: Principal) -> Tuple[Any, str]:
         """Bridge to local-agent."""
-        if not LocalAgent: return "Agent not available", ""
-        agent = LocalAgent()
+        if not Sovereign AI Agent: return "Agent not available", ""
+        agent = Sovereign AI Agent()
         resp = agent.chat(query, principal=principal)
         trace_id = getattr(agent, "current_trace", None)
         return resp, trace_id.trace_id if trace_id else ""
@@ -506,7 +506,7 @@ class SovereignOrchestrator:
             return f"Error connecting to LLM backend ({backend.url}): {e}"
 
     def _record_tokens(self, tenant_id, model, prompt, completion, p_tokens, c_tokens):
-        """Record token usage with high-precision tiktoken fallback (v0.1.0-preview)."""
+        """Record token usage with high-precision tiktoken fallback (v1.1.0a2)."""
         source_p = "reported" if p_tokens > 0 else "estimated"
         source_c = "reported" if c_tokens > 0 else "estimated"
         
@@ -531,7 +531,7 @@ class SovereignOrchestrator:
 
     def _create_response(self, request, text, request_id, principal, rag_reason, agent_trace_id, start_time, is_cached=False, audit_hash=None, chunks_cited=None, timing_meta=None):
         """
-        Create a GA-standard response with conditional debug metadata (v0.1.0-preview).
+        Create a GA-standard response with conditional debug metadata (v1.1.0a2).
         """
         latency = time.time() - start_time
         

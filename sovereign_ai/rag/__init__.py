@@ -18,10 +18,10 @@ Advanced:
 
 Phase 1 consolidation note:
     This package is the canonical home for all RAG logic previously
-    in the local-rag satellite repository (now deprecated).
+    in the sovereign-ai rag satellite repository (now deprecated).
     The monorepo version is ahead: it adds GovernedRetriever, AsyncLocalRAG,
     tenant isolation, SQLCipher encryption, and egress secret scanning.
-    Do NOT sync backward to local-rag; archive that repo instead.
+    Do NOT sync backward to sovereign-ai rag; archive that repo instead.
 
 Version: 0.4.0
 """

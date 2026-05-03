@@ -9,7 +9,7 @@ class BridgeAuditLogger:
     Sovereign Bridge Audit Logger - Implementing GAIP-2030 Master Forensic Chain.
     
     Provides a hash-chained (SHA-256) master log that anchors evidence from 
-    both retrieval (local-rag) and action (local-agent) layers.
+    both retrieval (sovereign-ai rag) and action (local-agent) layers.
     """
     
     def __init__(self, base_dir: str = "data", tenant_id: str = "default"):
