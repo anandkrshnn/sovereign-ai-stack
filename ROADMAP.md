@@ -76,5 +76,30 @@ These items require third-party work and cannot be given internal target dates:
 
 ---
 
-*Roadmap updated: 2026-05-02*
+## V2 Maturation Roadmap — Addressing Security Depth
+
+### TPM 2.0 Hardware-Bound Signatures
+
+- Replace OS-keyring based signing with TPM 2.0 hardware-bound keys.
+- Use `tpm2-tools` or the `python-tpm` bindings to generate an Attestation Key (AK) inside the TPM.
+- Agent identity signatures (Ed25519) will be co-signed by the TPM's AK, making them hardware-rooted.
+- Target: `sovereign_ai/agent/tpm_signer.py` module.
+
+### Formal NLI Calibration
+
+- Replace simple threshold-based NLI scoring with probabilistic grounding scores.
+- Implement isotonic regression or Platt scaling on the NLI model's softmax outputs.
+- Introduce adversarial calibration benchmarks: ANLI, WaNLI, and SNLI-hard.
+- Target: `sovereign_ai/verify/nli_calibration.py` module.
+
+### Formal Policy Verification via Z3
+
+- Research and prototype ABAC policy conflict detection using the Z3 SMT solver.
+- Encode policy rules as Z3 boolean constraints; detect satisfiability violations as policy conflicts.
+- Target: `sovereign_ai/verify/policy_z3.py` module.
+- Reference: Microsoft Z3 Python API (`z3-solver` PyPI package).
+
+---
+
+*Roadmap updated: 2026-05-03*
 *Next review: 2026-06-01*

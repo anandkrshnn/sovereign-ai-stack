@@ -101,6 +101,7 @@ sovereign-ai = "sovereign_ai.cli:main"
 requires = ["setuptools>=68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+# Consolidated: includes agent, bridge, rag, verify
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["sovereign_ai*"]
