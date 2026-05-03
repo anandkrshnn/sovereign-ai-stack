@@ -2,13 +2,13 @@ import pytest
 import json
 import os
 from pathlib import Path
-from sovereign_ai.rag.audit import AuditLogger
+from sovereign_ai.rag.audit import RAGAuditLogger
 from sovereign_ai.rag.schemas import AuditRecord, PolicyDecision
 
 @pytest.fixture
 def audit_log(tmp_path):
     log_path = tmp_path / "audit.jsonl"
-    return AuditLogger(str(log_path))
+    return RAGAuditLogger(str(log_path))
 
 def create_mock_record(seq, prev_hash=None):
     decision = PolicyDecision(action="allow", reason="Test")

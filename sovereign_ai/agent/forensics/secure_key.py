@@ -138,7 +138,7 @@ class SecureKeyManager:
         Explicit investigative bridge: Provisions a KeyManager from the OS enclave.
         This is an operator-invoked action for authorized decryption.
         """
-        from localagent.forensics.vault_key_manager import VaultKeyManager
+        from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
         key = SecureKeyManager.get_trace_key()
         return VaultKeyManager(vault_root, key)
 

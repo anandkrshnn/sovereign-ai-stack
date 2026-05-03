@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 from .store import Store
-from .audit import AuditLogger
+from .audit import RAGAuditLogger
 from .db_utils import get_db_status
 from .config import DEFAULT_DB_PATH
 from .schemas import AuditRecord
@@ -35,7 +35,7 @@ async def get_status():
     db_status = get_db_status(db_path_global, password_global)
     
     # 2. Audit Status
-    audit_logger = AuditLogger() # Uses default log path
+    audit_logger = RAGAuditLogger() # Uses default log path
     is_valid, msg = audit_logger.verify_integrity()
     
     # 3. Stats (if accessible)
@@ -66,7 +66,7 @@ async def get_status():
 @app.get("/api/logs", response_model=List[AuditRecord])
 async def get_logs(limit: int = 50):
     """Fetch the recent compliance stream."""
-    audit_logger = AuditLogger()
+    audit_logger = RAGAuditLogger()
     logs = audit_logger.read_logs()
     # Return last 'limit' logs, newest first
     return logs[-limit:][::-1]
@@ -90,7 +90,7 @@ async def get_policy():
 @app.post("/api/verify-audit")
 async def verify_audit():
     """Manually trigger a full forensic verification."""
-    audit_logger = AuditLogger()
+    audit_logger = RAGAuditLogger()
     is_valid, msg = audit_logger.verify_integrity()
     return {"valid": is_valid, "message": msg}
 

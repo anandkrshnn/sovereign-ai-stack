@@ -60,7 +60,7 @@ def _handle_ipc_message(msg: Any) -> Dict[str, Any]:
     if command == "ping":
         return {"status": "ok", "version": "0.2.0-RELEASE"}
     elif command == "get_status":
-        from localagent.api.app import current_agent
+        from sovereign_ai.agent.api.app import current_agent
         return {
             "status": "online",
             "agent_loaded": current_agent is not None,
@@ -72,12 +72,12 @@ def _handle_ipc_message(msg: Any) -> Dict[str, Any]:
         
         # We run the agent chat in a thread to not block the IPC listener too long
         # (Though uvicorn/asyncio handles it if we use to_thread)
-        from localagent.api.app import get_agent_async
+        from sovereign_ai.agent.api.app import get_agent_async
         import asyncio
         
         # Note: In a real sync IPC handler, we might have issues with nested loops.
         # We use a simplified synchronous call for v0.2
-        from localagent.api.app import current_agent
+        from sovereign_ai.agent.api.app import current_agent
         if not current_agent:
             return {"error": "agent_not_ready"}
         
@@ -85,14 +85,14 @@ def _handle_ipc_message(msg: Any) -> Dict[str, Any]:
         return {"status": "success", "response": response}
 
     elif command == "get_pending":
-        from localagent.api.app import pending_requests
+        from sovereign_ai.agent.api.app import pending_requests
         return {"pending": list(pending_requests.values())}
 
     elif command == "confirm":
         request_id = msg.get("params", {}).get("request_id")
         choice = msg.get("params", {}).get("choice") # a, d, p, s
         
-        from localagent.api.app import pending_requests, current_agent
+        from sovereign_ai.agent.api.app import pending_requests, current_agent
         if request_id not in pending_requests:
             return {"error": "invalid_request_id"}
         

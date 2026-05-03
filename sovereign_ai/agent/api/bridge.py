@@ -3,7 +3,7 @@ import hashlib
 import time
 import json
 from typing import Dict, Any, Optional
-from localagent.config import Config
+from sovereign_ai.agent.config import Config
 
 class BridgeSecurityManager:
     """

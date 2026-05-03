@@ -6,8 +6,8 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.styles import Style
 from rich.console import Console
-from localagent.cli.ipc import send_ipc_command
-from localagent.cli.terminal_ui import render_airlock_modal, print_banner
+from sovereign_ai.agent.cli.ipc import send_ipc_command
+from sovereign_ai.agent.cli.terminal_ui import render_airlock_modal, print_banner
 
 console = Console()
 

@@ -8,12 +8,12 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from localagent.core_loop import LocalAgent
-from localagent.forensics.vault_context import VaultContext
-from localagent.api.bridge import BridgeSecurityManager
+from sovereign_ai.agent.core_loop import LocalAgent
+from sovereign_ai.agent.forensics.vault_context import VaultContext
+from sovereign_ai.agent.api.bridge import BridgeSecurityManager
 import uvicorn
 import random
-from localagent.config import Config
+from sovereign_ai.agent.config import Config
 from contextlib import asynccontextmanager
 
 # Global State: Total singleton isolation
@@ -48,7 +48,7 @@ event_bus = EventBus()
 async def lifespan(app: FastAPI):
     # PRE-WARMING: Load embedder and default agent once on startup
     try:
-        from localagent.memory import get_embedder
+        from sovereign_ai.agent.memory import get_embedder
         print("Pre-warming embedding model...")
         await asyncio.to_thread(get_embedder)
         print("Embedding model ready.")
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(asyncio.to_thread(LocalAgent))
         
         # Phase 4: Start IPC Bridge Listener for CLI Comms
-        from localagent.cli.ipc import start_ipc_bridge
+        from sovereign_ai.agent.cli.ipc import start_ipc_bridge
         asyncio.create_task(start_ipc_bridge())
         
     except Exception as e:
@@ -732,7 +732,7 @@ async def health_check():
 async def verify_audit_integrity():
     """Cryptographic verification of the entire audit chain."""
     agent = await get_agent_async()
-    from localagent.forensics.audit_chain import AuditChainManager
+    from sovereign_ai.agent.forensics.audit_chain import AuditChainManager
     
     log_path = Path(agent.memory_service.lancedb_path).parent / "audit_log.jsonl"
     is_valid = await asyncio.to_thread(

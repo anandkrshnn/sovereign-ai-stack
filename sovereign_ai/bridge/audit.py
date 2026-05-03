@@ -4,7 +4,7 @@ import time
 import hashlib
 from typing import Dict, Any, Optional, Tuple
 
-class AuditLogger:
+class BridgeAuditLogger:
     """
     Sovereign Bridge Audit Logger - Implementing GAIP-2030 Master Forensic Chain.
     

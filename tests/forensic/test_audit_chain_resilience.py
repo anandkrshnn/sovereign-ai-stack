@@ -2,13 +2,13 @@ import pytest
 import json
 import os
 from pathlib import Path
-from sovereign_ai.rag.audit import AuditLogger
+from sovereign_ai.rag.audit import RAGAuditLogger
 from sovereign_ai.rag.schemas import AuditRecord
 
 @pytest.fixture
 def audit_logger(tmp_path):
     log_path = tmp_path / "test_audit.jsonl"
-    return AuditLogger(str(log_path))
+    return RAGAuditLogger(str(log_path))
 
 @pytest.mark.sovereign(id="AUD-001")
 def test_audit_chain_mutation_detection(audit_logger):

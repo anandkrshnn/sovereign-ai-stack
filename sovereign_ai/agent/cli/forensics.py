@@ -6,8 +6,8 @@ from rich.console import Console
 from rich.prompt import Prompt
 from datetime import datetime, timedelta
 
-from localagent.forensics.vault_context import VaultContext
-from localagent.config import Config
+from sovereign_ai.agent.forensics.vault_context import VaultContext
+from sovereign_ai.agent.config import Config
 
 console = Console()
 

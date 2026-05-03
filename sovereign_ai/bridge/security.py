@@ -7,7 +7,7 @@ from typing import Optional, List, Dict
 from jose import jwt, jwk
 from fastapi import Request, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from local_bridge.schemas import TenantContext
+from sovereign_ai.bridge.schemas import TenantContext
 
 class SovereignIdentityHub:
     """

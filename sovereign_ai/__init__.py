@@ -11,7 +11,7 @@ from .rag.retriever import FTS5Retriever
 from .rag.generator import QwenGenerator
 from .rag.schemas import Document, SearchResult, AuditRecord, RAGResponse, PolicyDecision
 from .rag.policy import PolicyEngine, Principal, AccessRequest
-from .rag.audit import AuditLogger, KeyringProvider
+from .rag.audit import RAGAuditLogger, KeyringProvider
 from .rag.governed import GovernedRetriever, AsyncGovernedRetriever
 from .rag.db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
 from .rag.hub import app as hub_app
@@ -49,7 +49,7 @@ __all__ = [
     "PolicyEngine",
     "Principal",
     "AccessRequest",
-    "AuditLogger",
+    "RAGAuditLogger",
     "KeyringProvider",
     "GovernedRetriever",
     "AsyncGovernedRetriever",

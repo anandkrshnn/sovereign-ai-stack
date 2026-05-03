@@ -13,7 +13,7 @@ from .main import LocalRAG
 from .retriever import FTS5Retriever
 from .schemas import Document
 from .config import DEFAULT_DB_PATH
-from .audit import AuditLogger
+from .audit import RAGAuditLogger
 from .db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
 from .sovereign_score import compute_sovereign_score, ScoreConfig
 
@@ -30,7 +30,7 @@ def verify(
     full: bool = typer.Option(True, "--full/--tip", help="Full forensic scan or fast tip check")
 ):
     """Verify the integrity of a cryptographic audit trail (v0.1.0-preview)."""
-    logger = AuditLogger(log_path)
+    logger = RAGAuditLogger(log_path)
     mode = "Forensic (Full)" if full else "Operational (Tip)"
     with console.status(f"Running {mode} integrity check..."):
         is_valid, report = logger.verify_integrity(full=full)
@@ -44,7 +44,7 @@ def verify(
 @audit_app.command()
 def doctor():
     """Detect hardware/enclave capabilities for sovereign security."""
-    logger = AuditLogger()
+    logger = RAGAuditLogger()
     status = logger.get_provider_status()
     
     table = Table(title="Sovereign Security Doctor")

@@ -2,7 +2,7 @@ from typing import Dict, List, Any
 from datetime import datetime
 import json
 import uuid
-from localagent.memory.lancedb_store import LanceDBStore
+from sovereign_ai.agent.memory.lancedb_store import LanceDBStore
 
 PROMOTION_PIPELINE_MAX_QUEUED = 500
 
@@ -30,7 +30,7 @@ class MemoryPromotionPipeline:
                 is_duplicate = self._check_duplicate(candidate["body"])
                 if not is_duplicate:
                     # Get vector embedding for the item
-                    from localagent.memory import get_embedder
+                    from sovereign_ai.agent.memory import get_embedder
                     embedder = get_embedder()
                     vector = embedder.encode(candidate["body"]).tolist() if embedder else [0.0]*384
                     

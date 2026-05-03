@@ -9,7 +9,7 @@ client = TestClient(app)
 
 @pytest.fixture
 def mock_audit_logger():
-    with patch("sovereign_ai.rag.hub.AuditLogger") as mock:
+    with patch("sovereign_ai.rag.hub.RAGAuditLogger") as mock:
         instance = mock.return_value
         instance.verify_integrity.return_value = (True, "Forensic chain intact.")
         instance.read_logs.return_value = []

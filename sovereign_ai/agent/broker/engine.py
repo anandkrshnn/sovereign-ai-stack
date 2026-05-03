@@ -5,14 +5,14 @@ import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from localagent.forensics.audit_chain import AuditChainManager
-from localagent.forensics.secure_key import SecureKeyManager
-from localagent.broker.resource_quota import ResourceQuota
-from localagent.broker.scanner import ScannerManager
-from localagent.config import Config
+from sovereign_ai.agent.forensics.audit_chain import AuditChainManager
+from sovereign_ai.agent.forensics.secure_key import SecureKeyManager
+from sovereign_ai.agent.broker.resource_quota import ResourceQuota
+from sovereign_ai.agent.broker.scanner import ScannerManager
+from sovereign_ai.agent.config import Config
 import random
 import hashlib
-from localagent.cli.daemon import get_daemon_dir
+from sovereign_ai.agent.cli.daemon import get_daemon_dir
 import threading
 
 class LocalPermissionBroker:
@@ -38,14 +38,14 @@ class LocalPermissionBroker:
                 if master_passphrase:
                     SecureKeyManager.wrap_key_to_vault(vault_root, master_passphrase)
                 
-                from localagent.forensics.vault_key_manager import VaultKeyManager
+                from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
                 self.key_manager = VaultKeyManager(vault_root, session_key.decode() if isinstance(session_key, bytes) else session_key)
             except Exception as e:
                 # 3. v8.0 Recovery: If enclave fails, attempt to unwrap from vault
                 if master_passphrase:
                     try:
                         recovered_key = SecureKeyManager.unwrap_key_from_vault(vault_root, master_passphrase)
-                        from localagent.forensics.vault_key_manager import VaultKeyManager
+                        from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
                         self.key_manager = VaultKeyManager(vault_root, recovered_key)
                         print(f"[Broker] v8.0 RECOVERY SUCCESS: Audit key restored from vault-staple.")
                     except:
@@ -77,7 +77,7 @@ class LocalPermissionBroker:
         # Default policies for each capability
         self.policies = self._load_default_policies()
         
-        from localagent.broker.engine_core import PolicyEngine
+        from sovereign_ai.agent.broker.engine_core import PolicyEngine
         # Construct PolicyEngine path based on audit log path for vault consistency
         policies_path = self.audit_log_path.parent / "policies.json"
         self.policy_engine = PolicyEngine(self, db_path=str(policies_path), key_manager=self.key_manager)

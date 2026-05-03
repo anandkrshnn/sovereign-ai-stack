@@ -5,9 +5,9 @@ from typing import List, Dict, Any
 from rich.console import Console
 from rich.table import Table
 
-from localagent.config import Config
-from localagent.forensics.vault_context import VaultContext
-from localagent.broker.engine_core import PolicyEngine, PolicyRule
+from sovereign_ai.agent.config import Config
+from sovereign_ai.agent.forensics.vault_context import VaultContext
+from sovereign_ai.agent.broker.engine_core import PolicyEngine, PolicyRule
 
 console = Console()
 

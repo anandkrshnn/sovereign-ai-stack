@@ -63,7 +63,7 @@ class TPMProviderStub(KeyProvider):
             "status": "Roadmap: v1.5.0-HARDWARE"
         }
 
-class AuditLogger:
+class RAGAuditLogger:
     """
     Append-only, tamper-evident audit log with cryptographic hash chains.
     

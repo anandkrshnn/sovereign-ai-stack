@@ -2,7 +2,7 @@ import typer
 import os
 from rich.console import Console
 from rich.panel import Panel
-from .audit import AuditLogger
+from .audit import BridgeAuditLogger
 
 app = typer.Typer(help="local-bridge — GAIP-2030 Developer Gateway Control Plane")
 console = Console()
@@ -26,7 +26,7 @@ def verify(
     log_path: str = typer.Option("sovereign_bridge_audit.jsonl", "--log-path", help="Path to bridge audit log")
 ):
     """Verify the integrity of the Master Forensic Chain."""
-    logger = AuditLogger(log_path)
+    logger = BridgeAuditLogger(log_path)
     with console.status("Verifying master forensic chain..."):
         is_valid, report = logger.verify_integrity()
     

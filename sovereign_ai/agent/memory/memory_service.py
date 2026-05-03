@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
-from localagent.memory.lancedb_store import LanceDBStore
-from localagent.memory.promotion_pipeline import MemoryPromotionPipeline
-from localagent.broker.engine import LocalPermissionBroker
+from sovereign_ai.agent.memory.lancedb_store import LanceDBStore
+from sovereign_ai.agent.memory.promotion_pipeline import MemoryPromotionPipeline
+from sovereign_ai.agent.broker.engine import LocalPermissionBroker
 
 class MemoryService:
     def __init__(self, broker: LocalPermissionBroker, lancedb_path: str, duckdb_path: str, key_manager=None):
@@ -9,8 +9,8 @@ class MemoryService:
         self.promotion_pipeline = MemoryPromotionPipeline(self.lancedb_store)
         self.broker = broker
         self.key_manager = key_manager
-        from localagent.memory.duckdb_index import HotMemoryIndex
-        from localagent.memory import get_embedder # Keep lazy initializer
+        from sovereign_ai.agent.memory.duckdb_index import HotMemoryIndex
+        from sovereign_ai.agent.memory import get_embedder # Keep lazy initializer
         self.hot_memory = HotMemoryIndex(db_path=duckdb_path, key_manager=key_manager, embedder=get_embedder())
 
     def get_governed_context(self, user_query: str, session_context: Dict[str, Any]):

@@ -191,9 +191,17 @@ class TestRAGConsolidation:
         from sovereign_ai.rag.schemas import RAGResponse
 
         # Seed with one document
-        store = Store(temp_db)
-        store.add_document("doc-001", "Sovereign AI ensures local data residency and zero-trust attestation.", "public")
-        store.close()
+        from sovereign_ai.rag.retriever import FTS5Retriever
+        from sovereign_ai.rag.schemas import Document
+        retriever = FTS5Retriever(temp_db)
+        doc = Document(
+            doc_id="doc-001",
+            source="test-source",
+            content="Sovereign AI ensures local data residency and zero-trust attestation.",
+            classification="public"
+        )
+        retriever.ingest([doc])
+        retriever.close()
 
         rag = LocalRAG(temp_db)
         rag.generator = mock_generator
@@ -211,9 +219,17 @@ class TestRAGConsolidation:
         from sovereign_ai.rag.store import Store
         from sovereign_ai.rag.schemas import RAGResponse
 
-        store = Store(temp_db)
-        store.add_document("doc-002", "The PTV protocol binds Ed25519 keys to agent identities at runtime.", "internal")
-        store.close()
+        from sovereign_ai.rag.retriever import FTS5Retriever
+        from sovereign_ai.rag.schemas import Document
+        retriever = FTS5Retriever(temp_db)
+        doc = Document(
+            doc_id="doc-002",
+            source="test-source",
+            content="The PTV protocol binds Ed25519 keys to agent identities at runtime.",
+            classification="internal"
+        )
+        retriever.ingest([doc])
+        retriever.close()
 
         rag = LocalRAG(temp_db)
         rag.generator = mock_generator
@@ -322,13 +338,17 @@ class TestEndToEndSmoke:
         log_path = tmp_path / "audit.jsonl"
 
         # Seed
-        store = Store(db_path)
-        store.add_document(
-            "doc-e2e",
-            "Sovereign AI stacks bind hardware attestation to agent decision traces.",
-            "public",
+        from sovereign_ai.rag.retriever import FTS5Retriever
+        from sovereign_ai.rag.schemas import Document
+        retriever = FTS5Retriever(db_path)
+        doc = Document(
+            doc_id="doc-e2e",
+            source="test-source",
+            content="Sovereign AI stacks bind hardware attestation to agent decision traces.",
+            classification="public"
         )
-        store.close()
+        retriever.ingest([doc])
+        retriever.close()
 
         # Query
         rag = LocalRAG(db_path)

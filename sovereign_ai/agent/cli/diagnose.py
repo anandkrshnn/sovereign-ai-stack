@@ -4,7 +4,7 @@ import requests
 import psutil
 from rich.console import Console
 from rich.table import Table
-from localagent.config import Config
+from sovereign_ai.agent.config import Config
 from localagent import __version__
 
 console = Console()
@@ -39,7 +39,7 @@ def run_diagnose():
 
     # 2. Daemon Check
     # Actually use our daemon helper
-    from localagent.cli.daemon import get_pid_file
+    from sovereign_ai.agent.cli.daemon import get_pid_file
     pid_file = get_pid_file()
     
     daemon_status = "[bold red][FAIL][/bold red]"
@@ -63,13 +63,13 @@ def run_diagnose():
         table.add_row("Sandbox Path", "[bold green][READY][/bold green]", str(sandbox))
 
     # 4. IPC (Pipe/Socket)
-    from localagent.cli.ipc import PIPE_NAME
+    from sovereign_ai.agent.cli.ipc import PIPE_NAME
     import time
     time.sleep(0.5) # Allow cold-start daemon to bind pipe
     
     if os.name == 'nt':
         # On Windows we check if pipe exists via a quick client test
-        from localagent.cli.ipc import send_ipc_command
+        from sovereign_ai.agent.cli.ipc import send_ipc_command
         res = send_ipc_command("ping")
         if res.get("status") == "ok":
             table.add_row("IPC Bridge", "[bold green][CONNECTED][/bold green]", PIPE_NAME)

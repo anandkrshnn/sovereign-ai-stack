@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass
-from localagent.config import Config
+from sovereign_ai.agent.config import Config
 
 # Per-scanner wall-clock budgets from the Performance Baseline Specification (§6).
 # These are enforced at the ScannerManager level, not inside each scanner.
