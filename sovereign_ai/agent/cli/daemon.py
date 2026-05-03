@@ -12,7 +12,7 @@ console = Console()
 
 def get_daemon_dir() -> Path:
     """Standard global state directory for LocalAgent (cross-platform home)."""
-    env_home = os.environ.get("LOCALAGENT_HOME")
+    env_home = os.environ.get("SOVEREIGN_AI_HOME")
     if env_home:
         path = Path(env_home)
     else:
@@ -44,7 +44,7 @@ def start_daemon_process(token: Optional[str] = None, port: int = 8000) -> None:
     # Build daemon command targeting the app's main entry point
     # We use -m localagent.api.app to trigger the API server
     cmd = [
-        sys.executable, "-m", "localagent.api.app",
+        sys.executable, "-m", "sovereign_ai.agent.api.app",
         "--host", "127.0.0.1",
         "--port", str(port),
         "--daemon-mode"

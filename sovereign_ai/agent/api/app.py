@@ -70,7 +70,7 @@ async def lifespan(app: FastAPI):
             current_agent.close()
         except: pass
 
-app = FastAPI(title="LocalAgent Dashboard", lifespan=lifespan)
+app = FastAPI(title="Sovereign AI Agent Dashboard", lifespan=lifespan)
 
 # --- Bridge DoS Protection: reject payloads > 1.04 MB before HMAC evaluation ---
 # Spec §3: "Payloads > 1.04MB trigger immediate PAYLOAD_TOO_LARGE drop states at TCP ingress."

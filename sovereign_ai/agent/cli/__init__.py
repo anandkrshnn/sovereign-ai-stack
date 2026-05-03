@@ -10,7 +10,7 @@ from typing import Optional
 # from sovereign_ai.agent.cli.interact import interact_repl
 
 app = typer.Typer(
-    name="localagent",
+    name="sovereign-ai-agent",
     help="Zero-Trust Sovereign AI - Headless Control Surface",
     no_args_is_help=True,
     rich_markup_mode="rich"

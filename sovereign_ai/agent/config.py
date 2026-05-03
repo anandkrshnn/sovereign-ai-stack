@@ -12,8 +12,8 @@ class Config:
     max_iterations: int = 4
     
     # Milestone 4: Bridge Config
-    bridge_secret: str = os.getenv("LOCALAGENT_BRIDGE_SECRET", "localagent-default-secret-change-me")
-    bridge_enabled: bool = os.getenv("LOCALAGENT_BRIDGE_ENABLED", "True").lower() == "true"
+    bridge_secret: str = os.getenv("SOVEREIGN_AI_BRIDGE_SECRET", "localagent-default-secret-change-me")
+    bridge_enabled: bool = os.getenv("SOVEREIGN_AI_BRIDGE_ENABLED", "True").lower() == "true"
     
     # Phase 2: Security Hardening
     secret_scanner_entropy_threshold: float = float(os.getenv("SECRET_SCANNER_ENTROPY_THRESHOLD", "4.5"))

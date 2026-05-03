@@ -1,18 +1,22 @@
+import os
+import asyncio
+from typing import Dict, Any, Optional
+from multiprocessing.connection import Listener, Client
 from pathlib import Path
 
-# v0.2-RELEASE uses versioned isolation and secure runtime pathing
+# v1.1.0a2 uses versioned isolation and secure runtime pathing
 def _get_secure_pipe_name():
     if os.name == 'nt':
-        return r'\\.\pipe\localagent_v02'
+        return r'\\.\pipe\sovereign_ai_agent_v11'
     
     # Secure Unix Socket: move from world-writable /tmp to user-scoped home
-    home = Path(os.getenv("LOCALAGENT_HOME", Path.home() / ".localagent"))
+    home = Path(os.getenv("SOVEREIGN_AI_HOME", Path.home() / ".sovereign_ai"))
     run_dir = home / "run"
     run_dir.mkdir(parents=True, exist_ok=True)
     if os.name != 'nt':
         os.chmod(str(run_dir), 0o700)
     
-    return str(run_dir / "localagent_v02.sock")
+    return str(run_dir / "sovereign_ai_agent_v11.sock")
 
 PIPE_NAME = _get_secure_pipe_name()
 

@@ -22,7 +22,7 @@ class LocalPermissionBroker:
         if audit_log_path:
             self.audit_log_path = Path(audit_log_path)
         else:
-            # Default to LOCALAGENT_HOME/audit.jsonl (Bulletproof v3.0 standard)
+            # Default to SOVEREIGN_AI_HOME/audit.jsonl (Bulletproof v3.0 standard)
             self.audit_log_path = get_daemon_dir() / "audit.jsonl"
 
         self.key_manager = key_manager
