@@ -16,16 +16,16 @@ def get_daemon_dir() -> Path:
     if env_home:
         path = Path(env_home)
     else:
-        path = Path.home() / ".localagent"
+        path = Path.home() / ".sovereign_ai"
     
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 def get_pid_file() -> Path:
-    return get_daemon_dir() / "localagent.pid"
+    return get_daemon_dir() / "sovereign_ai_agent.pid"
 
 def get_log_file() -> Path:
-    return get_daemon_dir() / "localagent_daemon.log"
+    return get_daemon_dir() / "sovereign_ai_agent_daemon.log"
 
 def start_daemon_process(token: Optional[str] = None, port: int = 8000) -> None:
     """Launch Sovereign AI Agent as a background daemon using DETACHED_PROCESS on Windows."""

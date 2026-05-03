@@ -5,16 +5,16 @@ import psutil
 from rich.console import Console
 from rich.table import Table
 from sovereign_ai.agent.config import Config
-from localagent import __version__
+from sovereign_ai.agent import __version__
 
 console = Console()
 
 def run_diagnose():
     """
-    Standard Sovereign AI Agent v0.2 Diagnosis suite.
+    Standard SovereignAIAgent v1.1.0a2 Diagnosis suite.
     Checks environment, daemon health, and isolation boundaries.
     """
-    console.print(f"[bold cyan]--- Sovereign AI Agent v{__version__} Multi-Point Diagnosis ---[/bold cyan]\n")
+    console.print(f"[bold cyan]--- SovereignAIAgent v{__version__} Multi-Point Diagnosis ---[/bold cyan]\n")
     
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")

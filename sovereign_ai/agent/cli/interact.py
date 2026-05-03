@@ -27,7 +27,7 @@ def interact_repl(timeout: int = None):
     console.print("[dim]Type '/exit' to quit, '/status' for daemon health.[/dim]\n")
     
     # Setup persistent history
-    history_file = Path.home() / ".localagent" / "history"
+    history_file = Path.home() / ".sovereign_ai" / "history"
     history_file.parent.mkdir(parents=True, exist_ok=True)
     
     session = PromptSession(
@@ -39,7 +39,7 @@ def interact_repl(timeout: int = None):
     while True:
         try:
             # 1. Prompt for user input
-            text = session.prompt([('class:prompt', 'Sovereign AI Agent > ')]).strip()
+            text = session.prompt([('class:prompt', 'SovereignAIAgent > ')]).strip()
             
             if not text:
                 continue

@@ -45,7 +45,7 @@ class SecureKeyManager:
         passphrase = getpass.getpass("Enter master passphrase: ")
         
         # Derive a 32-byte key from the passphrase
-        salt = b'SovereignSovereign AI AgentV0.2' # Static salt for session persistence
+        salt = b'SovereignAIAgentV1.1.0a2' # Static salt for session persistence
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,

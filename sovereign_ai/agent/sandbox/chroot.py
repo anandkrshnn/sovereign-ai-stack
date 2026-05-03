@@ -4,7 +4,7 @@ import re
 class SandboxPath:
     def __init__(self, root: Path = None):
         if root is None:
-            root = Path.home() / "Sovereign AI AgentSandbox"
+            root = Path.home() / "SovereignAIAgentSandbox"
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
 

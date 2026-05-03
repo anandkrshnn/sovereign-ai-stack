@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    sandbox_root: Path = Path.home() / "Sovereign AI AgentSandbox"
+    sandbox_root: Path = Path.home() / "SovereignAIAgentSandbox"
     default_model: str = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
     ollama_endpoint: str = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
     audit_db: str = "lpb_audit.db"
