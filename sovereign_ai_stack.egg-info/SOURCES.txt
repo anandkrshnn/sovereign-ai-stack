@@ -7,6 +7,7 @@ sovereign_ai/pipeline.py
 sovereign_ai/agent/__init__.py
 sovereign_ai/agent/config.py
 sovereign_ai/agent/core_loop.py
+sovereign_ai/agent/signing.py
 sovereign_ai/agent/utils.py
 sovereign_ai/agent/adapters/adapter_registry.py
 sovereign_ai/agent/api/app.py
@@ -82,6 +83,7 @@ sovereign_ai_stack.egg-info/requires.txt
 sovereign_ai_stack.egg-info/top_level.txt
 tests/test_chunking.py
 tests/test_cli.py
+tests/test_consolidation.py
 tests/test_encryption.py
 tests/test_governance.py
 tests/test_hub.py
