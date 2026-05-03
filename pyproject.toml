@@ -1,6 +1,6 @@
 [project]
 name = "sovereign-ai-stack"
-version = "1.0.0"
+version = "1.1.0a2"
 description = "Local-first RAG with policy gating and audit-friendly logging — reference implementation"
 authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
 license = {text = "MIT"}

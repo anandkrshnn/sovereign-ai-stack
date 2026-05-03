@@ -2,7 +2,7 @@
 Sovereign AI Stack - Local RAG with Cryptographic Verification
 """
 
-__version__ = "0.1.0a1"
+__version__ = "1.1.0a2"
 
 # RAG Components
 from .rag.main import LocalRAG, AsyncLocalRAG
