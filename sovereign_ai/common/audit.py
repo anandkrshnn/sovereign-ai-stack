@@ -41,6 +41,11 @@ class AuditEvent:
     algorithm: str = "ed25519"
 
 
+class SecurityHalt(Exception):
+    """Immediate safety halt when forensic integrity is compromised."""
+    pass
+
+
 class SignedAuditChain:
     """
     Audit chain with Ed25519 asymmetric signatures.

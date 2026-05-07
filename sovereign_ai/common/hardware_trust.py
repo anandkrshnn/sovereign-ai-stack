@@ -7,6 +7,9 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, ec
 from cryptography.hazmat.primitives import serialization, hashes
 from .schemas import SigningAlgorithm
 
+import ctypes
+from ctypes import wintypes
+
 logger = logging.getLogger(__name__)
 
 class SecureAnchor(ABC):
@@ -119,9 +122,6 @@ class WindowsTPMAnchor(SecureAnchor):
         return SigningAlgorithm.P256
 
     def _init_tpm(self):
-        import ctypes
-        from ctypes import wintypes
-        
         ncrypt = ctypes.windll.ncrypt
         MS_PLATFORM_CRYPTO_PROVIDER = "Microsoft Platform Crypto Provider"
         NCRYPT_SUCCESS = 0
@@ -176,8 +176,6 @@ class WindowsTPMAnchor(SecureAnchor):
             return self._private_key.sign(data, ec.ECDSA(hashes.SHA256()))
         
         # Native TPM Signing
-        import ctypes
-        from ctypes import wintypes
         import time
         from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
         
@@ -232,8 +230,6 @@ class WindowsTPMAnchor(SecureAnchor):
             return self._private_key.public_key()
             
         # Export public key from TPM
-        import ctypes
-        from ctypes import wintypes
         ncrypt = ctypes.windll.ncrypt
         BCRYPT_ECCPUBLIC_BLOB = "ECCPUBLICBLOB"
         NCRYPT_SUCCESS = 0

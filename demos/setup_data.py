@@ -1,7 +1,6 @@
 import asyncio
 import os
-from sovereign_ai import SovereignPipeline, Config
-from sovereign_ai.schemas import Document
+from sovereign_ai import SovereignPipeline, Config, Document
 
 # Get the directory of the current script
 base_dir = os.path.dirname(os.path.abspath(__file__))
