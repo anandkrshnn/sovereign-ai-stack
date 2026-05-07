@@ -33,7 +33,7 @@ from .governed import GovernedRetriever, AsyncGovernedRetriever
 from .schemas import RAGResponse, SearchResult
 from .cache import SemanticCache
 from .policy import PolicyEngine
-from .audit import RAGAuditLogger
+from ..common.audit import SovereignAuditLogger
 
 __all__ = [
     # Primary interface
@@ -51,5 +51,5 @@ __all__ = [
     "QwenGenerator",
     "SemanticCache",
     "PolicyEngine",
-    "RAGAuditLogger",
+    "SovereignAuditLogger",
 ]

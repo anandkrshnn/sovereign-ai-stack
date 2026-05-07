@@ -4,64 +4,42 @@ Sovereign AI Stack - Local RAG with Cryptographic Verification
 
 __version__ = "1.1.0a2"
 
-# RAG Components
-from .rag.main import LocalRAG, AsyncLocalRAG
-from .rag.store import Store
-from .rag.retriever import FTS5Retriever
-from .rag.generator import QwenGenerator
-from .rag.schemas import Document, SearchResult, AuditRecord, RAGResponse, PolicyDecision
-from .rag.policy import PolicyEngine, Principal, AccessRequest
-from .rag.audit import RAGAuditLogger, KeyringProvider
-from .rag.governed import GovernedRetriever, AsyncGovernedRetriever
-from .rag.db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
-from .rag.hub import app as hub_app
-from .rag.utils import RecursiveCharacterTextSplitter, chunk_text, contains_secret
-from .rag.reranker import BGEReranker
-
-# Main Platform Facade
+# --- Core Platform Facade ---
 from .pipeline import SovereignPipeline, Config
 
-# Bridge Gateway
-try:
-    from .bridge.main import app as SovereignBridge
-except ImportError:
-    SovereignBridge = None
+# --- RAG & Retrieval ---
+from .rag import LocalRAG, AsyncLocalRAG
+from .rag.governed import GovernedRetriever as HybridRetriever
+from .rag.schemas import Document, SearchResult, RAGResponse, AuditRecord
 
-# Forensic Agent
+# --- Verification & Forensics ---
+from .verify import SovereignEvaluator
+from .agent.forensics.audit_chain import AuditChainManager as SignedAuditChain
+
+# --- Agentic Workflows ---
 try:
     from .agent.core_loop import AgentCore as SovereignAgent
 except ImportError:
     SovereignAgent = None
 
+# --- Bridge Gateway ---
+try:
+    from .bridge.main import app as SovereignBridge
+except ImportError:
+    SovereignBridge = None
+
 __all__ = [
-    "LocalRAG",
-    "AsyncLocalRAG",
-    "Store",
-    "FTS5Retriever",
-    "QwenGenerator",
     "SovereignPipeline",
     "Config",
+    "LocalRAG",
+    "AsyncLocalRAG",
+    "HybridRetriever",
     "Document",
     "SearchResult",
-    "AuditRecord",
     "RAGResponse",
-    "PolicyDecision",
-    "PolicyEngine",
-    "Principal",
-    "AccessRequest",
-    "RAGAuditLogger",
-    "KeyringProvider",
-    "GovernedRetriever",
-    "AsyncGovernedRetriever",
-    "get_db_status",
-    "encrypt_database",
-    "decrypt_database",
-    "rekey_database",
-    "hub_app",
-    "RecursiveCharacterTextSplitter",
-    "chunk_text",
-    "contains_secret",
-    "BGEReranker",
-    "SovereignBridge",
+    "AuditRecord",
+    "SovereignEvaluator",
+    "SignedAuditChain",
     "SovereignAgent",
+    "SovereignBridge",
 ]

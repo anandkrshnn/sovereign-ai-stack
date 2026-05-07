@@ -25,6 +25,10 @@ class Config:
     enable_verification: bool = False
     grounding_threshold: float = 0.85
     faithfulness_threshold: float = 0.90
+    
+    # [Policy Integrity]
+    trusted_policy_key: Optional[str] = None
+    strict_policy: bool = False
 
 class SovereignPipeline:
     """
@@ -37,6 +41,13 @@ class SovereignPipeline:
     """
     def __init__(self, config: Config):
         self.config = config
+        # [Finding 5 Fix] Instantiate anchor at the highest trust boundary (Pipeline level)
+        from .common.hardware_trust import WindowsTPMAnchor, SoftwareSimulatorAnchor
+        try:
+            self.anchor = WindowsTPMAnchor(tenant_id=config.tenant_id)
+        except Exception:
+            self.anchor = SoftwareSimulatorAnchor(tenant_id=config.tenant_id)
+
         self._engine = AsyncLocalRAG(
             db_path=config.db_path,
             policy_path=config.policy_path,
@@ -50,7 +61,10 @@ class SovereignPipeline:
             reranker_model=config.reranker_model,
             vector_dsn=config.vector_dsn,
             use_cache=config.use_cache,
-            cache_dir=config.cache_dir
+            cache_dir=config.cache_dir,
+            trusted_policy_key=config.trusted_policy_key,
+            strict_policy=config.strict_policy,
+            anchor=self.anchor  # Injected
         )
         self._evaluator = None
         if config.enable_verification:

@@ -10,34 +10,55 @@
 
 ## 🔬 Overview
 
-The **Sovereign AI Stack** is a reference implementation for high-trust, local-first agentic workflows. It addresses the "Black Box" problem in RAG by enforcing **Deterministic Verification** and **Non-Repudiable Forensics**.
-
-Target Use Cases:
-- **Regulated Data Silos**: Healthcare (HIPAA), Finance (SEC/FINRA).
-- **Compliance-First Apps**: DPDP (India) and GDPR (EU) compliant retrieval.
-- **Critical Infrastructure**: Air-gapped or high-security local environments.
+The **Sovereign AI Stack** is a reference implementation for high-trust, local-first agentic workflows. It addresses the "Black Box" problem in RAG by enforcing **NLI-based Grounding Verification** and **Cryptographically Anchored Audit Trails**.
 
 ---
 
-## ✨ Key Features (Current Scope)
+## 🏗️ Technical Architecture
 
-- **The Verified Airlock**: Every claim in an LLM response is verified using an NLI Cross-Encoder (`DeBERTa-v3`) against the retrieved context.
-- **Forensic Audit Chain**: Every decision, retrieval, and verification event is signed with **Ed25519 asymmetric cryptography**.
-- **ABAC Policy Engine**: Attribute-Based Access Control filters context *before* generation, preventing data leakage at the source.
-- **Multi-Tenant Isolation**: Physical isolation of encrypted SQLite/LanceDB silos per tenant/principal.
-- **OpenAI-Compatible Gateway**: Plug-and-play compatibility via the `sovereign-ai-bridge`.
+The stack operates as an experimental **Verify-First** pipeline.
+
+```mermaid
+flowchart TD
+    A[User Query + Principal] --> B[Hybrid Retriever<br/>BM25 + Dense]
+    B --> C[Context Builder]
+    C --> D[NLI Grounding Gate<br/>DeBERTa-v3<br/>≥0.85 entailment]
+    D -->|Pass| E[LLM Generation<br/>with Citations]
+    D -->|Fail| F[Verification Failure<br/>"Insufficient Grounding"]
+    E --> G[Signed Audit Event<br/>TPM 2.0 / P-256 Chain]
+    F --> G
+    G --> H[Forensic Certificate]
+```
+
+Detailed architecture documentation can be found in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
-## 🏗️ Architecture
+## ✨ Key Features (Alpha)
 
-The stack operates on a **Fail-Closed, Verify-First** pipeline:
+- **NLI Grounding Gate (Experimental)**: Uses a local cross-encoder (`DeBERTa-v3`) to score logical entailment between context and LLM claims.
+- **Hardware-Anchored Audit Chain**: Every decision event is signed with **TPM-bound P-256 signatures** (Windows) or Ed25519 hash chains, providing a hardware root of trust.
+- **ABAC Policy Engine**: Attribute-Based Access Control filters context *before* generation.
+- **Physical Multi-Tenancy**: Isolation of encrypted SQLite/LanceDB silos per principal.
+- **Compatibility Layer**: OpenAI-compatible gateway via the `sovereign-ai-bridge`.
 
-1.  **Retrieve**: Local retrieval from scoped, encrypted silos.
-2.  **Govern**: Policy engine filters context using zero-trust principles.
-3.  **Generate**: LLM produces a draft response based *only* on governed context.
-4.  **Verify**: The Airlock ensures logical entailment (Deterministic Grounding).
-5.  **Certify**: The trace is signed and anchored to the OS secure keyring.
+---
+
+## 🛡️ NLI Verification in Action (Conceptual)
+
+The "Airlock" uses a local NLI model to check grounding logic.
+
+```mermaid
+sequenceDiagram
+    participant L as LLM (Draft)
+    participant V as NLI Gate (Alpha)
+    participant U as User
+
+    L->>V: "The patient's heart rate is 72 bpm."
+    Note over V: Context: "BP 120/80. Resting."
+    V-->>V: Logic: Contradiction/Neutral
+    V->>U: ALERT: "Grounding Failure"
+```
 
 ---
 
@@ -48,24 +69,19 @@ The stack operates on a **Fail-Closed, Verify-First** pipeline:
 pip install sovereign-ai-stack
 ```
 
-### 2. Run the Gateway
+### 2. Run the Gateway (OpenAI Compatible)
 ```bash
-python -m sovereign_ai.bridge.main --model qwen2.5:7b
+python -m sovereign_ai.bridge.main
 ```
 
-### 3. Verification Example
-```python
-from sovereign_ai.verify.evaluator import SovereignEvaluator
+### 3. Explore Examples (Research Preview)
+We provide three end-to-end examples in the [examples/](examples/) directory:
 
-evaluator = SovereignEvaluator()
-result = evaluator.evaluate(
-    query="What is the patient's heart rate?",
-    context="Observation 10:45 AM: HR 72bpm, BP 120/80.",
-    answer="The patient's heart rate is 72 bpm."
-)
-
-print(f"Passed Grounding: {result['passed']}") # True
-```
+| Example | What it demonstrates | Status |
+| :--- | :--- | :--- |
+| [`01_basic_rag.py`](examples/01_basic_rag.py) | Minimal RAG setup | Stable |
+| [`02_verified_query.py`](examples/02_verified_query.py) | NLI Grounding Gate | Experimental |
+| [`03_forensic_agent.py`](examples/03_forensic_agent.py) | Signed Audit Chains | Alpha |
 
 ---
 
@@ -85,7 +101,7 @@ print(f"Passed Grounding: {result['passed']}") # True
 ## ⚠️ Known Limitations
 
 - **NLI Thresholding**: The default 0.8 threshold may produce false negatives in highly creative writing tasks; it is tuned for *fact-based retrieval*.
-- **Hardware Binding**: Keys are stored in the OS Keyring (Keychain/DPAPI). True hardware-anchored trust (TPM 2.0) is currently in development.
+- **Hardware Binding**: Support for **TPM 2.0 (P-256)** is now live for Windows environments. MacOS/Linux fallback to OS Keyring (Keychain/DPAPI).
 - **Context Window**: Verification latency scales linearly with the number of claims; massive responses (>2048 tokens) may see a lag.
 
 ---
@@ -100,8 +116,8 @@ print(f"Passed Grounding: {result['passed']}") # True
 
 ## 🗺️ Maturation Roadmap
 
-- **Phase 1 (May 2026)**: Monorepo consolidation, Ed25519 forensics, NLI verification.
-- **Phase 2 (Q3 2026)**: TPM 2.0 Hardware Binding, Secure Enclaves (Intel SGX).
+- **Phase 1 (May 2026)**: Monorepo consolidation, TPM 2.0 / Ed25519 forensics, NLI verification.
+- **Phase 2 (Q3 2026)**: Secure Enclaves (Intel SGX), Remote Attestation Protocol.
 - **Phase 3 (2027)**: Formal verification of the policy engine, Zero-Knowledge Proofs for compliance.
 
 ---

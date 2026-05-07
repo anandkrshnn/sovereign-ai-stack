@@ -61,3 +61,13 @@ vaults/
 *.key
 *.sig
 !sovereign_ai/verify/models/
+
+# Forensic & Test Artifacts
+*.checkpoint
+test_policy.yaml
+test_latency.db
+perf_test/
+test_perf/
+benchmarks/
+latency_report.py
+scripts/latency_report.py

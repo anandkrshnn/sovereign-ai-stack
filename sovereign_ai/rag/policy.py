@@ -1,8 +1,11 @@
 import yaml
 import logging
-from typing import List, Dict, Any, Optional
+import base64
+from typing import List, Dict, Any, Optional, Union
 from dataclasses import dataclass
 from pathlib import Path
+from cryptography.hazmat.primitives.asymmetric import ed25519, ec
+from cryptography.hazmat.primitives import hashes
 
 from .schemas import SearchResult, PolicyDecision
 
@@ -24,20 +27,81 @@ class PolicyEngine:
     Acts as the 'Sovereign Airlock', filtering chunks based on principal attributes.
     """
     
-    def __init__(self, policy_path: Optional[str] = None):
+    def __init__(self, policy_path: Optional[str] = None, trusted_public_key: Optional[Union[bytes, str]] = None, strict_mode: bool = False):
+        """
+        Initialize the Policy Engine.
+        
+        Args:
+            policy_path: Path to policy YAML.
+            trusted_public_key: Raw bytes or B64 string of the public key allowed to sign policies.
+            strict_mode: If True, rejection of unsigned or invalid policies is mandatory.
+        """
         if policy_path:
             self.policy_path = Path(policy_path)
         else:
             self.policy_path = None
+            
+        self.trusted_public_key = self._parse_public_key(trusted_public_key)
+        self.strict_mode = strict_mode
         self.policy = self._load_policy()
         self.version = self.policy.get("version", "1.1.0a2")
+
+    def _parse_public_key(self, key_data: Optional[Union[bytes, str]]):
+        if not key_data:
+            return None
+        if isinstance(key_data, str):
+            try:
+                return base64.b64decode(key_data)
+            except:
+                return key_data.encode()
+        return key_data
+
+    def verify_signature(self) -> bool:
+        """Verify the policy file against its .sig counterpart."""
+        if not self.policy_path or not self.trusted_public_key:
+            return not self.strict_mode
+
+        sig_path = self.policy_path.with_suffix(self.policy_path.suffix + ".sig")
+        if not sig_path.exists():
+            logger.error(f"Policy signature MISSING at {sig_path}")
+            return False
+
+        try:
+            with open(self.policy_path, "rb") as f:
+                content = f.read()
+            with open(sig_path, "r", encoding="utf-8") as f:
+                signature = base64.b64decode(f.read())
+
+            # Verification logic based on key type
+            # We assume Ed25519 (Software) or P-256 (TPM)
+            if len(self.trusted_public_key) == 32: # Ed25519
+                pub = ed25519.Ed25519PublicKey.from_public_bytes(self.trusted_public_key)
+                pub.verify(signature, content)
+            else: # Assume P-256
+                from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+                pub = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), self.trusted_public_key)
+                pub.verify(signature, content, ec.ECDSA(hashes.SHA256()))
+                
+            logger.info(f"Policy signature VERIFIED for {self.policy_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Policy signature VERIFICATION FAILED: {e}")
+            return False
     
     def _load_policy(self) -> Dict[str, Any]:
-        """Load YAML policy or return default safe policy if missing."""
+        """Load YAML policy or return default safe policy if missing/invalid."""
+        # 1. Existence Check
         if not self.policy_path or not self.policy_path.exists():
             logger.warning(f"Policy file NOT FOUND at {self.policy_path}. Using 'Deny-All' safety default.")
             return {"allow": [], "deny": [{"classification": "all"}], "limits": {"max_results": 0}}
             
+        # 2. Integrity Check (Signed Policies)
+        if self.trusted_public_key or self.strict_mode:
+            if not self.verify_signature():
+                logger.critical("FORCED POLICY DENIAL: Signature invalid or missing in strict mode.")
+                return {"allow": [], "deny": [{"classification": "all"}], "limits": {"max_results": 0}}
+
+        # 3. YAML Parse
         try:
             with open(self.policy_path, "r", encoding="utf-8") as f:
                 policy = yaml.safe_load(f)

@@ -7,10 +7,9 @@ from pathlib import Path
 import yaml
 
 from .store import Store
-from .audit import RAGAuditLogger
+from ..common.audit import SovereignAuditLogger, Principal
 from .db_utils import get_db_status
 from .config import DEFAULT_DB_PATH
-from .schemas import AuditRecord
 
 app = FastAPI(title="Sovereign Hub")
 
@@ -35,7 +34,7 @@ async def get_status():
     db_status = get_db_status(db_path_global, password_global)
     
     # 2. Audit Status
-    audit_logger = RAGAuditLogger() # Uses default log path
+    audit_logger = SovereignAuditLogger(base_dir="data", tenant_id="default") 
     is_valid, msg = audit_logger.verify_integrity()
     
     # 3. Stats (if accessible)
@@ -63,10 +62,10 @@ async def get_status():
         "sovereignty_score": 93 # Placeholder for v0.4.0 baseline
     }
 
-@app.get("/api/logs", response_model=List[AuditRecord])
+@app.get("/api/logs")
 async def get_logs(limit: int = 50):
     """Fetch the recent compliance stream."""
-    audit_logger = RAGAuditLogger()
+    audit_logger = SovereignAuditLogger(base_dir="data", tenant_id="default")
     logs = audit_logger.read_logs()
     # Return last 'limit' logs, newest first
     return logs[-limit:][::-1]
@@ -90,7 +89,7 @@ async def get_policy():
 @app.post("/api/verify-audit")
 async def verify_audit():
     """Manually trigger a full forensic verification."""
-    audit_logger = RAGAuditLogger()
+    audit_logger = SovereignAuditLogger(base_dir="data", tenant_id="default")
     is_valid, msg = audit_logger.verify_integrity()
     return {"valid": is_valid, "message": msg}
 

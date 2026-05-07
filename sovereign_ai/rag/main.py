@@ -6,6 +6,7 @@ from .generator import QwenGenerator
 from .cache import SemanticCache
 from .schemas import RAGResponse, SearchResult
 from .prompts import DEFAULT_SYSTEM_PROMPT, RAG_USER_PROMPT
+from ..common.hardware_trust import SecureAnchor
 
 class LocalRAG:
     """
@@ -22,10 +23,15 @@ class LocalRAG:
         model_name: Optional[str] = None,
         password: Optional[str] = None,
         use_reranker: bool = False,
-        reranker_model: str = "BAAI/bge-reranker-base"
+        reranker_model: str = "BAAI/bge-reranker-base",
+        enable_verification: bool = False,
+        trusted_policy_key: Optional[str] = None,
+        strict_policy: bool = False,
+        anchor: Optional[SecureAnchor] = None
     ):
         self.governed = policy_path is not None
         self.use_reranker = use_reranker
+        self.enable_verification = enable_verification
         
         if self.governed:
             self.retriever = GovernedRetriever(
@@ -34,7 +40,10 @@ class LocalRAG:
                 principal=principal,
                 password=password,
                 use_reranker=use_reranker,
-                reranker_model=reranker_model
+                reranker_model=reranker_model,
+                trusted_policy_key=trusted_policy_key,
+                strict_policy=strict_policy,
+                anchor=anchor
             )
         else:
             # Legacy/Ungoverned Mode
@@ -46,6 +55,11 @@ class LocalRAG:
             self.generator = QwenGenerator(model_name=model_name)
         else:
             self.generator = QwenGenerator()
+
+        self.evaluator = None
+        if self.enable_verification:
+            from sovereign_ai.verify import SovereignEvaluator
+            self.evaluator = SovereignEvaluator()
     
     def ask(self, query: str, top_k: int = 5, stream: bool = False) -> Union[RAGResponse, Generator[str, None, None]]:
         """
@@ -92,7 +106,28 @@ class LocalRAG:
             return self.generator.stream_generate(messages)
         
         answer = self.generator.generate(messages)
-        return RAGResponse(answer=answer, sources=results, model_name=self.generator.model_name)
+        
+        # 🛡️ Sovereign Airlock: Egress Verification (NLI Grounding)
+        metadata = {}
+        if self.evaluator:
+            verification = self.evaluator.evaluate(
+                query=query,
+                context=context_text,
+                answer=answer
+            )
+            metadata["verification"] = verification
+            if not verification["passed"]:
+                answer = (
+                    f"[Sovereign Verification Failed] The generated response could not be "
+                    f"deterministically grounded in the local context (Score: {verification['grounding_score']:.2f})."
+                )
+        
+        return RAGResponse(
+            answer=answer, 
+            sources=results, 
+            model_name=self.generator.model_name,
+            metadata=metadata
+        )
 
     def _format_context(self, results: List[SearchResult]) -> str:
         """Format retrieved chunks into a context string with citations."""
@@ -124,7 +159,10 @@ class AsyncLocalRAG:
         reranker_model: str = "BAAI/bge-reranker-base",
         vector_dsn: Optional[str] = None,
         use_cache: bool = True,
-        cache_dir: str = ".cache"
+        cache_dir: str = ".cache",
+        trusted_policy_key: Optional[str] = None,
+        strict_policy: bool = False,
+        anchor: Optional[SecureAnchor] = None
     ):
         self.governed = (policy_path is not None) or (tenant_id != "default")
         self.use_reranker = use_reranker
@@ -142,13 +180,22 @@ class AsyncLocalRAG:
                 password=password,
                 use_reranker=use_reranker,
                 reranker_model=reranker_model,
-                vector_dsn=vector_dsn
+                vector_dsn=vector_dsn,
+                trusted_policy_key=trusted_policy_key,
+                strict_policy=strict_policy,
+                anchor=anchor
             )
         else:
             self.retriever = AsyncFTS5Retriever(db_path, password=password)
             
         self.generator = QwenGenerator(model_name=model_name) if model_name else QwenGenerator()
         self.cache = SemanticCache(cache_dir=cache_dir) if use_cache else None
+        
+        self.evaluator = None
+        if (policy_path is not None) or (tenant_id != "default"):
+             # In async/tenant mode, we default to enabling the evaluator if it's a governed environment
+             from sovereign_ai.verify import SovereignEvaluator
+             self.evaluator = SovereignEvaluator()
 
     async def ask(self, query: str, intent: str = "general", top_k: int = 5, stream: bool = False) -> Union[RAGResponse, AsyncGenerator[str, None]]:
         """
@@ -198,14 +245,30 @@ class AsyncLocalRAG:
         # Generation is CPU/GPU bound, offload to thread to keep loop alive
         answer = await asyncio.to_thread(self.generator.generate, messages)
         
-        # 4. Egress Secret Scanning (Fail-Closed)
-        from .utils import contains_secret
-        if contains_secret(answer):
-            logger.error("Secret detected in generated answer! Redacting response.")
-            answer = "[Sovereign Privacy Guardrail] The generated response was blocked due to potential credential leakage."
-            results = [] # Strip sources if response was blocked
-            
-        response = RAGResponse(answer=answer, sources=results, model_name=self.generator.model_name)
+        # 🛡️ Sovereign Airlock: Egress Verification (NLI Grounding)
+        metadata = {}
+        if self.evaluator:
+            # Offload heavy NLI check to thread
+            verification = await asyncio.to_thread(
+                self.evaluator.evaluate,
+                query=query,
+                context=context_text,
+                answer=answer
+            )
+            metadata["verification"] = verification
+            if not verification["passed"]:
+                answer = (
+                    f"[Sovereign Verification Failed] The generated response could not be "
+                    f"deterministically grounded in the local context (Score: {verification['grounding_score']:.2f})."
+                )
+                results = [] # Strip sources for failed verification
+
+        response = RAGResponse(
+            answer=answer, 
+            sources=results, 
+            model_name=self.generator.model_name,
+            metadata=metadata
+        )
         
         # 5. Cache Update
         if self.cache and not stream:
