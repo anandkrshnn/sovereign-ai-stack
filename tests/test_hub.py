@@ -9,7 +9,7 @@ client = TestClient(app)
 
 @pytest.fixture
 def mock_audit_logger():
-    with patch("sovereign_ai.rag.hub.RAGAuditLogger") as mock:
+    with patch("sovereign_ai.rag.hub.SovereignAuditLogger") as mock:
         instance = mock.return_value
         instance.verify_integrity.return_value = (True, "Forensic chain intact.")
         instance.read_logs.return_value = []
@@ -53,18 +53,14 @@ def test_api_status(mock_audit_logger, mock_db_utils):
 
 def test_api_logs(mock_audit_logger):
     """Test the compliance stream endpoint with valid schema."""
-    record = AuditRecord(
-        event_id="abc-123",
-        principal="test-user",
-        query_hash="hash",
-        query_preview="What is...",
-        decision=PolicyDecision(action="allow", reason="Rules pass"),
-        candidate_count=5,
-        allowed_count=5,
-        denied_count=0,
-        curr_hash="hash-123",
-        sequence_number=1
-    )
+    record = {
+        "event_id": "abc-123",
+        "principal": "test-user",
+        "event_type": "allow",
+        "data": {"reason": "Rules pass"},
+        "timestamp": 123456789.0,
+        "sequence_number": 1
+    }
     mock_audit_logger.read_logs.return_value = [record]
     
     response = client.get("/api/logs")
@@ -72,7 +68,7 @@ def test_api_logs(mock_audit_logger):
     data = response.json()
     assert len(data) == 1
     assert data[0]["principal"] == "test-user"
-    assert data[0]["decision"]["action"] == "allow"
+    assert data[0]["event_type"] == "allow"
 
 def test_api_verify_audit(mock_audit_logger):
     """Test manual verification trigger."""

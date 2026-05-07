@@ -279,7 +279,11 @@ class SignedAuditChain:
             with open(self.audit_file, 'r') as f:
                 for line in f:
                     if line.strip():
-                        events.append(json.loads(line))
+                        try:
+                            events.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            print(f"Malformed JSON in audit log")
+                            return False
         
         if not events:
             return True
@@ -469,11 +473,12 @@ class SovereignAuditLogger:
                 signing_key=self.key_mgr.get_or_create_signing_key()
             )
 
-    def log(self, event_type: str, principal: Principal, data: Dict[str, Any], correlation_id: Optional[str] = None):
+    def log(self, event_type: str, principal: Any, data: Dict[str, Any], correlation_id: Optional[str] = None):
+        p_id = principal.id if hasattr(principal, "id") else str(principal)
         event = self.chain.log_event(
             component="system",
             action=event_type,
-            principal=principal.id,
+            principal=p_id,
             event_data=data
         )
         return event.curr_hash

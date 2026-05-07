@@ -81,7 +81,8 @@ def test_audit_tamper_detection(tmp_path):
         logger.log("test_event", principal, {"i": i})
         
     # 2. Verify initial integrity
-    assert logger.verify_integrity() is True
+    is_valid, msg = logger.verify_integrity()
+    assert is_valid is True
     
     # 3. TAMPER: Mutate a record in the MIDDLE
     with open(logger.log_path, "r") as f:
@@ -95,7 +96,8 @@ def test_audit_tamper_detection(tmp_path):
         f.writelines(lines)
         
     # 4. Integrity check should CATCH this
-    assert logger.verify_integrity() is False
+    is_valid, msg = logger.verify_integrity()
+    assert is_valid is False
 
 @pytest.mark.skip(reason="Anchor file replaced by per-event Ed25519 signatures in v1.0.0")
 def test_hardware_binding_fails_on_deletion(tmp_path):
@@ -106,7 +108,8 @@ def test_hardware_binding_fails_on_deletion(tmp_path):
     logger.log("evt1", principal, {})
     logger.log("evt2", principal, {})
     
-    assert logger.verify_integrity() is True
+    is_valid, msg = logger.verify_integrity()
+    assert is_valid is True
     
     # TAMPER: Delete the last line
     with open(logger.log_path, "r") as f:
@@ -116,4 +119,5 @@ def test_hardware_binding_fails_on_deletion(tmp_path):
         f.writelines(lines[:-1]) # Remove last event
         
     # Should FAIL because the log_path's final hash won't match the saved anchor
-    assert logger.verify_integrity() is False
+    is_valid, msg = logger.verify_integrity()
+    assert is_valid is False

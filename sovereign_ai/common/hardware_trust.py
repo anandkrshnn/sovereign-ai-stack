@@ -6,9 +6,14 @@ from typing import Optional, Any
 from cryptography.hazmat.primitives.asymmetric import ed25519, ec
 from cryptography.hazmat.primitives import serialization, hashes
 from .schemas import SigningAlgorithm
-
 import ctypes
-from ctypes import wintypes
+import sys
+
+# Windows-specific imports
+if sys.platform == "win32":
+    from ctypes import wintypes
+else:
+    wintypes = None
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +116,8 @@ class WindowsTPMAnchor(SecureAnchor):
         self._is_hardware = False
         
         try:
+            if sys.platform != "win32":
+                raise RuntimeError("TPM anchoring only supported on Windows")
             self._init_tpm()
             self._is_hardware = True
         except Exception as e:
