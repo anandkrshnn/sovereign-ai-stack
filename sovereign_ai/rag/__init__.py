@@ -35,6 +35,9 @@ from .cache import SemanticCache
 from .policy import PolicyEngine
 from ..common.audit import SovereignAuditLogger
 
+# Backward compatibility alias
+RAGAuditLogger = SovereignAuditLogger
+
 __all__ = [
     # Primary interface
     "LocalRAG",
@@ -52,4 +55,5 @@ __all__ = [
     "SemanticCache",
     "PolicyEngine",
     "SovereignAuditLogger",
+    "RAGAuditLogger",
 ]

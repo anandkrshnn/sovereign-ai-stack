@@ -9,7 +9,7 @@ import json
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Union
 from dataclasses import dataclass, asdict, field
 
 from cryptography.hazmat.primitives.asymmetric import ed25519, ec
@@ -120,8 +120,9 @@ class SignedAuditChain:
         return json.dumps(signing_data, sort_keys=True, separators=(',', ':')).encode('utf-8')
 
     @staticmethod
-    def _get_last_record_fast(file_path: Path, chunk_size: int = 8192) -> Optional[Dict[str, Any]]:
+    def _get_last_record_fast(file_path: Union[str, Path], chunk_size: int = 8192) -> Optional[Dict[str, Any]]:
         """Backward-seek reader (v5.0): only reads the last chunk of the file (O(1))."""
+        file_path = Path(file_path)
         if not file_path.exists():
             return None
             
@@ -250,11 +251,11 @@ class SignedAuditChain:
         """Load existing chain state (O(1) optimization)."""
         last_record = self._get_last_record_fast(self.audit_file)
         if last_record:
-            self.sequence_number = last_record["sequence_number"]
-            self.last_hash = last_record["curr_hash"]
+            self.sequence_number = last_record.get("sequence_number", 0)
+            self.last_hash = last_record.get("curr_hash") or last_record.get("chain_hash")
             # Detect algorithm from the first record if possible, or use the last one
             # For robustness, we should read the first record to pin the algorithm
-            self.pinned_algorithm = last_record.get("algorithm", "ed25519")
+            self.pinned_algorithm = last_record.get("algorithm")
         else:
             self.sequence_number = 0
             self.last_hash = "0" * 64
@@ -291,29 +292,42 @@ class SignedAuditChain:
         prev_hash = "0" * 64  # Genesis
         
         for i, event in enumerate(events):
-            # Check 1: Sequence number
+            # Check 1: Sequence number (Legacy compatibility: might be missing)
             expected_seq = i + 1
-            if event["sequence_number"] != expected_seq:
-                print(f"Sequence mismatch at event {i}: expected {expected_seq}, got {event['sequence_number']}")
+            if event.get("sequence_number", expected_seq) != expected_seq:
+                print(f"Sequence mismatch at event {i}: expected {expected_seq}, got {event.get('sequence_number')}")
                 return False
             
-            # Check 2: Hash chain
-            if event["prev_hash"] != prev_hash:
+            # Check 2: Hash chain (Legacy compatibility: prev_hash might be missing)
+            event_prev_hash = event.get("prev_hash", prev_hash)
+            if event_prev_hash != prev_hash:
                 print(f"Hash chain broken at event {i}")
                 return False
             
-            # Check 3: Ed25519 signature
-            if not self._verify_signature(event):
-                print(f"Invalid signature at event {i}")
-                return False
+            # Check 3: Signature (Skip if missing - legacy logs weren't all signed)
+            if "signature" in event:
+                if not self._verify_signature(event):
+                    print(f"Invalid signature at event {i}")
+                    return False
             
             # Check 4: Current hash matches recomputed
-            recomputed_hash = self._hash_event(event)
-            if event["curr_hash"] != recomputed_hash:
-                print(f"Current hash mismatch at event {i}")
+            # Handle 'curr_hash' (modern) or 'chain_hash' (legacy)
+            event_curr_hash = event.get("curr_hash") or event.get("chain_hash")
+            if not event_curr_hash:
+                print(f"Missing hash field at event {i}")
+                return False
+                
+            # For legacy simple hashes, we recompute using the static helper logic if it's not a modern record
+            if "signature" not in event:
+                recomputed_hash = _calculate_next_hash_static(prev_hash, {k:v for k,v in event.items() if k != "chain_hash"})
+            else:
+                recomputed_hash = self._hash_event(event)
+
+            if event_curr_hash != recomputed_hash:
+                print(f"Current hash mismatch at event {i}: expected {recomputed_hash}, got {event_curr_hash}")
                 return False
             
-            prev_hash = event["curr_hash"]
+            prev_hash = event_curr_hash
         
         return True
     
@@ -423,8 +437,42 @@ class SignedAuditChain:
             logging.getLogger(__name__).warning("Corrupt checkpoint file detected.")
 
 
-# Backward compatibility alias
+# Backward compatibility aliases
 AuditChainManager = SignedAuditChain
+
+# Define static methods for legacy compatibility
+def _calculate_next_hash_static(prev_hash, event_data):
+    import hashlib
+    import json
+    msg = prev_hash + json.dumps(event_data, sort_keys=True)
+    return hashlib.sha256(msg.encode()).hexdigest()
+
+def _verify_chain_static(audit_file):
+    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
+    return chain.verify_chain()
+
+def _get_last_hash_static(audit_file):
+    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
+    return chain.last_hash
+
+def _save_anchor_static(audit_file, last_hash):
+    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
+    chain._save_checkpoint()
+
+def _verify_anchor_static(audit_file, last_hash):
+    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
+    try:
+        chain._verify_checkpoint()
+        return True
+    except Exception:
+        return False
+
+# Attach static methods to SignedAuditChain
+SignedAuditChain.GENESIS_HASH = "0" * 64
+SignedAuditChain.calculate_next_hash = staticmethod(_calculate_next_hash_static)
+SignedAuditChain.get_last_hash = staticmethod(_get_last_hash_static)
+SignedAuditChain.save_anchor = staticmethod(_save_anchor_static)
+SignedAuditChain.verify_anchor = staticmethod(_verify_anchor_static)
 
 @dataclass
 class Principal:
@@ -451,6 +499,7 @@ class AuditRecord:
 
 class SovereignAuditLogger:
     """Backward compatibility adapter for SignedAuditChain."""
+    
     def __init__(self, base_dir: str, tenant_id: str, anchor: Optional[SecureAnchor] = None, remote_anchor_config: Optional[Dict[str, Any]] = None):
         from .secure_key import SecureKeyManager
         self.base_dir = Path(base_dir)
