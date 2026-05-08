@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, ec
 from cryptography.hazmat.primitives import serialization, hashes
 from .hardware_trust import SecureAnchor, SoftwareSimulatorAnchor, LegacyRawAnchor, WindowsTPMAnchor
 from .schemas import SigningAlgorithm, RecordStatus
+from .merkle import MerkleTree
 
 
 @dataclass
@@ -43,6 +44,10 @@ class AuditEvent:
     # Transparency Metadata (v0.1.0a2)
     is_hardware_anchored: bool = False
     attestation_statement: Optional[str] = None
+    
+    # Merkle Aggregation (v0.1.0a2)
+    merkle_root: Optional[str] = None
+    merkle_proof: Optional[List[Dict[str, str]]] = None
 
 
 class SecurityHalt(Exception):
@@ -99,6 +104,10 @@ class SignedAuditChain:
         self.sequence_number = 0
         self.last_hash = "0" * 64  # Genesis hash
         self.pinned_algorithm: Optional[str] = None
+        
+        # Merkle Buffer (v0.1.0a2)
+        self.event_buffer: List[Dict[str, Any]] = []
+        self.checkpoint_interval = 10  # Aggregate every 10 events
         
         # 5. Checkpoint for truncation detection
         self.checkpoint_file = self.audit_file.with_suffix(".checkpoint")
@@ -247,8 +256,48 @@ class SignedAuditChain:
         # 6. Update checkpoint (truncation protection)
         self._save_checkpoint()
         
-        # 7. Return typed event
+        # 7. Update Merkle Buffer
+        self._update_merkle_aggregation(event)
+        
+        # 8. Return typed event
         return AuditEvent(**event)
+
+    def _update_merkle_aggregation(self, event: Dict[str, Any]):
+        """Periodically aggregates events into a Merkle Block."""
+        self.event_buffer.append(event)
+        
+        if len(self.event_buffer) >= self.checkpoint_interval:
+            self._finalize_merkle_block()
+
+    def _finalize_merkle_block(self):
+        """Computes Merkle Root for the current buffer and clears it."""
+        if not self.event_buffer:
+            return
+            
+        # Use curr_hash as leaves
+        hashes = [e["curr_hash"] for e in self.event_buffer]
+        tree = MerkleTree(hashes)
+        root = tree.root
+        
+        # Log a CHECKPOINT event containing the Merkle Root
+        checkpoint_event = self.log_event(
+            component="system",
+            action="MERKLE_CHECKPOINT",
+            principal="system",
+            event_data={
+                "merkle_root": root,
+                "block_size": len(self.event_buffer),
+                "start_seq": self.event_buffer[0]["sequence_number"],
+                "end_seq": self.event_buffer[-1]["sequence_number"]
+            }
+        )
+        
+        # Clear buffer
+        self.event_buffer = []
+
+    def flush(self):
+        """Flush the Merkle buffer to disk."""
+        self._finalize_merkle_block()
     
     def _append_to_file(self, event: Dict[str, Any]):
         """Append event to JSONL audit file."""

@@ -131,9 +131,11 @@ We provide three end-to-end examples in the [examples/](examples/) directory:
 
 ## 🗺️ Target Maturation Roadmap
 
+For detailed technical requirements to reach production readiness, see [Maturation Gates](docs/architecture/MATURATION_GATES.md).
+
 - **Phase 1 (May 2026)**: Monorepo consolidation, TPM 2.0 / Ed25519 forensics, NLI verification.
-- **Phase 2 (Q3 2026)**: Secure Enclaves (Intel SGX), Remote Attestation Protocol.
-- **Phase 3 (2027)**: Formal verification of the policy engine, Zero-Knowledge Proofs for compliance.
+- **Phase 2 (Q3 2026)**: Knowledge-Augmented Gates (K-Gate), Remote Attestation Protocol.
+- **Phase 3 (2027)**: Secure Enclaves (Intel SGX), ZK-Proofs for compliance.
 
 ---
 

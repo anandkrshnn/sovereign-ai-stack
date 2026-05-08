@@ -1,44 +1,52 @@
-# 🛡️ Sovereign AI Threat Model
+# 🛡️ Sovereign AI Threat Model (v0.1.0a2)
 
-**Version**: 0.1.0-alpha  
-**Scope**: Local-First RAG Stack
+This document identifies the security boundaries and adversarial risks of the Sovereign AI Stack, mapping them to the **STRIDE** methodology.
 
-## 1. Trust Assumptions
-- **Host Integrity**: We assume the underlying Operating System and Hardware are not compromised.
-- **Local Isolation**: We assume the local file system provides basic read/write protection between user accounts.
-- **Key Storage**: We trust the OS-level secure storage (Apple Keychain, Windows DPAPI, Linux Secret Service) to protect private Ed25519 keys.
+## 1. Trust Boundaries & Assumptions
+- **TB1: Host OS Kernel**: We assume the underlying kernel (Windows/Linux/macOS) and its filesystem permissions are not compromised.
+- **TB2: Secure Keyring**: We assume the OS-level secure storage (DPAPI/Keychain) provides isolation for the local `Master Key`.
+- **TB3: Verification Model**: The NLI Cross-Encoder is treated as a "Semi-Trusted" component; we rely on its statistical performance, not formal proof.
 
-## 2. Adversarial Personas
-| Persona | Goal | Capability |
-|---|---|---|
-| **Malicious User** | Extract unauthorized data | Prompt injection, credential stuffing. |
-| **Tampering Actor** | Modify audit logs to hide actions | Local file system access. |
-| **Model Poisoner** | Bias the NLI verifier | Providing malicious training data (Out of scope). |
+## 2. STRIDE Risk Analysis
 
-## 3. High-Level Data Flow
-1. **Input**: User prompt enters the `Bridge`.
-2. **Retrieve**: Context pulled from `SQLite/LanceDB`.
-3. **Govern**: `PolicyEngine` applies ABAC rules.
-4. **Verify**: `SovereignEvaluator` (NLI) checks grounding.
-5. **Output**: Verified answer returned with signed `AuditRecord`.
+| Category | Risk Name | Description | Mitigation |
+| :--- | :--- | :--- | :--- |
+| **S**poofing | **Identity Forgery** | An attacker impersonates a valid Principal in the audit chain. | **TPM-Anchored Signing**: Ed25519 keys are bound to hardware (Windows) or software-simulated hardware. |
+| **T**ampering | **Audit Truncation** | Deleting the last N records of the log to hide recent activity. | **Merkle Checkpoints**: Periodic Merkle roots are signed and hashed into the chain, preventing silent truncation. |
+| **R**epudiation | **Forensic Denial** | A user claims they didn't run a prompt despite it being in the log. | **Hardware-Backed Timestamps**: Every log entry includes an immutable sequence and hash-chain link. |
+| **I**nformation Disclosure | **Airlock Blindness** | LLM uses clever prompt injection to hide sensitive data in a "grounded-looking" answer. | **NLI Entailment + ABAC**: Policy engine filters retrieval *before* generation; Airlock verifies *after* generation. |
+| **D**enial of Service | **Inference Overblocking** | The verifier blocks valid reasoning (The "Inference Gap"), rendering the AI useless. | **Roadmap: K-Gate**: Moving toward a knowledge-augmented ensemble to distinguish reasoning from hallucinations. |
+| **E**levation of Privilege | **Policy Bypass** | Prompt injection bypasses the ABAC Policy Engine. | **Strict Schema Enforcement**: Input prompts are sanitized and passed through a constrained `Bridge` interface. |
 
-## 4. Key Risks & Mitigations
+## 3. High-Integrity Data Flow
 
-### R1: Hallucination Bypass
-- **Risk**: The LLM generates a convincing but false answer that confuses the NLI verifier.
-- **Mitigation**: Fail-closed logic on low NLI scores (<0.8) and mandatory citation of source chunks.
+1.  **Request**: User -> `Bridge` (Authenticated via Local Key).
+2.  **Filter**: `PolicyEngine` (ABAC) filters RAG context based on Principal.
+3.  **Generate**: LLM generates response using filtered context.
+4.  **Airlock**: `SovereignEvaluator` calculates `grounding_score`.
+5.  **Audit**: `SignedAuditChain` computes `curr_hash`, updates `Merkle Buffer`.
+6.  **Checkpoint**: Every 10 events, a **Merkle Root** is signed and committed.
 
-### R2: Audit Log Tampering
-- **Risk**: An attacker deletes or modifies the forensic log to hide data extraction.
-- **Mitigation**: **Ed25519 Signatures** and Hash-Chaining. Any modification breaks the chain and fails the `verify_integrity()` check.
+## 4. Specific Attack Surfaces
 
-### R3: Key Extraction
-- **Risk**: A local attacker extracts the Ed25519 private key to forge audit logs.
-- **Mitigation**: Keys are stored in the OS secure keyring, not as plaintext files. Future work: TPM 2.0 binding.
+### AS1: The Verification Gate (Airlock)
+- **Attack**: Adversarial prompt designed to trigger a "Neutral" NLI response while leaking info.
+- **Surface**: The NLI model's latent space.
+- **Maturity**: Low. Statistical validation is ongoing (see [Maturity Report](../benchmark/airlock_maturity.json)).
+
+### AS2: Local Storage (Audit Logs)
+- **Attack**: Modification of the `.audit` JSONL file.
+- **Surface**: File system.
+- **Maturity**: High. Merkle-linked hashing makes modifications computationally evident.
+
+### AS3: Trusted Execution Fallback
+- **Attack**: Forging a hardware attestation statement on a non-TPM system (macOS/Linux).
+- **Surface**: The `hardware_trust.py` simulation layer.
+- **Maturity**: Moderate. Clearly labeled as "Software Simulated" in logs to prevent false confidence.
 
 ---
 
-## 5. Out of Scope
-- Protection against physical RAM dumping or Cold Boot attacks.
-- Network-level protection (Bridge is assumed to run on `localhost` or via encrypted VPN).
-- LLM weights protection (weights are assumed public or locally controlled).
+## 5. Security Posture Roadmap
+- [ ] **Phase 2**: Transition from Software Simulation to **Intel SGX Enclaves** for Mac/Linux.
+- [ ] **Phase 2**: Formal verification of the `PolicyEngine` logic.
+- [ ] **Phase 3**: Integration of **Zero-Knowledge Proofs** for cross-tenant audit verification.

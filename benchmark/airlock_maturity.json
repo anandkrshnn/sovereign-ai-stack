@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "timestamp": 1778237592.1930342,
+    "threshold": 0.85,
+    "dataset_size": 10
+  },
+  "metrics": {
+    "accuracy": 0.8,
+    "precision": 0.7143,
+    "recall": 1.0,
+    "f1_score": 0.8333,
+    "avg_latency_ms": 207.76
+  }
+}
