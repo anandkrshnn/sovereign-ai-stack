@@ -1,6 +1,9 @@
 # NIST AI Risk Management Framework (RMF 1.0) Mapping
 
-This document provides a technical mapping between the Sovereign AI Stack features and the NIST AI RMF functions.
+> [!IMPORTANT]
+> **Regulatory Disclaimer**: This mapping is intended for **informational and architectural guidance** only. It supports organizational risk and governance documentation but does **not** constitute a formal audit or proof of production compliance. This is a technical reference for an Alpha Research Preview.
+
+This document identifies how the **Sovereign AI Stack** technical features align with the NIST AI RMF functions to support organizational governance.
 
 | Function | Category | Sovereign AI Stack Implementation | Status |
 | :--- | :--- | :--- | :--- |
