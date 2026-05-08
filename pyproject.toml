@@ -46,9 +46,6 @@ dependencies = [
     "tiktoken>=0.5.0",
 ]
 
-[project.urls]
-"Source" = "https://github.com/anandkrshnn/sovereign-ai-stack"
-"Issue Tracker" = "https://github.com/anandkrshnn/sovereign-ai-stack/issues"
 
 [project.optional-dependencies]
 # Core verification (included in default install)
