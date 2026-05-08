@@ -5,6 +5,22 @@ All notable changes to the Sovereign AI Stack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0a1] - 2026-05-08
+
+### Added
+- **TPM P-256 Hardware Anchoring**: Integrated Windows TPM (via `ncrypt.dll`) for anchoring forensic audit chains to hardware root-of-trust.
+- **Genesis Transition Protocol**: Implemented `GENESIS_TRANSITION` blocks to maintain forensic continuity across algorithm migrations (e.g., Ed25519 to P-256 Handover).
+- **Adversarial Truncation Detection**: Added `SecurityHalt` triggers that detect and block attempts to truncate or manipulate historical audit records.
+- **Unified Forensic Bridge**: Refactored the audit manager to support multi-version signature validation, bridging legacy hash chains with modern signed records.
+
+### Fixed
+- **Monorepo Dependency Gaps**: Resolved missing `tiktoken`, `duckdb`, and `opentelemetry` dependencies in the consolidated bridge orchestrator.
+- **Hardware Lifecycle Cleanup**: Fixed TPM handle leaks and name errors in the `hardware_trust` module.
+
+### Housekeeping
+- Purged all compiled bytecode and binary SQLite artifacts from the repository history.
+- Hardened `.gitignore` with strict environment and demonstration data patterns.
+
 ## [1.0.0] - 2026-04-29
 
 ### Added

@@ -1,11 +1,11 @@
 [project]
 name = "sovereign-ai-stack"
-version = "1.1.0a2"
+version = "0.1.0a1"
 description = "Local-first RAG with policy gating and audit-friendly logging — reference implementation"
 authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 keywords = [
     "sovereign-ai",
@@ -29,6 +29,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Security :: Cryptography",
 ]
+
+[project.urls]
+"Source" = "https://github.com/anandkrshnn/sovereign-ai-stack"
+"Issue Tracker" = "https://github.com/anandkrshnn/sovereign-ai-stack/issues"
 
 dependencies = [
     "pydantic>=2.5.0",
