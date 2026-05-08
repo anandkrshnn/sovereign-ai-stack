@@ -264,6 +264,10 @@ class SignedAuditChain:
 
     def _update_merkle_aggregation(self, event: Dict[str, Any]):
         """Periodically aggregates events into a Merkle Block."""
+        # Prevent infinite recursion by excluding checkpoints from the buffer
+        if event.get("action") == "MERKLE_CHECKPOINT":
+            return
+            
         self.event_buffer.append(event)
         
         if len(self.event_buffer) >= self.checkpoint_interval:
