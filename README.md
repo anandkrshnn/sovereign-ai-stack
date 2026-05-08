@@ -30,7 +30,9 @@ flowchart TD
     G --> H["Forensic Certificate"]
 ```
 
-Detailed architecture documentation can be found in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Detailed architecture documentation, including C4 Container Diagrams and Architecture Decision Records (ADRs), can be found in [docs/architecture/c4-container-v0.1.0a2.md](docs/architecture/c4-container-v0.1.0a2.md).
+
+For an honest assessment of current technical debt and discrepancies, see [docs/architecture/KNOWN_GAPS.md](docs/architecture/KNOWN_GAPS.md).
 
 ---
 
@@ -127,7 +129,7 @@ We provide three end-to-end examples in the [examples/](examples/) directory:
 
 ---
 
-## 🗺️ Maturation Roadmap
+## 🗺️ Target Maturation Roadmap
 
 - **Phase 1 (May 2026)**: Monorepo consolidation, TPM 2.0 / Ed25519 forensics, NLI verification.
 - **Phase 2 (Q3 2026)**: Secure Enclaves (Intel SGX), Remote Attestation Protocol.
