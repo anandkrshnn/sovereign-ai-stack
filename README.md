@@ -20,14 +20,14 @@ The stack operates as an experimental **Verify-First** pipeline.
 
 ```mermaid
 flowchart TD
-    A[User Query + Principal] --> B[Hybrid Retriever<br/>BM25 + Dense]
-    B --> C[Context Builder]
-    C --> D[NLI Grounding Gate<br/>DeBERTa-v3<br/>≥0.85 entailment]
-    D -->|Pass| E[LLM Generation<br/>with Citations]
-    D -->|Fail| F[Verification Failure<br/>"Insufficient Grounding"]
-    E --> G[Signed Audit Event<br/>TPM 2.0 / P-256 Chain]
+    A["User Query + Principal"] --> B["Hybrid Retriever<br/>BM25 + Dense"]
+    B --> C["Context Builder"]
+    C --> D["NLI Grounding Gate<br/>DeBERTa-v3<br/>≥0.85 entailment"]
+    D -->|Pass| E["LLM Generation<br/>with Citations"]
+    D -->|Fail| F["Verification Failure<br/>Insufficient Grounding"]
+    E --> G["Signed Audit Event<br/>TPM 2.0 / P-256 Chain"]
     F --> G
-    G --> H[Forensic Certificate]
+    G --> H["Forensic Certificate"]
 ```
 
 Detailed architecture documentation can be found in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -55,9 +55,9 @@ sequenceDiagram
     participant U as User
 
     L->>V: "The patient's heart rate is 72 bpm."
-    Note over V: Context: "BP 120/80. Resting."
-    V-->>V: Logic: Contradiction/Neutral
-    V->>U: ALERT: "Grounding Failure"
+    Note over V: "Context: BP 120/80. Resting."
+    V-->>V: "Logic: Contradiction/Neutral"
+    V->>U: "ALERT: Grounding Failure"
 ```
 
 ---
