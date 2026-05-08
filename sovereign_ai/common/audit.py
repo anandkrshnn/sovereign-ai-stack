@@ -39,6 +39,10 @@ class AuditEvent:
     signature: str  # Base64-encoded Ed25519 signature
     public_key: str  # Base64-encoded Ed25519 public key
     algorithm: str = "ed25519"
+    
+    # Transparency Metadata (v0.1.0a2)
+    is_hardware_anchored: bool = False
+    attestation_statement: Optional[str] = None
 
 
 class SecurityHalt(Exception):
@@ -116,6 +120,7 @@ class SignedAuditChain:
             "event_data": event["event_data"],
             "prev_hash": event["prev_hash"],
             "algorithm": event.get("algorithm", "ed25519"), # Include algorithm in signature
+            "is_hardware_anchored": event.get("is_hardware_anchored", False),
         }
         return json.dumps(signing_data, sort_keys=True, separators=(',', ':')).encode('utf-8')
 
@@ -201,6 +206,7 @@ class SignedAuditChain:
             "event_data": event_data,
             "prev_hash": self.last_hash,
             "algorithm": self.anchor.algorithm.value,
+            "is_hardware_anchored": self.anchor.is_hardware,
         }
         
         # Enforce pinned algorithm or lock it in
@@ -222,7 +228,11 @@ class SignedAuditChain:
         import base64
         event["public_key"] = base64.b64encode(public_key_bytes).decode('utf-8')
         
-        # 3. Sign the canonical JSON
+        # 3. Add Hardware Attestation Statement (v0.1.0a2)
+        attestation = self.anchor.get_attestation_statement()
+        event["attestation_statement"] = base64.b64encode(attestation).decode('utf-8')
+        
+        # 4. Sign the canonical JSON
         event["signature"] = self._sign_event(event)
         
         # 4. Hash complete event (creates chain link)

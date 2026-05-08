@@ -1,16 +1,16 @@
-# Sovereign AI Stack
+# Sovereign AI Stack (Reference Implementation)
 
-**Local-First RAG with Verifiable Grounding and Forensic Auditability**
+**A Technical Framework for Local-First RAG Verification and Forensic Auditability**
 
 > [!CAUTION]
-> **Alpha Release (v1.1.0a2) | Research Prototype**
-> This repository is for technical exploration and research purposes only. It is **not** currently certified for production use with sensitive data. Last security/architecture audit: May 2026.
+> **Experimental Research Preview (v0.1.0a2)**
+> This repository is a reference implementation for technical exploration. It is **not** currently certified for production use with sensitive data. Last architecture audit: May 2026.
 
 ---
 
 ## 🔬 Overview
 
-The **Sovereign AI Stack** is a reference implementation for high-trust, local-first agentic workflows. It addresses the "Black Box" problem in RAG by enforcing **NLI-based Grounding Verification** and **Cryptographically Anchored Audit Trails**.
+The **Sovereign AI Stack** is an experimental reference implementation for local-first AI governance. It explores a **Verify-First** architecture using **NLI-based Grounding Checks** and **Signed Forensic Audit Trails** to mitigate hallucination and tampering risks in regulated environments.
 
 ---
 
@@ -36,11 +36,23 @@ Detailed architecture documentation can be found in [docs/ARCHITECTURE.md](docs/
 
 ## ✨ Key Features (Alpha)
 
-- **NLI Grounding Gate (Experimental)**: Uses a local cross-encoder (`DeBERTa-v3`) to score logical entailment between context and LLM claims.
-- **Hardware-Anchored Audit Chain**: Every decision event is signed with **TPM-bound P-256 signatures** (Windows) or Ed25519 hash chains, providing a hardware root of trust.
+- **NLI Grounding Gate (Experimental)**: Uses a local cross-encoder (`DeBERTa-v3`) to score logical entailment between context and LLM claims. This is a heuristic verification layer, not a formal proof.
+- **Forensic Audit Chain (Alpha)**: Every decision event is signed with **Asymmetric Signatures** (P-256 on Windows TPM / Ed25519 in software).
 - **ABAC Policy Engine**: Attribute-Based Access Control filters context *before* generation.
-- **Physical Multi-Tenancy**: Isolation of encrypted SQLite/LanceDB silos per principal.
-- **Compatibility Layer**: OpenAI-compatible gateway via the `sovereign-ai-bridge`.
+- **Compatibility Layer**: Basic OpenAI-compatible gateway via the `sovereign-ai-bridge`.
+
+---
+
+## 🔒 Transparency & Trust Boundaries
+
+| Feature | Research Implementation | Production Hardening Status |
+| :--- | :--- | :--- |
+| **Grounding** | NLI threshold (DeBERTa-v3) | Experimental |
+| **Forensics** | TPM P-256 (Windows) / Keyring (Fallback) | Alpha |
+| **Isolation** | Logical (Filesystem + SQL) | Prototype |
+
+> [!NOTE]
+> **Hardware Binding**: Support for **TPM 2.0 (P-256)** is currently native on Windows. In MacOS/Linux environments, the stack fallbacks to the OS Keyring. True remote attestation is on the roadmap for Phase 2.
 
 ---
 
@@ -85,15 +97,16 @@ We provide three end-to-end examples in the [examples/](examples/) directory:
 
 ---
 
-## 📈 Performance & Benchmarks
+## 📈 Technical Benchmarks (Alpha)
 
 *Hardware: MacBook Pro M2 Max (32GB) | Model: Qwen-2.5-7B-Instruct (Ollama)*
+*Note: These numbers are baseline results and have not yet been validated across diverse hardware or scaled datasets.*
 
-| Operation | Latency (P50) | Accuracy (NLI) |
+| Operation | Latency (P50) | Verification Rate |
 |---|---|---|
 | Vector Retrieval | 12ms | N/A |
 | Policy Evaluation | 4ms | 100% |
-| **NLI Verification (Airlock)** | **82ms** | **94.2% (Med-QA)** |
+| **NLI Verification (Airlock)** | **82ms** | **~94% (Med-QA Subset)** |
 | Cryptographic Signing | 1ms | 100% |
 
 ---

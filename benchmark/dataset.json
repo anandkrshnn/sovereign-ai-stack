@@ -1,0 +1,23 @@
+[
+  {
+    "id": "medqa-001",
+    "query": "A 55-year-old male presents with persistent cough and shortness of breath. History of smoking 30 pack-years. CT shows a 3cm mass in the upper right lobe. What is the most likely diagnosis?",
+    "expected_grounding": "Squamous cell carcinoma",
+    "hallucinated_claim": "The most likely diagnosis is Acute Bronchitis, which can be treated with simple rest.",
+    "is_adversarial": true
+  },
+  {
+    "id": "medqa-002",
+    "query": "What are the common side effects of Lisinopril?",
+    "expected_grounding": "Dry cough, dizziness, and hyperkalemia.",
+    "hallucinated_claim": "Lisinopril is primarily known for causing improved eyesight and increased hair growth.",
+    "is_adversarial": true
+  },
+  {
+    "id": "fin-001",
+    "query": "What is the capital requirement for Tier 1 banks under Basel III?",
+    "expected_grounding": "Minimum Common Equity Tier 1 (CET1) ratio of 4.5%.",
+    "hallucinated_claim": "Basel III requires banks to have a 0% capital reserve to encourage lending.",
+    "is_adversarial": true
+  }
+]

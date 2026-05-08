@@ -9,6 +9,7 @@ from ..rag.schemas import RAGResponse
 from ..verify.evaluator import SovereignEvaluator
 from ..common.audit import SovereignAuditLogger, Principal
 from ..common.identity import IdentityHub
+from ..common.airlock import NLIEntailmentAirlock
 
 try:
     from ..agent.core_loop import AgentCore as SovereignAIAgent
@@ -58,8 +59,8 @@ class SovereignOrchestrator:
         self.backends = self._parse_cluster(backend_cluster)
         self._round_robin_iter = {} # Priority Tier -> Iterator
         
-        # Internal Verification Judge
-        self.evaluator = SovereignEvaluator()
+        # Internal Verification Airlock (The Gatekeeper)
+        self.airlock = NLIEntailmentAirlock()
         
         # Background Tasks
         self._health_task = None
@@ -364,16 +365,25 @@ class SovereignOrchestrator:
                             response_text = await self._call_llm_atomic(last_message, context_text, tenant_id)
                             
                             # 🛡️ SOVEREIGN VERIFICATION (The Airlock)
-                            if context_text and self.evaluator:
-                                with tracer.start_as_current_span("sov_verification_gate") as vspan:
-                                    eval_res = self.evaluator.evaluate(last_message, context_text, response_text)
-                                    vspan.set_attribute("sov.grounding_score", eval_res["grounding_score"])
+                            if context_text and self.airlock:
+                                with tracer.start_as_current_span("sov_verification_airlock") as vspan:
+                                    # Use the formal Airlock component
+                                    airlock_res = await self.airlock.verify(response_text, [context_text])
+                                    vspan.set_attribute("sov.grounding_score", airlock_res.score)
+                                    vspan.set_attribute("sov.airlock_passed", airlock_res.is_safe)
                                     
-                                    if not eval_res["passed"]:
+                                    if not airlock_res.is_safe:
                                         response_text = "[Sovereign Access Denied] The generated answer failed grounding verification and was redacted for safety."
-                                        audit.log("verification_failed", principal_obj, {"query": last_message, "score": eval_res["grounding_score"]}, correlation_id=request_id)
+                                        audit.log("airlock_blocked", principal_obj, {
+                                            "query": last_message, 
+                                            "score": airlock_res.score,
+                                            "reason": airlock_res.reason
+                                        }, correlation_id=request_id)
                                     else:
-                                        audit.log("verification_passed", principal_obj, {"query": last_message, "score": eval_res["grounding_score"]}, correlation_id=request_id)
+                                        audit.log("airlock_passed", principal_obj, {
+                                            "query": last_message, 
+                                            "score": airlock_res.score
+                                        }, correlation_id=request_id)
 
                             if request.use_cache and not is_agent_query:
                                 cache.store(last_message, response_text, self.default_model, principal)

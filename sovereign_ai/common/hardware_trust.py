@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 class SecureAnchor(ABC):
     """
-    Abstract interface for Hardware Root of Trust (TPM/HSM).
-    Encapsulates key generation and signing without exposing private keys to the OS.
+    Abstract interface for Secure Key Anchoring.
+    Provides a standardized API for key generation and signing, allowing for
+    either hardware (TPM/HSM) or software-based simulation.
     """
     
     @property
@@ -44,10 +45,25 @@ class SecureAnchor(ABC):
         """Return diagnostic status of the anchor."""
         pass
 
+    @property
+    @abstractmethod
+    def is_hardware(self) -> bool:
+        """Whether the key is physically bound to hardware (TPM/HSM)."""
+        pass
+
+    @abstractmethod
+    def get_attestation_statement(self) -> bytes:
+        """
+        Return a verifiable statement (e.g. TPM Quote or Cert) 
+        proving the key is hardware-bound.
+        """
+        pass
+
 class SoftwareSimulatorAnchor(SecureAnchor):
     """
-    A simulated TPM anchor that stores the key in a local, hidden, 
-    permission-locked file to simulate a hardware-protected enclave.
+    A software-based key anchor for development and MacOS/Linux testing.
+    Simulates hardware protection by using hidden, permission-locked files.
+    **WARNING**: This does not provide a hardware root of trust.
     """
     
     def __init__(self, tenant_id: str, storage_path: str = ".tpm_sim"):
@@ -96,6 +112,10 @@ class SoftwareSimulatorAnchor(SecureAnchor):
     def get_public_key(self) -> ed25519.Ed25519PublicKey:
         return self._private_key.public_key()
 
+    @property
+    def is_hardware(self) -> bool:
+        return False
+
     def get_status(self) -> dict:
         return {
             "type": "Software Simulator",
@@ -103,10 +123,14 @@ class SoftwareSimulatorAnchor(SecureAnchor):
             "details": "Permission-locked file (simulation)"
         }
 
+    def get_attestation_statement(self) -> bytes:
+        """Simulated attestation for research purposes."""
+        return b"SOFT_SIM_ATTESTATION_V1"
+
 class WindowsTPMAnchor(SecureAnchor):
     """
-    Hardware Root of Trust via Windows Platform Crypto Provider (TPM 2.0).
-    Uses P-256 (ECDSA) anchored in the hardware TPM.
+    Secure Key Anchoring via Windows Platform Crypto Provider (TPM 2.0).
+    Provides native hardware-bound signing on supported Windows systems.
     """
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
@@ -264,12 +288,26 @@ class WindowsTPMAnchor(SecureAnchor):
         point_data = b"\x04" + x + y
         return ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), point_data)
 
+    @property
+    def is_hardware(self) -> bool:
+        return self._is_hardware
+
     def get_status(self) -> dict:
         return {
             "type": "Windows TPM 2.0" if self._is_hardware else "Windows TPM (Simulated)",
             "available": True,
             "details": f"Key: {self.key_name}" + (" [Hardware]" if self._is_hardware else " [Fallback]")
         }
+
+    def get_attestation_statement(self) -> bytes:
+        """
+        In a production implementation, this would return a TPM Quote 
+        signed by the Attestation Identity Key (AIK).
+        For this Research Preview, we return a structural placeholder.
+        """
+        if not self._is_hardware:
+            return b"TPM_SIM_ATTESTATION_V1"
+        return b"TPM_HARDWARE_ATTESTATION_V1_P256"
 
     def __del__(self):
         if hasattr(self, "_hKey") and self._hKey:
@@ -295,9 +333,16 @@ class LegacyRawAnchor(SecureAnchor):
     def get_public_key(self) -> ed25519.Ed25519PublicKey:
         return self._private_key.public_key()
 
+    @property
+    def is_hardware(self) -> bool:
+        return False
+
     def get_status(self) -> dict:
         return {
             "type": "Legacy Key",
             "available": True,
             "details": "In-memory raw private key"
         }
+
+    def get_attestation_statement(self) -> bytes:
+        return b"LEGACY_KEY_NO_ATTESTATION"

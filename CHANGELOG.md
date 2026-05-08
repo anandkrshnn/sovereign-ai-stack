@@ -5,6 +5,19 @@ All notable changes to the Sovereign AI Stack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0a2] - 2026-05-08
+
+### Added
+- **Sovereign Airlock Middleware**: Formalized the verification gate as a pluggable `SovereignAirlock` interface, enabling multi-stage grounding and safety checks.
+- **Verifiable Hardware Attestation**: Enhanced `hardware_trust.py` with `get_attestation_statement()`, allowing the audit chain to carry verifiable proof of hardware-bound trust.
+- **Transparency Metadata**: Added `is_hardware_anchored` flags and attestation proofs to every audit record for full forensic transparency.
+- **Reproducible Benchmark Harness**: Introduced `benchmark/harness.py` and a curated Med-QA adversarial dataset to empirically validate hallucination blocking rates.
+- **Transparency Documentation**: Added "Transparency & Trust Boundaries" to README and reframed compliance docs as templates to clarify Research Preview status.
+
+### Changed
+- **Research Preview Alignment**: Downgraded "GA" branding to "Experimental Research Preview" across all package metadata and documentation.
+- **Fail-Closed Verification**: Refactored the orchestrator to enforce a fail-closed verification posture via the new Airlock middleware.
+
 ## [0.1.0a1] - 2026-05-08
 
 ### Added
@@ -21,22 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Purged all compiled bytecode and binary SQLite artifacts from the repository history.
 - Hardened `.gitignore` with strict environment and demonstration data patterns.
 
-## [1.0.0] - 2026-04-29
+## [0.1.0-concept] - 2026-04-29
 
 ### Added
-- **NLI Cross-Encoder Verification**: Replaced generative LLM judges with `DeBERTa-v3-base` for deterministic, mathematically interpretable hallucination detection.
-- **Ed25519 Asymmetric Audit Signatures**: Replaced basic SHA-256 hash chains with true cryptographic non-repudiation. Every event is signed with a private key stored in the OS keyring.
-- **SHA-256 Linked Audit Chain**: Full tamper-evident forensic history.
-- **Hybrid Retrieval**: Integrated BM25 lexical search with dense vector fusion.
-- **ABAC Policy Enforcement**: Zero-trust role and classification-based access control before any retrieval.
-- **Hardware-Backed Key Storage**: OS keyring integration (TPM/Keychain/DPAPI) for securing forensic signing keys.
-
-### Performance
-- **80ms Verification Latency**: 25x faster than previous Qwen generative judge (~2000ms).
-- **92% Grounding Accuracy**: Benchmarked on healthcare and finance test sets.
-- **100% Policy Enforcement**: Deterministic blocking of unauthorized intents or out-of-bounds queries.
-
-### Security
-- Ed25519 signatures ensure that audit logs cannot be spoofed or repudiated.
-- OS-level credential management ensures signing keys are not exposed in plaintext `.env` files.
-- Tamper-evident audit trail linking guarantees temporal integrity.
+- **NLI Cross-Encoder Verification (Concept)**: Exploration of `DeBERTa-v3-base` for deterministic grounding.
+- **Asymmetric Audit Signatures (Prototype)**: Initial implementation of Ed25519 for tamper-evident logs.
+- **Local RAG Foundation**: Basic SQLite/LanceDB hybrid retrieval.
+- **ABAC Policy Gateway**: Policy-first access control pattern.

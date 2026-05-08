@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
 *$py.class
 *.so
 .Python
@@ -31,6 +32,9 @@ htmlcov/
 *.db
 *.db-wal
 *.db-shm
+demos/**/*.db
+demos/**/*.db-shm
+demos/**/*.db-wal
 .cache/
 data/
 stress_tenant/
