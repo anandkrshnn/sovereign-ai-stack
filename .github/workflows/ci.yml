@@ -44,14 +44,14 @@ jobs:
         
     - name: Start TPM Simulator and Sovereign App
       run: |
-        docker-compose up --build -d
+        docker compose up --build -d
         # Wait for the containers to initialize
         sleep 10
         
     - name: Run Attestation Smoke Test
       run: |
-        python3 scripts/verify_attestation.py
+        python scripts/verify_attestation.py
         
     - name: Teardown
       if: always()
-      run: docker-compose down
+      run: docker compose down
