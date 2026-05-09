@@ -36,7 +36,7 @@ class WindowsTPMAnchor(SecureAnchor):
         )
 
     def get_signing_algorithm(self) -> SigningAlgorithm:
-        return SigningAlgorithm.RSA_2048  # Windows TPM default
+        return SigningAlgorithm.RSA2048  # Windows TPM default
 
     @property
     def is_hardware(self) -> bool:

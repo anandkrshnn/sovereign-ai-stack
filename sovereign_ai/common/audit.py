@@ -9,6 +9,7 @@ import json
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
+import base64
 from typing import Dict, Any, Optional, List, Tuple, Union
 from dataclasses import dataclass, asdict, field
 
@@ -171,7 +172,6 @@ class SignedAuditChain:
         signature_bytes = self.anchor.sign(canonical)
         
         # Base64 encode for JSON storage
-        import base64
         return base64.b64encode(signature_bytes).decode('utf-8')
     
     def _hash_event(self, event: Dict[str, Any]) -> str:
@@ -237,7 +237,6 @@ class SignedAuditChain:
                 format=serialization.PublicFormat.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
                 else serialization.PublicFormat.UncompressedPoint
             )
-            import base64
             event["public_key"] = base64.b64encode(public_key_bytes).decode('utf-8')
         else:
             # Fallback to PEM if raw object is not available
@@ -413,7 +412,6 @@ class SignedAuditChain:
         """
         Verify signature for a single event based on stored algorithm.
         """
-        import base64
         from cryptography.exceptions import InvalidSignature
         
         try:
@@ -473,7 +471,6 @@ class SignedAuditChain:
         
         Returns base64-encoded Ed25519 public key.
         """
-        import base64
         public_key_bytes = self.public_key.public_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PublicFormat.Raw
