@@ -4,7 +4,14 @@
 Accepted
 
 ## Implementation Note (2026-05-09)
-The Pluggable HAL has been implemented in `sovereign_ai.common.hardware_trust`. It successfully provides an auto-detecting factory with native Linux TPM2 support (reference) and high-fidelity simulator fallbacks.
+The Pluggable HAL has been implemented in `sovereign_ai.common.hardware_trust`. For production stability, the Linux implementation uses high-level context management via `tpm2-pytss` for discovery and subprocess orchestration of `tpm2_quote` for robust evidence generation, bypassing memory handle constraints of pure ESAPI bindings.
+
+### Verified Production Flow (2026-05-09)
+The hardware attestation flow is now verified using an automated CI smoke test with `swtpm`. This test validates that `sovereign trust attest` produces cryptographically valid quotes bound to a challenge nonce, verifiable via `tpm2_checkquote`.
+
+- **Handle Persistence**: AIK is persisted at `0x81000002`.
+- **TCTI Interface**: Standardized on `swtpm` network sockets for containerized trust.
+- **Verification**: Integrated `tpm2_checkquote` into the CI/CD pipeline.
 
 ## Context
 The Sovereign AI Stack currently uses a high-fidelity software simulator (`MOCK_SIM`) for remote attestation. While this validates the IETF RATS protocol flow (ADR-004), it does not provide hardware-anchored trust. To reach production maturity, the stack must transition to native TPM 2.0 (Trusted Platform Module) quotes.

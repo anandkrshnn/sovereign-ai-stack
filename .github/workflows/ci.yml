@@ -45,7 +45,7 @@ jobs:
         
     - name: Run Attestation Smoke Test
       run: |
-        docker exec sovereign-app sovereign trust attest --nonce "ci-test-$(date +%s)"
+        python scripts/verify_attestation.py
         
     - name: Teardown
       if: always()

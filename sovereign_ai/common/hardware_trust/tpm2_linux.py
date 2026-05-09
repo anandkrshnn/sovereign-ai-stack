@@ -36,7 +36,7 @@ class TPM2LinuxAnchor(SecureAnchor):
     Native Linux TPM 2.0 anchor using python-tpm2-pytss.
     Phase 3: Hardware-Native Attestation (Priority 1).
     """
-    def __init__(self, tenant_id: str, aik_handle: int = 0x81010001):
+    def __init__(self, tenant_id: str, aik_handle: int = 0x81000002):
         if not HAS_PYTSS:
             raise ImportError("python-tpm2-pytss not installed. Run: pip install sovereign-ai-stack[tpm2]")
         
@@ -152,7 +152,7 @@ class TPM2LinuxAnchor(SecureAnchor):
                 
                 cmd = [
                     "tpm2_quote", 
-                    "-c", "0x81000002", 
+                    "-c", f"0x{self.aik_handle:08x}", 
                     "-q", nonce.encode().hex(), 
                     "-l", pcr_sel_str, 
                     "-m", msg_path, 
