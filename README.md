@@ -3,7 +3,7 @@
 **A Technical Framework for Local-First RAG Verification and Forensic Auditability**
 
 > [!CAUTION]
-> **Experimental Research Preview (v0.1.0a2)**
+> **Experimental Research Preview (v0.1.0a4)**
 > This repository is a reference implementation for technical exploration. It is **not** currently certified for production use with sensitive data. Last architecture audit: May 2026.
 
 ---
@@ -25,12 +25,14 @@ flowchart TD
     C --> D["NLI Grounding Gate<br/>DeBERTa-v3<br/>≥0.85 entailment"]
     D -->|Pass| E["LLM Generation<br/>with Citations"]
     D -->|Fail| F["Verification Failure<br/>Insufficient Grounding"]
-    E --> G["Signed Audit Event<br/>TPM 2.0 / P-256 Chain"]
+    E --> G["Signed Audit Event<br/>Ed25519 Chain"]
     F --> G
-    G --> H["Forensic Certificate"]
+    G --> H["Merkle Aggregation<br/>(10-event blocks)"]
+    H --> I["Hardware Attestation Quote<br/>TPM 2.0 / IETF RATS"]
+    I --> J["Forensic Certificate"]
 ```
 
-Detailed architecture documentation, including C4 Container Diagrams and Architecture Decision Records (ADRs), can be found in [docs/architecture/c4-container-v0.1.0a2.md](docs/architecture/c4-container-v0.1.0a2.md).
+Detailed architecture documentation, including C4 Container Diagrams and Architecture Decision Records (ADRs), can be found in [docs/architecture/c4-container-v0.1.0a4.md](docs/architecture/c4-container-v0.1.0a4.md).
 
 For an honest assessment of current technical debt and discrepancies, see [docs/architecture/KNOWN_GAPS.md](docs/architecture/KNOWN_GAPS.md).
 
@@ -39,7 +41,7 @@ For an honest assessment of current technical debt and discrepancies, see [docs/
 ## ✨ Key Features (Alpha)
 
 - **NLI Grounding Gate (Experimental)**: Uses a local cross-encoder (`DeBERTa-v3`) to score logical entailment between context and LLM claims. This is a heuristic verification layer, not a formal proof.
-- **Forensic Audit Chain (Alpha)**: Every decision event is signed with **Asymmetric Signatures** (P-256 on Windows TPM / Ed25519 in software).
+- **Hardware-Attested Forensics (Alpha)**: Every decision event is signed and aggregated into Merkle Trees, with roots bound to **TPM 2.0 Hardware Quotes** (IETF RATS compliant).
 - **ABAC Policy Engine**: Attribute-Based Access Control filters context *before* generation.
 - **Compatibility Layer**: Basic OpenAI-compatible gateway via the `sovereign-ai-bridge`.
 
@@ -50,11 +52,22 @@ For an honest assessment of current technical debt and discrepancies, see [docs/
 | Feature | Research Implementation | Production Hardening Status |
 | :--- | :--- | :--- |
 | **Grounding** | NLI threshold (DeBERTa-v3) | Experimental |
-| **Forensics** | TPM P-256 (Windows) / Keyring (Fallback) | Alpha |
+| **Forensics** | TPM 2.0 / IETF RATS (Linux Native) | Alpha |
 | **Isolation** | Logical (Filesystem + SQL) | Prototype |
 
-> [!NOTE]
-> **Hardware Binding**: Support for **TPM 2.0 (P-256)** is currently native on Windows. In MacOS/Linux environments, the stack fallbacks to the OS Keyring. True remote attestation is on the roadmap for Phase 2.
+> [!IMPORTANT]
+> **Hardware-Anchored Trust**: v0.1.0a4 introduces the **Hardware Abstraction Layer (HAL)**. It supports native **TPM 2.0 (ESYS)** on Linux for remote attestation, with structural support for Windows and a high-fidelity simulator for development.
+
+---
+
+## 🛡️ Hardware-Attested Audit Chain (v0.1.0a4)
+
+The Sovereign AI Stack provides a non-repudiable forensic trail by binding software-level audit events to hardware-level measurements.
+
+- **Merkle Checkpoints**: Audit events are aggregated into Merkle Trees. Every 10 events (or on shutdown), a `MERKLE_CHECKPOINT` is generated.
+- **Hardware Binding**: The Merkle Root of the block acts as a **nonce** for a TPM 2.0 Quote.
+- **PCR measurements**: The quote includes platform measurements (PCR 0 for firmware, PCR 11 for application state), proving that the audit log was generated on specific, untampered hardware.
+- **IETF RATS Compliance**: Evidence bundles follow the **Remote ATtestation procedureS (RATS)** architecture, enabling remote verification of node integrity.
 
 ---
 
@@ -116,7 +129,7 @@ We provide three end-to-end examples in the [examples/](examples/) directory:
 ## ⚠️ Known Limitations
 
 - **NLI Thresholding**: The default 0.8 threshold may produce false negatives in highly creative writing tasks; it is tuned for *fact-based retrieval*.
-- **Hardware Binding**: Support for **TPM 2.0 (P-256)** is now live for Windows environments. MacOS/Linux fallback to OS Keyring (Keychain/DPAPI).
+- **Hardware Binding**: Support for **TPM 2.0** is now live via the pluggable HAL. Native ESYS support is available for Linux; Windows and macOS fall back to software-bound simulator keys unless configured otherwise.
 - **Context Window**: Verification latency scales linearly with the number of claims; massive responses (>2048 tokens) may see a lag.
 
 ---
@@ -133,9 +146,9 @@ We provide three end-to-end examples in the [examples/](examples/) directory:
 
 For detailed technical requirements to reach production readiness, see [Maturation Gates](docs/architecture/MATURATION_GATES.md).
 
-- **Phase 1 (May 2026)**: Monorepo consolidation, TPM 2.0 / Ed25519 forensics, NLI verification.
-- **Phase 2 (Q3 2026)**: Knowledge-Augmented Gates (K-Gate), Remote Attestation Protocol.
-- **Phase 3 (2027)**: Secure Enclaves (Intel SGX), ZK-Proofs for compliance.
+- **Phase 1 (Completed)**: Monorepo consolidation, Forensic Hardening (Merkle/STRIDE), Remote Trust Preview (RATS), Pluggable Hardware Abstraction Layer (HAL).
+- **Phase 2 (Completed)**: Hardware-Anchored Merkle Checkpoints, Linux TPM 2.0 Native Integration (ESYS).
+- **Phase 3 (2026/2027)**: Secure Enclaves (Intel SGX), ZK-Proofs for compliance, Knowledge-Augmented Gates (K-Gate).
 
 ---
 

@@ -27,7 +27,8 @@ class LocalRAG:
         enable_verification: bool = False,
         trusted_policy_key: Optional[str] = None,
         strict_policy: bool = False,
-        anchor: Optional[SecureAnchor] = None
+        anchor: Optional[SecureAnchor] = None,
+        attest: bool = False
     ):
         self.governed = policy_path is not None
         self.use_reranker = use_reranker
@@ -43,7 +44,8 @@ class LocalRAG:
                 reranker_model=reranker_model,
                 trusted_policy_key=trusted_policy_key,
                 strict_policy=strict_policy,
-                anchor=anchor
+                anchor=anchor,
+                attest=attest
             )
         else:
             # Legacy/Ungoverned Mode
@@ -162,7 +164,8 @@ class AsyncLocalRAG:
         cache_dir: str = ".cache",
         trusted_policy_key: Optional[str] = None,
         strict_policy: bool = False,
-        anchor: Optional[SecureAnchor] = None
+        anchor: Optional[SecureAnchor] = None,
+        attest: bool = False
     ):
         self.governed = (policy_path is not None) or (tenant_id != "default")
         self.use_reranker = use_reranker
@@ -183,7 +186,8 @@ class AsyncLocalRAG:
                 vector_dsn=vector_dsn,
                 trusted_policy_key=trusted_policy_key,
                 strict_policy=strict_policy,
-                anchor=anchor
+                anchor=anchor,
+                attest=attest
             )
         else:
             self.retriever = AsyncFTS5Retriever(db_path, password=password)

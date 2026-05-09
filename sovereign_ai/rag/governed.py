@@ -34,14 +34,15 @@ class GovernedRetriever:
         reranker_model: str = "BAAI/bge-reranker-base",
         trusted_policy_key: Optional[str] = None,
         strict_policy: bool = False,
-        anchor: Optional[SecureAnchor] = None
+        anchor: Optional[SecureAnchor] = None,
+        attest: bool = False
     ):
         self.retriever = FTS5Retriever(db_path, password=password)
         self.policy_engine = PolicyEngine(policy_path, trusted_public_key=trusted_policy_key, strict_mode=strict_policy)
         
         # Determine base_dir for audit (v1.1.0a2 consolidation)
         base_dir = os.path.dirname(os.path.dirname(db_path)) if db_path != ":memory:" else "data"
-        self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id, anchor=anchor)
+        self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id, anchor=anchor, attest=attest)
         
         self.principal = Principal(
             id=principal,
@@ -105,14 +106,15 @@ class AsyncGovernedRetriever:
         vector_uri: Optional[str] = ".cache/lancedb",
         trusted_policy_key: Optional[str] = None,
         strict_policy: bool = False,
-        anchor: Optional[SecureAnchor] = None
+        anchor: Optional[SecureAnchor] = None,
+        attest: bool = False
     ):
         self.retriever = AsyncFTS5Retriever(db_path, password=password)
         self.policy_engine = PolicyEngine(policy_path, trusted_public_key=trusted_policy_key, strict_mode=strict_policy)
         
         # Determine base_dir for audit (v1.1.0a2 consolidation)
         base_dir = os.path.dirname(os.path.dirname(db_path)) if db_path != ":memory:" else "data"
-        self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id, anchor=anchor)
+        self.audit_logger = SovereignAuditLogger(base_dir=base_dir, tenant_id=tenant_id, anchor=anchor, attest=attest)
         
         self.principal = Principal(
             id=principal,

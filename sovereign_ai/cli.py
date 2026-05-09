@@ -82,5 +82,32 @@ def verify(tenant, base_dir):
         click.echo(f"CRITICAL: Audit chain for tenant '{tenant}' is CORRUPTED or TAMPERED!")
         sys.exit(1)
 
+@main.group()
+def trust():
+    """Hardware-anchored trust and attestation."""
+    pass
+
+@trust.command()
+@click.option("--tenant", default="default", help="Tenant ID.")
+@click.option("--nonce", default=None, help="Optional 32-char challenge nonce.")
+@click.option("--backend", default="auto", type=click.Choice(["auto", "mock", "tpm2_linux", "tpm2_windows"]))
+def attest(tenant, nonce, backend):
+    """Generate a hardware-attested integrity quote."""
+    import hashlib
+    import json
+    from .common.hardware_trust import get_secure_anchor
+    
+    if not nonce:
+        nonce = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
+    
+    anchor = get_secure_anchor(tenant, backend=backend)
+    quote = anchor.generate_quote(nonce, [0, 11])
+    
+    click.echo(f"Backend: {quote.type}")
+    click.echo(f"Nonce: {nonce}")
+    click.echo(f"Measurement: {quote.runtime_measurement}")
+    click.echo("\n[Evidence Quote]")
+    click.echo(json.dumps(quote.model_dump(), indent=2))
+
 if __name__ == "__main__":
     main()

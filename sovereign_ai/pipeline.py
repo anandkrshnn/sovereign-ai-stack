@@ -29,6 +29,9 @@ class Config:
     # [Policy Integrity]
     trusted_policy_key: Optional[str] = None
     strict_policy: bool = False
+    
+    # [Hardware Attestation]
+    enable_attestation: bool = False
 
 class SovereignPipeline:
     """
@@ -41,12 +44,9 @@ class SovereignPipeline:
     """
     def __init__(self, config: Config):
         self.config = config
-        # [Finding 5 Fix] Instantiate anchor at the highest trust boundary (Pipeline level)
-        from .common.hardware_trust import WindowsTPMAnchor, SoftwareSimulatorAnchor
-        try:
-            self.anchor = WindowsTPMAnchor(tenant_id=config.tenant_id)
-        except Exception:
-            self.anchor = SoftwareSimulatorAnchor(tenant_id=config.tenant_id)
+        # [Phase 3] Instantiate anchor via factory for cross-platform hardware trust
+        from .common.hardware_trust import get_secure_anchor
+        self.anchor = get_secure_anchor(config.tenant_id)
 
         self._engine = AsyncLocalRAG(
             db_path=config.db_path,
@@ -64,7 +64,8 @@ class SovereignPipeline:
             cache_dir=config.cache_dir,
             trusted_policy_key=config.trusted_policy_key,
             strict_policy=config.strict_policy,
-            anchor=self.anchor  # Injected
+            anchor=self.anchor,
+            attest=config.enable_attestation
         )
         self._evaluator = None
         if config.enable_verification:

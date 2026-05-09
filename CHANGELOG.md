@@ -5,6 +5,24 @@ All notable changes to the Sovereign AI Stack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0a4] - 2026-05-09
+### Added
+- **Hardware-Anchored Merkle Checkpoints**: Integrated IETF RATS-compliant TPM quotes directly into forensic audit checkpoints, cryptographically binding Merkle Roots to PCR measurements.
+- **Hardware Abstraction Layer (HAL)**: Refactored `hardware_trust` into a pluggable, multi-backend package supporting Linux TPM 2.0 (ESYS), Windows TPM (Structural), and High-Fidelity Software Simulation.
+- **Fail-Closed Shutdown Integrity**: Implemented mandatory audit finalization on shutdown, ensuring the final Merkle state is hardware-attested before the system exits.
+- **Unified Trust Factory**: Introduced `get_secure_anchor()` for automated, cross-platform hardware detection and graceful simulator fallback.
+
+### Changed
+- **Audit-to-Hardware Binding**: Updated `SovereignAuditLogger` to natively support `SecureAnchor` injection, ensuring non-repudiable forensic traces.
+- **Interface Standardization**: Unified the `SecureAnchor` interface across all backends to resolve signature-related attribute errors.
+
+## [0.1.0a3] - 2026-05-08
+### Added
+- **Remote Attestation Service**: Standalone FastAPI verifier for IETF RATS-aligned evidence validation.
+- **Evidence Bundling**: Merkle Root binding to hardware quotes in `EvidenceBundle`.
+- **Pydantic v2 Schemas**: Strict schema enforcement for `AttestationQuote` and `EvidenceBundle`.
+- **RATS Alignment**: Formal separation of Attester (Node) and Verifier (Service) roles.
+
 ## [0.1.0a2] - 2026-05-08
 
 ### Added

@@ -14,7 +14,7 @@ from dataclasses import dataclass, asdict, field
 
 from cryptography.hazmat.primitives.asymmetric import ed25519, ec
 from cryptography.hazmat.primitives import serialization, hashes
-from .hardware_trust import SecureAnchor, SoftwareSimulatorAnchor, LegacyRawAnchor, WindowsTPMAnchor
+from .hardware_trust import SecureAnchor, SoftwareSimulatorAnchor, LegacyRawAnchor, WindowsTPMAnchor, get_secure_anchor
 from .schemas import SigningAlgorithm, RecordStatus
 from .merkle import MerkleTree
 
@@ -228,14 +228,20 @@ class SignedAuditChain:
             self.pinned_algorithm = event["algorithm"]
         
         # 2. Add public key for independent verification
-        public_key_bytes = self.anchor.get_public_key().public_bytes(
-            encoding=serialization.Encoding.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
-            else serialization.Encoding.X962,
-            format=serialization.PublicFormat.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
-            else serialization.PublicFormat.UncompressedPoint
-        )
-        import base64
-        event["public_key"] = base64.b64encode(public_key_bytes).decode('utf-8')
+        # 2. Add public key for independent verification
+        pub_key = self.anchor.get_public_key()
+        if pub_key:
+            public_key_bytes = pub_key.public_bytes(
+                encoding=serialization.Encoding.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
+                else serialization.Encoding.X962,
+                format=serialization.PublicFormat.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
+                else serialization.PublicFormat.UncompressedPoint
+            )
+            import base64
+            event["public_key"] = base64.b64encode(public_key_bytes).decode('utf-8')
+        else:
+            # Fallback to PEM if raw object is not available
+            event["public_key_pem"] = self.anchor.get_public_key_pem().decode('utf-8')
         
         # 3. Add Hardware Attestation Statement (v0.1.0a2)
         attestation = self.anchor.get_attestation_statement()
@@ -283,7 +289,11 @@ class SignedAuditChain:
         tree = MerkleTree(hashes)
         root = tree.root
         
-        # Log a CHECKPOINT event containing the Merkle Root
+        # 2. Generate Hardware Attestation Quote for the Merkle Root
+        # Binding the Merkle Root as the nonce ensures the quote proves THIS specific audit state
+        quote = self.anchor.generate_quote(nonce=root, pcrs=[0, 11])
+        
+        # 3. Log a CHECKPOINT event containing the Merkle Root + Hardware Quote
         checkpoint_event = self.log_event(
             component="system",
             action="MERKLE_CHECKPOINT",
@@ -292,7 +302,8 @@ class SignedAuditChain:
                 "merkle_root": root,
                 "block_size": len(self.event_buffer),
                 "start_seq": self.event_buffer[0]["sequence_number"],
-                "end_seq": self.event_buffer[-1]["sequence_number"]
+                "end_seq": self.event_buffer[-1]["sequence_number"],
+                "attestation_quote": quote.model_dump()
             }
         )
         
@@ -301,6 +312,10 @@ class SignedAuditChain:
 
     def flush(self):
         """Flush the Merkle buffer to disk."""
+        self._finalize_merkle_block()
+
+    def close(self):
+        """Finalize the current block and close."""
         self._finalize_merkle_block()
     
     def _append_to_file(self, event: Dict[str, Any]):
@@ -563,7 +578,7 @@ class AuditRecord:
 class SovereignAuditLogger:
     """Backward compatibility adapter for SignedAuditChain."""
     
-    def __init__(self, base_dir: str, tenant_id: str, anchor: Optional[SecureAnchor] = None, remote_anchor_config: Optional[Dict[str, Any]] = None):
+    def __init__(self, base_dir: str, tenant_id: str, anchor: Optional[SecureAnchor] = None, attest: bool = False):
         from .secure_key import SecureKeyManager
         self.base_dir = Path(base_dir)
         self.tenant_id = tenant_id
@@ -576,6 +591,14 @@ class SovereignAuditLogger:
                 tenant_id=tenant_id,
                 audit_file=str(self.log_path),
                 anchor=anchor
+            )
+        elif attest:
+            # Use factory to get the best hardware anchor
+            hw_anchor = get_secure_anchor(tenant_id)
+            self.chain = SignedAuditChain(
+                tenant_id=tenant_id,
+                audit_file=str(self.log_path),
+                anchor=hw_anchor
             )
         else:
             self.key_mgr = SecureKeyManager(tenant_id)
@@ -613,4 +636,4 @@ class SovereignAuditLogger:
         }
 
     def close(self):
-        pass
+        self.chain.close()

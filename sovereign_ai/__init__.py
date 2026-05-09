@@ -2,7 +2,7 @@
 Sovereign AI Stack - Local RAG with Cryptographic Verification
 """
 
-__version__ = "1.1.0a2"
+__version__ = "0.1.0a4"
 
 # --- Core Platform Facade ---
 from .pipeline import SovereignPipeline, Config

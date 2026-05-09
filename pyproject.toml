@@ -1,6 +1,6 @@
 [project]
 name = "sovereign-ai-stack"
-version = "0.1.0a2"
+version = "0.1.0a3"
 description = "Local-first RAG with policy gating and audit-friendly logging — reference implementation"
 authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
 license = {text = "MIT"}
@@ -76,9 +76,14 @@ dashboard = [
     "pandas>=2.0.0",
 ]
 
+# Hardware Attestation
+tpm2 = [
+    "tpm2-pytss>=2.1.0",
+]
+
 # All features
 full = [
-    "sovereign-ai-stack[verify,bridge,agent,dashboard]",
+    "sovereign-ai-stack[verify,bridge,agent,dashboard,tpm2]",
 ]
 
 # Development
