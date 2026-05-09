@@ -23,6 +23,10 @@ def provision_tpm():
     print("[*] Provisioning TPM simulator with AIK at 0x81000002...")
     env = ["-e", "TPM2TOOLS_TCTI=swtpm:host=tpm-simulator,port=2321"]
     
+    # 0. Initialize TPM (required after swtpm starts)
+    print("[*] Initializing TPM...")
+    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_startup", "-c"], check=False, capture_output=True)
+
     # 1. Start fresh by clearing the TPM (Owner hierarchy)
     print("[*] Clearing TPM state...")
     subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_clear", "-c", "o"], check=False, capture_output=True)
