@@ -23,42 +23,37 @@ def provision_tpm():
     print("[*] Provisioning TPM simulator with AIK at 0x81000002...")
     env = ["-e", "TPM2TOOLS_TCTI=swtpm:host=tpm-simulator,port=2321"]
     
-    # Initialize TPM (ignore error if already initialized)
-    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_startup", "-c"], check=False, capture_output=True)
+    # 1. Start fresh by clearing the TPM (Owner hierarchy)
+    print("[*] Clearing TPM state...")
+    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_clear", "-c", "o"], check=False, capture_output=True)
     
-    # Flush transient objects to avoid 0x902 (out of memory)
-    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-t"], check=False, capture_output=True)
-
-    # Check if key exists
-    res = subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_readpublic", "-c", "0x81000002"], capture_output=True)
-    if res.returncode == 0:
-        print("[+] AIK already provisioned.")
-        return
-
-    # Flush contexts to be safe
-    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-t"], check=False, capture_output=True)
-    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-s"], check=False, capture_output=True)
-    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-l"], check=False, capture_output=True)
+    # 2. Aggressively flush all context types (transient, loaded, session)
+    print("[*] Flushing all contexts...")
+    for ctype in ["-t", "-l", "-s"]:
+        subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", ctype], check=False, capture_output=True)
     
-    # Create primary
+    # 3. Create primary handle in the Endorsement hierarchy
     print("[*] Creating primary handle...")
     subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_createprimary", "-C", "e", "-g", "sha256", "-G", "rsa", "-c", "primary.ctx"], check=True)
     
-    # Flush transient again to make room for load
-    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-t"], check=False, capture_output=True)
-
-    # Create restricted signing key
+    # 4. Create restricted signing key (AIK)
     print("[*] Creating AIK...")
     subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_create", "-C", "primary.ctx", "-g", "sha256", "-G", "rsa2048:rsassa-sha256:null", "-u", "aik.pub", "-r", "aik.priv"], check=True)
     
-    # Load and persist
+    # 5. Flush BEFORE loading to maximize available memory
+    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-t"], check=False, capture_output=True)
+
+    # 6. Load AIK into TPM
     print("[*] Loading AIK into TPM...")
     subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_load", "-C", "primary.ctx", "-u", "aik.pub", "-r", "aik.priv", "-c", "aik.ctx"], check=True)
     
+    # 7. Persist to a fixed handle
     print("[*] Persisting AIK to 0x81000002...")
+    # If 0x81000002 is occupied, evict it first
+    subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_evictcontrol", "-C", "o", "-c", "0x81000002"], check=False, capture_output=True)
     subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_evictcontrol", "-C", "o", "-c", "aik.ctx", "0x81000002"], check=True)
     
-    # Final cleanup of transient handles
+    # 8. Final cleanup
     subprocess.run(["docker", "exec"] + env + ["sovereign-app", "tpm2_flushcontext", "-t"], check=False, capture_output=True)
     print("[+] Provisioning complete.")
 
