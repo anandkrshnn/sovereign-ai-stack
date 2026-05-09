@@ -1,39 +1,60 @@
-# Hardening TPM2 Attestation Pipeline
+# DOCKER_ATTESTATION_WALKTHROUGH.md: Hardware-Native Validation (v0.1.0a2)
 
-I have successfully finalized the hardware-native attestation integration for the Sovereign AI Stack, removing the structural `MOCK_SIM` dependency inside the Docker container and replacing it with genuine TPM 2.0 hardware evidence.
+This document captures the exact CI assumptions and operational requirements for validating the Sovereign AI Stack's hardware-native attestation pipeline using a Docker-based TPM simulator.
 
-## What Was Accomplished
+## 1. CI Infrastructure Assumptions
 
-### 1. Fixed the TPM Simulator State (Persistent AIK)
-The previous attempts to use the TPM simulator were failing because the `tpm2_pytss` library required a properly configured **Persistent Restricted Signing Key** inside the TPM's NVRAM. I flushed out the corrupt transient contexts (which were causing the `TPM Error 0x902` - Out of Memory) and created a new primary key in the Endorsement Hierarchy. Finally, I persisted it to handle `0x81000002` with the exact attributes required for quote signing.
+The `Sovereign CI` workflow relies on the following infrastructure configuration:
 
-### 2. Addressed the ESAPI `tpm2_pytss` Handling Bugs
-The `tpm2_pytss` Python bindings had several issues interfacing with persistent handles when using the `ESAPI` layer (resulting in `0x18B` "handle is not correct for the use"). Instead of continuing to fight the upstream `ESAPI.tr_from_tpmpublic` C bindings (which mistakenly reject persistent handles for signing operations in some TSS versions), I modified the `generate_quote` method to use native `subprocess` calls specifically for the `tpm2_quote` command.
-- This creates an extremely robust integration.
-- It correctly manages TPM transient memory by invoking `tpm2_flushcontext -t` before the quote.
-- The `quote_data` and `signature` are correctly pulled from the TPM and packed into the RATS bundle.
+- **Runner**: `ubuntu-latest` (GitHub-hosted runner).
+- **Orchestration**: `docker compose` (V2 plugin).
+- **Language Environment**: Python 3.10+ (via `actions/setup-python@v5`).
+- **Dependencies**: The runner must have `docker` installed (standard on `ubuntu-latest`).
 
-### 3. Updated `docker-compose.yml` TCTI Config
-I modified `docker-compose.yml` to correctly export the `TPM2TOOLS_TCTI` and `TCTI` variables as `swtpm:host=tpm-simulator,port=2321` to make sure all `tpm2-tools` and TSS connections natively resolve the simulator over the Docker network.
+## 2. TPM Simulator Configuration (`swtpm`)
 
-### 4. Checklist Validation
-We executed the exact `sovereign trust attest` command from the `DOCKER_VALIDATION_CHECKLIST.md`. 
-The result successfully produced a `TPM2_QUOTE` backend instead of `MOCK_SIM`, correctly measuring PCRs `0` and `11`, and outputting a valid cryptographic signature and quote buffer!
+We use the `ghcr.io/stefanberger/swtpm:latest` image to provide a virtual TPM 2.0 interface. Key operational parameters include:
 
-```json
-[Evidence Quote]
-{
-  "type": "TPM2_QUOTE",
-  "quote_data": "/1RDR4AYACIACyYUVcGQfNzBV9Bb0m...",
-  "pcr_values": {
-    "0": "e05308b6b46e0045f2eeea1ef8a868d3223089d6c67a20e39a32789a6525e691",
-    "11": "948426beb0ec827332d1c5fffa7f8e8178b9b150e5e0b539e3afcd3f148bc54f"
-  },
-  "firmware_version": "Linux_TPM2_ESYS_v1.0",
-  "runtime_measurement": "948426beb0ec827332d1c5fffa7f8e8178b9b150e5e0b539e3afcd3f148bc54f",
-  "signature": "ABQACwEAJ4iAu6bm0dozVXtbTy00bJ..."
-}
-```
+- **Interface**: Network Socket (TCP).
+- **Ports**: 2321 (Command), 2322 (Control).
+- **State**: Ephemeral (reset per job run).
+- **TCTI Path**: `swtpm:host=tpm-simulator,port=2321`.
 
-> [!NOTE]
-> There are upstream warnings logged from `cryptography` regarding deprecated algorithms (`Camellia`, `CFB`), and a minor internal TSS layer warning `0x1c4` during PCR enumeration. These are strictly logging warnings from the upstream libraries and do not affect the cryptographic integrity or stability of the Quote evidence bundle.
+## 3. Mandatory Initialization Sequence
+
+TPM simulators require a specific startup sequence to avoid memory exhaustion and state errors:
+
+1.  **`tpm2_startup -c`**: Mandatory. Initializes the TPM state after the container starts.
+2.  **`tpm2_clear -c o`**: Clears the Owner hierarchy to ensure a clean slate for provisioning.
+3.  **Aggressive Flushing**: Before and after sensitive operations (like `tpm2_load`), we run `tpm2_flushcontext [-t|-l|-s]` to free up transient object slots. This prevents `0x902` (Out of Memory) errors.
+
+## 4. Attestation Smoke Test Logic
+
+The `scripts/verify_attestation.py` script performs the following steps to verify cryptographic integrity:
+
+### A. Provisioning
+- Creates an Endorsement Primary Key (`tpm2_createprimary`).
+- Generates a restricted RSA-2048 signing key (Attestation Identity Key - AIK).
+- Persists the AIK to a fixed handle (`0x81000002`).
+
+### B. Execution
+- Triggers `sovereign trust attest --nonce <nonce>` inside the container.
+- The stack detects the `TPM2LinuxAnchor` and requests a hardware quote from the simulator.
+- The simulator signs the Merkle Root of the current audit state using the AIK.
+
+### C. Cryptographic Verification
+- The script extracts the `quote_data` and `signature` from the stack's JSON output.
+- It extracts the AIK public key from the TPM in PEM format.
+- It runs `tpm2_checkquote` to cryptographically verify that the signature is valid, matches the AIK public key, and is bound to the original nonce.
+
+## 5. Troubleshooting (Error Reference)
+
+| Error Code | Meaning | Fix |
+|---|---|---|
+| `0x100` | TPM Not Started | Ensure `tpm2_startup -c` was called. |
+| `0x902` | Out of Memory | Flush transient objects via `tpm2_flushcontext -t`. |
+| `127` | Command Not Found | Verify `docker compose` (V2) or `python` paths. |
+| `0x143` | Handle Not Found | AIK at `0x81000002` was not provisioned or was evicted. |
+
+---
+*Verified Milestone: v0.1.0a2-docker-attestation*
