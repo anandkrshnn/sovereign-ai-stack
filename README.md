@@ -3,7 +3,7 @@
 **A Technical Framework for Local-First RAG Verification and Forensic Auditability**
 
 > [!CAUTION]
-> **Experimental Research Preview (v0.1.0a4)**
+> **Experimental Research Preview (v0.1.0a5)**
 > This repository is a reference implementation for technical exploration. It is **not** currently certified for production use with sensitive data. Last architecture audit: May 2026.
 
 ---
@@ -29,10 +29,12 @@ flowchart TD
     F --> G
     G --> H["Merkle Aggregation<br/>(10-event blocks)"]
     H --> I["Hardware Attestation Quote<br/>TPM 2.0 / IETF RATS"]
-    I --> J["Forensic Certificate"]
+    I --> J["Remote Verifier Service<br/>(Enforced Gate)"]
+    J -->|Approved| K["Forensic Certificate"]
+    J -->|Rejected| L["SecurityHalt<br/>Pipeline Blocked"]
 ```
 
-Detailed architecture documentation, including C4 Container Diagrams and Architecture Decision Records (ADRs), can be found in [docs/architecture/c4-container-v0.1.0a4.md](docs/architecture/c4-container-v0.1.0a4.md).
+Detailed architecture documentation, including C4 Container Diagrams and Architecture Decision Records (ADRs), can be found in [docs/architecture/c4-container-v0.1.0a5.md](docs/architecture/c4-container-v0.1.0a5.md).
 
 For an honest assessment of current technical debt and discrepancies, see [docs/architecture/KNOWN_GAPS.md](docs/architecture/KNOWN_GAPS.md).
 
@@ -40,8 +42,9 @@ For an honest assessment of current technical debt and discrepancies, see [docs/
 
 ## ✨ Key Features (Alpha)
 
-- **NLI Grounding Gate (Experimental)**: Uses a local cross-encoder (`DeBERTa-v3`) to score logical entailment between context and LLM claims. This is a heuristic verification layer, not a formal proof.
-- **Hardware-Attested Forensics (Alpha)**: Every decision event is signed and aggregated into Merkle Trees, with roots bound to **TPM 2.0 Hardware Quotes** (IETF RATS compliant).
+- **NLI Grounding Gate (Experimental)**: Uses a local cross-encoder (`DeBERTa-v3`) with **batched inference** (~90ms latency) to score logical entailment between context and LLM claims.
+- **Mandatory Attestation Gate (v0.1.0a5)**: The pipeline can be configured to **fail-closed** unless a Remote Verifier approves the platform's hardware state.
+- **Hardware-Attested Forensics (Alpha)**: Every decision event is signed and aggregated into Merkle Trees, with roots bound to **Native TPM 2.0 Hardware Quotes** (Linux ESYS).
 - **ABAC Policy Engine**: Attribute-Based Access Control filters context *before* generation.
 - **Compatibility Layer**: Basic OpenAI-compatible gateway via the `sovereign-ai-bridge`.
 
@@ -60,16 +63,18 @@ For an honest assessment of current technical debt and discrepancies, see [docs/
 
 ---
 
-## 🛡️ Hardware-Attested Audit Chain (v0.1.0a4)
+## 🔒 Mandatory Attestation Gate (v0.1.0a5)
 
-The Sovereign AI Stack provides a non-repudiable forensic trail by binding software-level audit events to hardware-level measurements.
+The Sovereign AI Stack introduces a **Mandatory Verification Gate** to ensure that AI operations only occur on trusted, untampered hardware.
 
-- **Merkle Checkpoints**: Audit events are aggregated into Merkle Trees. Every 10 events (or on shutdown), a `MERKLE_CHECKPOINT` is generated.
-- **Hardware Binding**: The Merkle Root of the block acts as a **nonce** for a TPM 2.0 Quote.
-- **PCR measurements**: The quote includes platform measurements (PCR 0 for firmware, PCR 11 for application state), proving that the audit log was generated on specific, untampered hardware.
-- **IETF RATS Compliance**: Evidence bundles follow the **Remote ATtestation procedureS (RATS)** architecture, enabling remote verification of node integrity.
+1.  **Challenge-Response**: Upon initialization, the pipeline generates a fresh hardware quote (Evidence) bound to a random nonce.
+2.  **Remote Verification**: This evidence is sent to a **Remote Verifier Service**.
+3.  **Enforcement**: If the verifier rejects the quote (e.g., PCR mismatch, stale firmware, or invalid signature), the pipeline raises a `SecurityHalt` and terminates immediately.
+4.  **Fail-Closed**: This prevents "Ghost Nodes" or compromised instances from joining the sovereign network.
 
 ---
+
+## 🛡️ Hardware-Attested Audit Chain
 
 ## 🛡️ NLI Verification in Action (Conceptual)
 
