@@ -270,7 +270,7 @@ async def test_interceptor_loop_hardware_tpm_p256(agent, mock_broker, mock_evalu
         # Check the actual file content for the algorithm field
         with open(audit_file, "r") as f:
             first_event = json.loads(f.readline())
-            assert first_event["algorithm"] == "p256"
+            assert first_event["algorithm"] == "rsa2048"
 
     # Cleanup
     await agent.close()

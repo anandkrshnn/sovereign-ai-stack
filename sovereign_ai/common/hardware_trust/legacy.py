@@ -3,22 +3,33 @@ from typing import List, Any
 from .base import SecureAnchor
 from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 
+from cryptography.hazmat.primitives import serialization
+
 class LegacyRawAnchor(SecureAnchor):
     """
     Legacy anchor for backward compatibility with non-attested keys.
+    Supports both raw bytes (HMAC-style) and cryptography key objects.
     """
-    def __init__(self, raw_key: bytes):
+    def __init__(self, raw_key: Any):
         self.raw_key = raw_key
 
     def sign_payload(self, payload: bytes) -> bytes:
+        if hasattr(self.raw_key, "sign"):
+            return self.raw_key.sign(payload)
         return hashlib.sha256(self.raw_key + payload).digest()
 
     def get_public_key(self) -> Any:
-        # Legacy keys don't easily expose a cryptography object without re-parsing
-        # But for mock purposes we can return a dummy or raise if needed
+        if hasattr(self.raw_key, "public_key"):
+            return self.raw_key.public_key()
         return None 
 
     def get_public_key_pem(self) -> bytes:
+        pub = self.get_public_key()
+        if pub:
+            return pub.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
         return b"LEGACY_PUB_KEY"
 
     def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:

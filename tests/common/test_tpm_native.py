@@ -22,10 +22,21 @@ def test_windows_tpm_anchor_real():
     pub_key = anchor.get_public_key()
     
     from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa, padding
     
     # This will raise an exception if verification fails
-    pub_key.verify(signature, data, ec.ECDSA(hashes.SHA256()))
+    if anchor.algorithm == SigningAlgorithm.RSA2048:
+        pub_key.verify(
+            signature,
+            data,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+    else:
+        pub_key.verify(signature, data, ec.ECDSA(hashes.SHA256()))
     
     print("Verification successful!")
 

@@ -38,8 +38,9 @@ class AuditEvent:
     curr_hash: str
     
     # Ed25519 signature (NEW)
-    signature: str  # Base64-encoded Ed25519 signature
-    public_key: str  # Base64-encoded Ed25519 public key
+    signature: str  # Base64-encoded signature
+    public_key: Optional[str] = None  # Base64-encoded raw public key
+    public_key_pem: Optional[str] = None  # PEM-encoded public key
     algorithm: str = "ed25519"
     
     # Transparency Metadata (v0.1.0a2)
@@ -231,13 +232,17 @@ class SignedAuditChain:
         # 2. Add public key for independent verification
         pub_key = self.anchor.get_public_key()
         if pub_key:
-            public_key_bytes = pub_key.public_bytes(
-                encoding=serialization.Encoding.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
-                else serialization.Encoding.X962,
-                format=serialization.PublicFormat.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
-                else serialization.PublicFormat.UncompressedPoint
-            )
-            event["public_key"] = base64.b64encode(public_key_bytes).decode('utf-8')
+            try:
+                public_key_bytes = pub_key.public_bytes(
+                    encoding=serialization.Encoding.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
+                    else serialization.Encoding.X962,
+                    format=serialization.PublicFormat.Raw if self.anchor.algorithm == SigningAlgorithm.ED25519
+                    else serialization.PublicFormat.UncompressedPoint
+                )
+                event["public_key"] = base64.b64encode(public_key_bytes).decode('utf-8')
+            except Exception:
+                # Fallback to PEM if raw bytes fail (e.g. RSA)
+                event["public_key_pem"] = self.anchor.get_public_key_pem().decode('utf-8')
         else:
             # Fallback to PEM if raw object is not available
             event["public_key_pem"] = self.anchor.get_public_key_pem().decode('utf-8')
@@ -426,10 +431,10 @@ class SignedAuditChain:
                 return False
 
             signature_b64 = event["signature"]
-            public_key_b64 = event["public_key"]
+            public_key_b64 = event.get("public_key")
             
             signature_bytes = base64.b64decode(signature_b64)
-            public_key_bytes = base64.b64decode(public_key_b64)
+            public_key_bytes = base64.b64decode(public_key_b64) if public_key_b64 else None
             
             canonical_data = self._canonical_json(event)
             
@@ -439,6 +444,23 @@ class SignedAuditChain:
             elif algorithm == "p256":
                 pub = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), public_key_bytes)
                 pub.verify(signature_bytes, canonical_data, ec.ECDSA(hashes.SHA256()))
+            elif algorithm.startswith("rsa"):
+                # Load from PEM if bytes are not raw RSA (RSA usually uses PEM/DER)
+                if event.get("public_key_pem"):
+                    pub = serialization.load_pem_public_key(event["public_key_pem"].encode())
+                else:
+                    pub = serialization.load_der_public_key(public_key_bytes)
+                
+                from cryptography.hazmat.primitives.asymmetric import padding
+                pub.verify(
+                    signature_bytes,
+                    canonical_data,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH
+                    ),
+                    hashes.SHA256()
+                )
             else:
                 print(f"Unsupported algorithm: {algorithm}")
                 return False

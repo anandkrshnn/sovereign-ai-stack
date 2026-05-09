@@ -64,6 +64,10 @@ vaults/
 .sovereign_ai/
 *.key
 *.sig
+*.ctx
+*.priv
+*.pub
+*.msg
 !sovereign_ai/verify/models/
 
 # Forensic & Test Artifacts

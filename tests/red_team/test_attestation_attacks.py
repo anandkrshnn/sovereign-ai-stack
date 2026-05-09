@@ -30,8 +30,9 @@ class TestAttestationAttacks:
         new_merkle_root = "new_tampered_root_hash_999"
         
         # 3. Attempt to verify stale quote against new root
-        # (This logic would be in the Verifier, but we test the principle here)
-        assert stale_quote.nonce != new_merkle_root
+        # The quote_data contains the hashed nonce in the mock simulator
+        expected_quote_data = hashlib.sha256(new_merkle_root.encode()).hexdigest()
+        assert stale_quote.quote_data != expected_quote_data
         # Verification should fail because the nonce in the quote doesn't match the new root
         print("PASS: Replay attack blocked by nonce-binding.")
 
@@ -71,9 +72,11 @@ class TestAttestationAttacks:
             enable_attestation=True
         )
         
+        from unittest.mock import patch
+        
         # We mock the factory to return a simulator even if hardware is requested
         # The pipeline should detect that the anchor is not hardware-backed
-        with pytest.patch("sovereign_ai.common.hardware_trust.get_secure_anchor") as mock_factory:
+        with patch("sovereign_ai.common.hardware_trust.get_secure_anchor") as mock_factory:
             mock_factory.return_value = SoftwareSimulatorAnchor(tenant_id="fake_hw")
             
             # This should ideally raise a security warning or be blocked by the verifier

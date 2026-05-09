@@ -60,4 +60,12 @@ class SecureAnchor(ABC):
         """
         return b""
 
+    def get_status(self) -> dict:
+        """Returns a diagnostic status of the anchor."""
+        return {
+            "type": self.__class__.__name__,
+            "available": True,
+            "details": "Active"
+        }
+
 __all__ = ["SecureAnchor"]
