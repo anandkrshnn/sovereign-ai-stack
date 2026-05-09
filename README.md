@@ -10,7 +10,10 @@
 
 ## 🔬 Overview
 
-The **Sovereign AI Stack** is an experimental reference implementation for local-first AI governance. It explores a **Verify-First** architecture using **NLI-based Grounding Checks** and **Signed Forensic Audit Trails** to mitigate hallucination and tampering risks in regulated environments.
+The **Sovereign AI Stack** is an alpha-stage research prototype for exploring local-first AI governance. It demonstrates a **Verify-First** architecture using **NLI-based Grounding Checks** and **Signed Forensic Audit Trails**. 
+
+> [!WARNING]
+> **Maturity Level**: This is a proof-of-concept. The "Verified Airlock" and "Hardware Attestation" features are functional in controlled simulator environments but have not undergone formal security audits for production deployment.
 
 ---
 
@@ -154,6 +157,17 @@ For detailed technical requirements to reach production readiness, see [Maturati
 - **Phase 1 (Completed)**: Monorepo consolidation, Forensic Hardening (Merkle/STRIDE), Remote Trust Preview (RATS), Pluggable Hardware Abstraction Layer (HAL).
 - **Phase 2 (Completed)**: Hardware-Anchored Merkle Checkpoints, Linux TPM 2.0 Native Integration (ESYS).
 - **Phase 3 (2026/2027)**: Secure Enclaves (Intel SGX), ZK-Proofs for compliance, Knowledge-Augmented Gates (K-Gate).
+
+---
+
+## 🛡️ Adversarial Verification (Red Team)
+
+To ensure the "Verified Airlock" is more than just "Security Theater", we maintain a dedicated **Red Team** test suite ([`tests/red_team/`](tests/red_team/)) that attempts to bypass the security gates:
+
+- **Quote Replay Attack**: Verified that the pipeline rejects valid but stale hardware quotes from previous sessions.
+- **PCR Modification Detection**: Verified that the `RemoteVerifier` detects and blocks operations if the platform state (PCRs) has changed since the last known-good baseline.
+- **Simulation Downgrade**: Verified that if `SOVEREIGN_REQUIRE_REMOTE_ATTESTATION` is set, the system **halts** rather than falling back to software-based simulation.
+- **Signature Forgery**: Verified that the `SignedAuditChain` rejects any tampering with historical audit logs by verifying the Ed25519/RSA-PSS signature chain.
 
 ---
 

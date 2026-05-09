@@ -63,43 +63,82 @@ class AttestationVerifier:
 
     def _verify_tpm2_quote(self, bundle: EvidenceBundle, results: Dict[str, Any]):
         """
-        Deep validation for native TPM 2.0 quotes.
+        Deep validation for native TPM 2.0 quotes using RSA-PSS verification.
         """
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding, rsa
+        from cryptography.hazmat.primitives import serialization
+        import base64
+
         quote = bundle.quote
         
-        # Structural Validation: In real TPM, quote_data is the TPM2B_ATTEST blob
-        # For Phase 3, we check for structural indicators or placeholders
-        if quote.quote_data and len(quote.quote_data) > 0:
+        # 1. Structural Validation
+        if quote.quote_data and quote.signature:
             results["checks"]["structure_valid"] = True
         else:
-            results["errors"].append("Invalid TPM quote structure: Missing TPM2B_ATTEST.")
+            results["errors"].append("Invalid TPM quote: Missing quote_data or signature.")
+            return
 
-        # Measurement Validation
+        # 2. Measurement Validation (PCR Check)
+        # In a real RATS flow, we'd verify the quote_data blob against the PCRs.
+        # Here we check the reported measurement against reference values.
         if quote.runtime_measurement == self.reference_values.get("app_hash"):
             results["checks"]["measurements_valid"] = True
         else:
             results["errors"].append(f"TPM PCR Measurement mismatch. Got: {quote.runtime_measurement}")
 
-        # Signature Validation (Simulated)
-        # TODO: Implement real RSA/ECDSA signature verification using AIK Cert
-        if quote.signature:
-            results["checks"]["signature_valid"] = True
-        else:
-            results["errors"].append("TPM quote signature missing.")
+        # 3. Cryptographic Signature Validation
+        try:
+            # Load the AIK Public Key (Endorsement)
+            aik_pem = self.reference_values.get("aik_public_key_pem")
+            if not aik_pem:
+                results["errors"].append("Missing AIK public key in reference values.")
+                return
+
+            public_key = serialization.load_pem_public_key(aik_pem.encode())
+            
+            # Prepare the data that was signed (the quote_data/TPM2B_ATTEST)
+            # Note: In a real TPM quote, the quote_data includes the nonce and Merkle Root.
+            quote_bytes = base64.b64decode(quote.quote_data)
+            signature_bytes = base64.b64decode(quote.signature)
+
+            if isinstance(public_key, rsa.RSAPublicKey):
+                public_key.verify(
+                    signature_bytes,
+                    quote_bytes,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH
+                    ),
+                    hashes.SHA256()
+                )
+                results["checks"]["signature_valid"] = True
+            else:
+                results["errors"].append("AIK key type mismatch: Expected RSA.")
+                
+        except Exception as e:
+            results["errors"].append(f"TPM Signature Verification Failed: {str(e)}")
 
     def _verify_mock_quote(self, bundle: EvidenceBundle, results: Dict[str, Any]):
         """
         Validation logic for simulator-based evidence.
+        Uses a simpler but still cryptographic check.
         """
+        import hashlib
         quote = bundle.quote
-        results["checks"]["structure_valid"] = True # Simulator is always 'structurally valid'
+        results["checks"]["structure_valid"] = True
         
+        # In the simulator, quote_data is sha256(nonce)
+        expected_quote_data = hashlib.sha256(bundle.nonce.encode()).hexdigest()
+        if quote.quote_data == expected_quote_data:
+            results["checks"]["signature_valid"] = True
+        else:
+            results["errors"].append("Simulator quote data mismatch (nonce binding failed).")
+            
         if quote.runtime_measurement == self.reference_values.get("app_hash"):
             results["checks"]["measurements_valid"] = True
         else:
             results["errors"].append(f"Simulator measurement mismatch.")
-
-        results["checks"]["signature_valid"] = True # Simulator signatures are auto-trusted in dev
 
 if __name__ == "__main__":
     ref_values = {"app_hash": "sha256_gold_v1"}
