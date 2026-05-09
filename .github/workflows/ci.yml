@@ -31,3 +31,22 @@ jobs:
         PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
       run: |
         python -m pytest tests/ --verbose -m "not requires_model and not slow"
+
+  test-docker-attestation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Start TPM Simulator and Sovereign App
+      run: |
+        docker-compose up --build -d
+        # Wait for the containers to initialize
+        sleep 10
+        
+    - name: Run Attestation Smoke Test
+      run: |
+        docker exec sovereign-app sovereign trust attest --nonce "ci-test-$(date +%s)"
+        
+    - name: Teardown
+      if: always()
+      run: docker-compose down

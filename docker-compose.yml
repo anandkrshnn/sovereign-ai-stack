@@ -1,45 +1,34 @@
 version: '3.8'
 
 services:
-  # 🛡️ Sovereign Bridge (The Verified Airlock)
-  sovereign-bridge:
+  # 1. TPM Simulator (IBM TPM 2.0)
+  # Provides a software-bound hardware-native interface for testing
+  tpm-simulator:
+    image: ghcr.io/stefanberger/swtpm:latest
+    container_name: sovereign-tpm-sim
+    command: >
+      socket 
+      --tpm2 
+      --tpmstate dir=/tmp 
+      --ctrl type=tcp,port=2322,bindaddr=0.0.0.0 
+      --server type=tcp,port=2321,bindaddr=0.0.0.0 
+      --flags not-need-init
+    ports:
+      - "2321:2321"
+      - "2322:2322"
+
+  # 2. Sovereign AI Stack
+  # Connects to the simulator via TCTI socket
+  sovereign-app:
     build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - SOVEREIGN_DATA_DIR=/app/data
-      - SOVEREIGN_MODEL=qwen2.5:7b
-      - BACKEND_CLUSTER=http://ollama:11434
-      - OTLP_ENDPOINT=http://jaeger:4318/v1/traces
-      - MASTER_GATEWAY_SECRET=sov-dev-secret
+    container_name: sovereign-app
     depends_on:
-      - ollama
-
-  # 🧠 Local Inference (Ollama)
-  ollama:
-    image: ollama/ollama:latest
+      - tpm-simulator
+    environment:
+      # Tell tpm2-pytss to connect to the swtpm simulator via network socket
+      - TPM2TOOLS_TCTI=swtpm:host=tpm-simulator,port=2321
+      - TCTI=swtpm:host=tpm-simulator,port=2321
     volumes:
-      - ./ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
-
-  # 📊 Observability (Prometheus)
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-
-  # 🔍 Distributed Tracing (Jaeger)
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686" # UI
-      - "4318:4318"   # OTLP HTTP
-
-volumes:
-  data:
-  ollama_data:
+      - .:/app
+    entrypoint: [""]
+    command: tail -f /dev/null

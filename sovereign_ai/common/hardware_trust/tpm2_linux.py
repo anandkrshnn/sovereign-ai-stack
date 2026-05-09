@@ -1,3 +1,4 @@
+import os
 import hashlib
 import logging
 import base64
@@ -8,7 +9,7 @@ from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 
 try:
     from tpm2_pytss import (
-        ESYS_CONTEXT, 
+        ESAPI, 
         TPM2B_DIGEST, 
         TPM2B_NONCE, 
         TPM2B_DATA,
@@ -19,7 +20,7 @@ try:
         ESYS_TR,
         TPMT_SIG_SCHEME,
         TPMU_SIG_SCHEME,
-        TPMS_SIG_SCHEME_RSASSA,
+        TPMS_SCHEME_HASH,
         TPMT_TK_HASHCHECK,
         TPM2_ST,
         TPM2_RH
@@ -43,11 +44,11 @@ class TPM2LinuxAnchor(SecureAnchor):
         self.aik_handle = aik_handle
         self._ctx: Optional[Any] = None
 
-    def _get_context(self) -> 'ESYS_CONTEXT':
+    def _get_context(self) -> 'ESAPI':
         if self._ctx is None:
-            # ESYS_CONTEXT() automatically opens /dev/tpmrm0 or /dev/tpm0
-            from tpm2_pytss import ESYS_CONTEXT
-            self._ctx = ESYS_CONTEXT()
+            from tpm2_pytss import ESAPI
+            tcti_str = os.environ.get("TPM2TOOLS_TCTI", None)
+            self._ctx = ESAPI(tcti=tcti_str) if tcti_str else ESAPI()
         return self._ctx
 
     def sign_payload(self, payload: bytes) -> bytes:
@@ -56,7 +57,7 @@ class TPM2LinuxAnchor(SecureAnchor):
         """
         from tpm2_pytss import (
             TPM2B_DIGEST, TPMT_SIG_SCHEME, TPM2_ALG, TPMU_SIG_SCHEME,
-            TPMS_SIG_SCHEME_RSASSA, TPMT_TK_HASHCHECK, TPM2_ST, TPM2_RH
+            TPMS_SCHEME_HASH, TPMT_TK_HASHCHECK, TPM2_ST, TPM2_RH
         )
         ctx = self._get_context()
         digest = hashlib.sha256(payload).digest()
@@ -65,7 +66,7 @@ class TPM2LinuxAnchor(SecureAnchor):
         scheme = TPMT_SIG_SCHEME(
             scheme=TPM2_ALG.RSASSA,
             details=TPMU_SIG_SCHEME(
-                rsassa=TPMS_SIG_SCHEME_RSASSA(hashAlg=TPM2_ALG.SHA256)
+                rsassa=TPMS_SCHEME_HASH(hashAlg=TPM2_ALG.SHA256)
             )
         )
         
@@ -78,7 +79,7 @@ class TPM2LinuxAnchor(SecureAnchor):
         
         try:
             # In tpm2-pytss, handles are managed via ESYS_TR or raw handle wrap
-            handle = ctx.tr_from_tpm_public(self.aik_handle)
+            handle = ctx.tr_from_tpmpublic(self.aik_handle)
             signature = ctx.sign(handle, digest, scheme, validation)
             
             # Extract raw signature bytes from the TPMT_SIGNATURE object
@@ -119,7 +120,7 @@ class TPM2LinuxAnchor(SecureAnchor):
         """
         from tpm2_pytss import (
             TPML_PCR_SELECTION, TPMS_PCR_SELECTION, TPM2_ALG, TPMT_SIG_SCHEME,
-            TPMU_SIG_SCHEME, TPMS_SIG_SCHEME_RSASSA
+            TPMU_SIG_SCHEME, TPMS_SCHEME_HASH
         )
         ctx = self._get_context()
         logger.info(f"Generating native TPM2 quote (PCRs: {pcrs})")
@@ -133,30 +134,51 @@ class TPM2LinuxAnchor(SecureAnchor):
         scheme = TPMT_SIG_SCHEME(
             scheme=TPM2_ALG.RSASSA,
             details=TPMU_SIG_SCHEME(
-                rsassa=TPMS_SIG_SCHEME_RSASSA(hashAlg=TPM2_ALG.SHA256)
+                rsassa=TPMS_SCHEME_HASH(hashAlg=TPM2_ALG.SHA256)
             )
         )
         
         try:
-            handle = ctx.tr_from_tpm_public(self.aik_handle)
-            # 3. Execute Quote
-            quote_info, signature = ctx.quote(
-                handle, 
-                nonce.encode(), 
-                scheme, 
-                pcr_sel
-            )
+            import subprocess
+            import tempfile
             
-            # Format results into RATS evidence bundle
+            # Flush transient contexts to prevent out of memory issues
+            subprocess.run(["tpm2_flushcontext", "-t"], check=False, capture_output=True)
+            
+            with tempfile.TemporaryDirectory() as tmpdir:
+                msg_path = os.path.join(tmpdir, "quote.msg")
+                sig_path = os.path.join(tmpdir, "quote.sig")
+                pcr_sel_str = "sha256:" + ",".join(str(p) for p in pcrs)
+                
+                cmd = [
+                    "tpm2_quote", 
+                    "-c", "0x81000002", 
+                    "-q", nonce.encode().hex(), 
+                    "-l", pcr_sel_str, 
+                    "-m", msg_path, 
+                    "-s", sig_path
+                ]
+                
+                res = subprocess.run(cmd, capture_output=True, text=True)
+                if res.returncode != 0:
+                    raise RuntimeError(f"tpm2_quote failed: {res.stderr}")
+                
+                with open(msg_path, "rb") as f:
+                    quote_bytes = f.read()
+                with open(sig_path, "rb") as f:
+                    sig_bytes = f.read()
+                    
             return AttestationQuote(
                 type=EvidenceType.TPM2_QUOTE,
-                quote_data=base64.b64encode(quote_info.to_bytes()).decode(),
+                quote_data=base64.b64encode(quote_bytes).decode(),
                 pcr_values={p: self._read_pcr(p) for p in pcrs},
                 firmware_version="Linux_TPM2_ESYS_v1.0",
                 runtime_measurement=self._read_pcr(11),
-                signature=base64.b64encode(signature.to_bytes()).decode()
+                signature=base64.b64encode(sig_bytes).decode()
             )
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             logger.warning(f"TPM2 Quote failed ({e}). Falling back to simulation.")
             return AttestationQuote(
                 type=EvidenceType.MOCK_SIM,

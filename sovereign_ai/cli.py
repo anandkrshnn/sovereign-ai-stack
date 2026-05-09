@@ -89,6 +89,18 @@ def trust():
 
 @trust.command()
 @click.option("--tenant", default="default", help="Tenant ID.")
+@click.option("--backend", default="auto", type=click.Choice(["auto", "mock", "tpm2_linux", "tpm2_windows"]))
+def status(tenant, backend):
+    """Check hardware trust status."""
+    from .common.hardware_trust import get_secure_anchor
+    anchor = get_secure_anchor(tenant, backend=backend)
+    
+    click.echo(f"Anchor Type: {anchor.__class__.__name__}")
+    click.echo(f"Hardware Status: {anchor.is_hardware}")
+    click.echo(f"Algorithm: {anchor.algorithm.value}")
+
+@trust.command()
+@click.option("--tenant", default="default", help="Tenant ID.")
 @click.option("--nonce", default=None, help="Optional 32-char challenge nonce.")
 @click.option("--backend", default="auto", type=click.Choice(["auto", "mock", "tpm2_linux", "tpm2_windows"]))
 def attest(tenant, nonce, backend):
