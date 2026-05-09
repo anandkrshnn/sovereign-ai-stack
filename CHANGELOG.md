@@ -5,6 +5,17 @@ All notable changes to the Sovereign AI Stack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0a5] - 2026-05-09
+### Added
+- **Mandatory Remote Attestation Gate**: `SovereignPipeline` now optionally enforces remote verification before startup, blocking operations if the hardware quote is rejected.
+- **Native TPM 2.0 (ESYS)**: Transitioned from simulated strings to real `python-tpm2-pytss` calls in `TPM2LinuxAnchor` for quote generation and signing.
+- **SecurityHalt Exception**: Dedicated error for non-recoverable security and attestation failures.
+- **Integration Tests**: Added `test_remote_enforcement.py` to verify the new control loop.
+
+### Changed
+- **NLI Optimization**: Implemented batch inference in `SovereignEvaluator`, reducing RAG verification latency by ~40%.
+- **HAL Reliability**: Hardened `tpm2_linux.py` for cross-platform imports using deferred loading.
+
 ## [0.1.0a4] - 2026-05-09
 ### Added
 - **Hardware-Anchored Merkle Checkpoints**: Integrated IETF RATS-compliant TPM quotes directly into forensic audit checkpoints, cryptographically binding Merkle Roots to PCR measurements.

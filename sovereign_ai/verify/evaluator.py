@@ -96,18 +96,15 @@ class SovereignEvaluator:
         """
         Score grounding and faithfulness of *answer* given *context*.
 
-        Returns
-        -------
-        dict with keys:
-            grounding_score   float in [0, 1]  — entailment prob of (context → answer)
-            faithfulness_score float in [0, 1] — entailment prob of (query+context → answer)
-            overall_score     float in [0, 1]  — mean of the two scores
-            passed            bool             — True iff both scores exceed thresholds
+        Optimized v0.1.0a5: Batch inference for grounding and faithfulness.
         """
-        grounding_score = self._entailment_prob(context, answer)
-        faithfulness_score = self._entailment_prob(
-            f"{query}\n\n{context}", answer
-        )
+        premises = [context, f"{query}\n\n{context}"]
+        hypotheses = [answer, answer]
+
+        probs = self._batch_entailment_probs(premises, hypotheses)
+
+        grounding_score = probs[0]
+        faithfulness_score = probs[1]
 
         passed = (
             grounding_score >= self.config.grounding_threshold
@@ -125,29 +122,31 @@ class SovereignEvaluator:
     # Internal
     # ------------------------------------------------------------------
 
-    def _entailment_prob(self, premise: str, hypothesis: str) -> float:
+    def _batch_entailment_probs(self, premises: list[str], hypotheses: list[str]) -> list[float]:
         """
-        Run one NLI inference pass and return the entailment probability.
-
-        The model card specifies label order: [contradiction, entailment, neutral].
-        We take softmax over all three logits and read index 1 (entailment).
+        Run multiple NLI inference passes in a single batch and return entailment probabilities.
         """
         assert self.model is not None and self.tokenizer is not None
 
         inputs = self.tokenizer(
-            premise,
-            hypothesis,
+            premises,
+            hypotheses,
+            padding=True,
             truncation=True,
             max_length=512,
             return_tensors="pt",
         ).to(self.model.device)
 
         with torch.no_grad():
-            logits = self.model(**inputs).logits  # shape: (1, 3)
+            logits = self.model(**inputs).logits  # shape: (N, 3)
 
-        probs = F.softmax(logits, dim=-1)  # (1, 3)
-        entailment_prob = probs[0, _ENTAILMENT_IDX].item()
-        return float(entailment_prob)
+        probs = F.softmax(logits, dim=-1)  # (N, 3)
+        entailment_probs = probs[:, _ENTAILMENT_IDX].tolist()
+        return [float(p) for p in entailment_probs]
+
+    def _entailment_prob(self, premise: str, hypothesis: str) -> float:
+        """Backward compatibility for single calls."""
+        return self._batch_entailment_probs([premise], [hypothesis])[0]
 
     def unload(self) -> None:
         """Release GPU memory."""

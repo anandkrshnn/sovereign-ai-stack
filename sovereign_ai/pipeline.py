@@ -32,6 +32,10 @@ class Config:
     
     # [Hardware Attestation]
     enable_attestation: bool = False
+    
+    # [Remote Attestation Enforcement]
+    remote_verifier_url: Optional[str] = None
+    require_remote_attestation: bool = False
 
 class SovereignPipeline:
     """
@@ -47,6 +51,23 @@ class SovereignPipeline:
         # [Phase 3] Instantiate anchor via factory for cross-platform hardware trust
         from .common.hardware_trust import get_secure_anchor
         self.anchor = get_secure_anchor(config.tenant_id)
+
+        # Mandatory Remote Attestation Gate (v0.1.0a5)
+        if config.require_remote_attestation:
+            import asyncio
+            # We need a bridge for sync init
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If we're in a loop, we can't block. 
+                    # In production, this should be called via an async factory.
+                    import nest_asyncio
+                    nest_asyncio.apply()
+                    loop.run_until_complete(self._perform_remote_attestation())
+                else:
+                    loop.run_until_complete(self._perform_remote_attestation())
+            except RuntimeError:
+                asyncio.run(self._perform_remote_attestation())
 
         self._engine = AsyncLocalRAG(
             db_path=config.db_path,
@@ -74,6 +95,51 @@ class SovereignPipeline:
                 self._evaluator = SovereignEvaluator()
             except ImportError:
                 print("Warning: local-verify components not found. Verification disabled.")
+
+    async def _perform_remote_attestation(self):
+        """
+        Hardened Gate: Sends a hardware quote to the Remote Verifier.
+        Halts pipeline if verification fails.
+        """
+        if not self.config.remote_verifier_url:
+            from .common.schemas import SecurityHalt
+            raise SecurityHalt("remote_verifier_url required when require_remote_attestation is True")
+
+        import httpx
+        import uuid
+        from .common.schemas import SecurityHalt
+        
+        nonce = str(uuid.uuid4())
+        quote = self.anchor.generate_quote(nonce=nonce, pcrs=[0, 11])
+        
+        payload = {
+            "tenant_id": self.config.tenant_id,
+            "nonce": nonce,
+            "evidence": quote.model_dump()
+        }
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    f"{self.config.remote_verifier_url}/verify/v1/attest",
+                    json=payload,
+                    timeout=10.0
+                )
+                
+                if resp.status_code != 200:
+                    raise SecurityHalt(f"Remote Attestation Rejected: {resp.text}")
+                
+                result = resp.json()
+                if not result.get("success"):
+                    raise SecurityHalt(f"Remote Attestation Failed: {result.get('message')}")
+                
+                print(f"DEBUG: Remote Attestation Verified by {self.config.remote_verifier_url}")
+                
+        except httpx.RequestError as e:
+            if self.config.fail_closed:
+                raise SecurityHalt(f"Verifier Unreachable: {e}")
+            else:
+                print(f"Warning: Verifier unreachable, but fail_closed=False. Proceeding with caution.")
 
     async def ask(self, query: str, intent: str = "general", top_k: int = 5, stream: bool = False) -> Union[RAGResponse, AsyncGenerator[str, None]]:
         """
