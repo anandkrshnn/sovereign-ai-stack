@@ -43,7 +43,7 @@ def test_immune_brain_basic_accepted_flow():
     )
 
     # Act: Propose the update
-    result = brain.propose_update(event)
+    result = brain.propose_update(event, ptv_validated=True)
 
     # Assert
     assert result["status"] == "ACCEPT"
@@ -70,7 +70,7 @@ def test_immune_brain_quarantine_flow():
     )
 
     # Act: Propose the update
-    result = brain.propose_update(event)
+    result = brain.propose_update(event, ptv_validated=True)
 
     # Assert
     assert result["status"] == "QUARANTINE"
@@ -99,7 +99,7 @@ def test_immune_brain_innate_rejection_flow():
     )
 
     # Act: Propose
-    result = brain.propose_update(event)
+    result = brain.propose_update(event, ptv_validated=True)
 
     # Assert
     assert result["status"] == "REJECT"

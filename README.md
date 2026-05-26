@@ -2,6 +2,10 @@
 
 **A Technical Framework for Local-First RAG Verification and Forensic Auditability**
 
+> [!NOTE]
+> **Current Status: v0.6.0 Complete & Briefing Ready**  
+> The Sovereign AI Stack v0.6.0 (Immune System Brain & PTV ZK-Attestation Bridge reference implementation) is fully completed, tested, and validated. Streamlined briefing telemetry scripts and official compliance documentation are prepped and ready for the Q3 2026 IMDA Singapore Technical Review.
+
 > [!CAUTION]
 > **Experimental Research Preview (v0.1.0a5)**
 > This repository is a reference implementation for technical exploration. It is **not** currently certified for production use with sensitive data. Last architecture audit: May 2026.
@@ -19,22 +23,19 @@ The **Sovereign AI Stack** is an alpha-stage research prototype for exploring lo
 
 ## 🏗️ Technical Architecture
 
-The stack operates as an experimental **Verify-First** pipeline.
+The stack operates as an experimental **Verify-First** pipeline, utilizing the **Immune System Brain**.
 
 ```mermaid
 flowchart TD
-    A["User Query + Principal"] --> B["Hybrid Retriever<br/>BM25 + Dense"]
-    B --> C["Context Builder"]
-    C --> D["NLI Grounding Gate<br/>DeBERTa-v3<br/>≥0.85 entailment"]
-    D -->|Pass| E["LLM Generation<br/>with Citations"]
-    D -->|Fail| F["Verification Failure<br/>Insufficient Grounding"]
-    E --> G["Signed Audit Event<br/>Ed25519 Chain"]
+    A["Knowledge Event (Antigen)"] --> B["PTV Bridge (Airlock)"]
+    B -->|TPM/Groth16 Valid| C["NLI Adaptive Gate (Innate Immunity)"]
+    B -->|Invalid| X["Security Halt"]
+    C -->|Entailment| D["Layer 1 Verified Memory"]
+    C -->|Contradiction| E["Reject (Fail-Closed)"]
+    C -->|Neutral| F["Quarantine Zone"]
+    D --> G["Merkle Audit Chain (Layer 0)"]
+    E --> G
     F --> G
-    G --> H["Merkle Aggregation<br/>(10-event blocks)"]
-    H --> I["Hardware Attestation Quote<br/>TPM 2.0 / IETF RATS"]
-    I --> J["Remote Verifier Service<br/>(Enforced Gate)"]
-    J -->|Approved| K["Forensic Certificate"]
-    J -->|Rejected| L["SecurityHalt<br/>Pipeline Blocked"]
 ```
 
 Detailed architecture documentation, including C4 Container Diagrams and Architecture Decision Records (ADRs), can be found in [docs/architecture/c4-container-v0.1.0a5.md](docs/architecture/c4-container-v0.1.0a5.md).
@@ -110,13 +111,40 @@ python -m sovereign_ai.bridge.main
 ```
 
 ### 3. Explore Examples (Research Preview)
-We provide three end-to-end examples in the [examples/](examples/) directory:
+We provide multiple end-to-end examples in the [examples/](examples/) directory:
 
 | Example | What it demonstrates | Status |
 | :--- | :--- | :--- |
 | [`01_basic_rag.py`](examples/01_basic_rag.py) | Minimal RAG setup | Stable |
 | [`02_verified_query.py`](examples/02_verified_query.py) | NLI Grounding Gate | Experimental |
 | [`03_forensic_agent.py`](examples/03_forensic_agent.py) | Signed Audit Chains | Alpha |
+| [`demo_immune_brain.py`](examples/demo_immune_brain.py) | **Immune System Brain & PTV Attestation Bridge** | Stable |
+
+To run the flagship Immune System Brain briefing demo:
+```bash
+python examples/demo_immune_brain.py
+```
+Or simulate a complete PTV bypass attack vector by running:
+```bash
+python examples/demo_immune_brain.py --no-ptv
+```
+
+---
+
+## 🇸🇬 IMDA Singapore Technical Briefing Preparation
+
+For teams preparing for the **IMDA Singapore & AI Verify Foundation technical briefing** (scheduled for Q3 2026), we provide dedicated, high-fidelity briefing assets and live demo configurations:
+
+### 1. Dedicated Technical Documentation
+*   **Executive Technical Note:** [docs/PTV_Immune_Brain_Technical_Note.md](docs/PTV_Immune_Brain_Technical_Note.md) — 4-page detailed whitepaper outlining mathematical ZKP formulations, hardware attestation steps, and security properties.
+*   **Technical Briefing One-Pager:** [docs/IMDA_Briefing_OnePager.md](docs/IMDA_Briefing_OnePager.md) — Under 1.5-page high-level executive summary tailored for regulatory compliance teams.
+*   **Technical Slide Deck & Speaker Notes:** [docs/IMDA_Presentation.md](docs/IMDA_Presentation.md) — Minute-by-minute slide presentation content and expert Q&A reference.
+
+### 2. Streamlined Live Call Demonstration
+To run a clean, telemetry-only briefing visualization optimized for a live Zoom/Teams presentation (with HTTP downloads, logs, and progress indicators fully silenced):
+```bash
+python examples/demo_immune_brain.py --briefing
+```
 
 ---
 

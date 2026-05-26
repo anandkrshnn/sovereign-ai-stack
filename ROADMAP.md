@@ -66,14 +66,34 @@
 
 ---
 
-## 🛡️ v0.6.0 (Immune System Brain & PTV Synergy) — Target: Q4 2026
+## ✅ v0.6.0 (Immune System Brain & PTV Synergy) — Done (2026-05-26)
 
 **Scope: Verifiable Adaptive Governance (Immune Memory + ZK Policy Attestation).**
 
-- [ ] **Adaptive Memory Core**: Integration of the `VerifiedBrain` with local high-performance LanceDB vector embedding storage and Neo4j/local network graph memory.
-- [ ] **ZK-Policy Gate (PTV Synergy)**: Integrate the hardware-anchored zero-knowledge attestation (Groth16) with the NLI gate to generate cryptographically verifiable proof of policy-compliant knowledge transformation without leaking underlying dataset contents.
-- [ ] **Dynamic Quarantine Resolution**: Fully automated consensus agent protocol where multiple independent LLMs/Classifiers act as a jury to resolve quarantined antigens.
-- [ ] **AI Verify & IMDA Alignment**: Implementation of audit templates directly compliant with Singapore's Model AI Governance Framework and AI Verify tools.
+- [x] **Adaptive Memory Core**: Integration of the `VerifiedBrain` with local high-performance LanceDB vector embedding storage and Neo4j/local network graph memory.
+- [x] **ZK-Policy Gate (PTV Synergy)**: Integrate the hardware-anchored zero-knowledge attestation (Groth16) with the NLI gate to generate cryptographically verifiable proof of policy-compliant knowledge transformation without leaking underlying dataset contents.
+- [x] **Dynamic Quarantine Resolution**: Fully automated consensus agent protocol where multiple independent LLMs/Classifiers act as a jury to resolve quarantined antigens.
+- [x] **AI Verify & IMDA Alignment**: Implementation of audit templates directly compliant with Singapore's Model AI Governance Framework and AI Verify tools.
+
+---
+
+## 🧠 v0.7.0 (Memory Consolidation) — Target: Q1 2027
+
+**Scope: Long-term Semantic Distillation and Knowledge Lifecycle.**
+
+- [ ] Automatic promotion of Layer 1 facts to Layer 2 Wisdom Principles.
+- [ ] Garbage collection for obsolete or overridden knowledge vectors.
+- [ ] Semantic deduplication across the Merkle history.
+
+---
+
+## 📊 v0.8.0 (Brain Health Dashboard) — Target: Q2 2027
+
+**Scope: Visual Observability of the Immune System.**
+
+- [ ] Real-time Autoimmune Threshold monitoring dashboard.
+- [ ] Visual Quarantine Zone with one-click resolution.
+- [ ] Merkle chain audit explorer UI.
 
 ---
 

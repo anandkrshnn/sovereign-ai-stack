@@ -44,12 +44,18 @@ class VerifiedBrain:
         self.evaluation_window_size = 10
         self.recent_rejection_history: List[bool] = []  # Tracks last N updates (True if rejected/quarantined)
 
-    def propose_update(self, event: KnowledgeEvent, public_key_hex: Optional[str] = None) -> Dict[str, Any]:
+    def propose_update(self, event: KnowledgeEvent, public_key_hex: Optional[str] = None, ptv_validated: bool = False) -> Dict[str, Any]:
         """
         Receives an Antigen (proposed change), verifies signatures, runs innate immunity checks, 
         and updates the memory layers accordingly.
+        Requires PTV (Prove-Transform-Verify) validation to be True.
         """
         logger.info("Processing proposed knowledge update: %s", event.event_id)
+
+        # 0. PTV Enforcement
+        if not ptv_validated:
+            logger.error("PTV validation missing for event: %s. Rejecting.", event.event_id)
+            return {"status": "REJECT", "reason": "Missing PTV validation. Must pass through PTV Bridge.", "event_id": event.event_id}
 
         # 1. Cryptographic Signature Verification
         if public_key_hex:

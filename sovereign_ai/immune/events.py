@@ -52,7 +52,6 @@ class KnowledgeEvent:
         """
         try:
             from cryptography.hazmat.primitives.asymmetric import ed25519
-            import bytes
         except ImportError:
             # Fallback for lightweight testing if cryptography library is missing
             self.signature = hashlib.sha256((self.payload + private_key_hex).encode('utf-8')).hexdigest()
@@ -71,7 +70,6 @@ class KnowledgeEvent:
             return False
         try:
             from cryptography.hazmat.primitives.asymmetric import ed25519
-            import bytes
         except ImportError:
             # Fallback verification matching the fallback sign method
             expected = hashlib.sha256((self.payload + public_key_hex).encode('utf-8')).hexdigest()
