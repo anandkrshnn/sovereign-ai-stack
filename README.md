@@ -148,6 +148,14 @@ python examples/demo_immune_brain.py --briefing
 
 ---
 
+## 🏛️ Government & Regulatory Engagements
+
+The Sovereign AI Stack project actively collaborates with national digital agencies and regulatory bodies to align verifiable, local-first artificial intelligence architectures with emerging security and governance frameworks:
+
+*   **IMDA Singapore Engagement:** Technical proposal for the **Prove-Transform-Verify (PTV) protocol** and **Immune System Brain** was submitted to the Info-communications Media Development Authority (IMDA) of Singapore in April 2026. Preliminary technical review was successfully completed in May 2026, with a formal technical briefing and live sandbox demonstration scheduled for Q3 2026. For a complete log of public milestones and policy alignments, see [docs/IMDA_Engagement.md](docs/IMDA_Engagement.md).
+
+---
+
 ## 📈 Technical Benchmarks (Alpha)
 
 *Hardware: MacBook Pro M2 Max (32GB) | Model: Qwen-2.5-7B-Instruct (Ollama)*
