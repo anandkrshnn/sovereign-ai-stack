@@ -147,7 +147,6 @@ python examples/demo_immune_brain.py --briefing
 ```
 
 ---
----
 
 ## 📈 Technical Benchmarks (Alpha)
 
