@@ -129,22 +129,6 @@ Or simulate a complete PTV bypass attack vector by running:
 python examples/demo_immune_brain.py --no-ptv
 ```
 
----
-
-## 🇸🇬 IMDA Singapore Technical Briefing Preparation
-
-For teams preparing for the **IMDA Singapore & AI Verify Foundation technical briefing** (scheduled for Q3 2026), we provide dedicated, high-fidelity briefing assets and live demo configurations:
-
-### 1. Dedicated Technical Documentation
-*   **Executive Technical Note:** [docs/PTV_Immune_Brain_Technical_Note.md](docs/PTV_Immune_Brain_Technical_Note.md) — 4-page detailed whitepaper outlining mathematical ZKP formulations, hardware attestation steps, and security properties.
-*   **Technical Briefing One-Pager:** [docs/IMDA_Briefing_OnePager.md](docs/IMDA_Briefing_OnePager.md) — Under 1.5-page high-level executive summary tailored for regulatory compliance teams.
-*   **Technical Slide Deck & Speaker Notes:** [docs/IMDA_Presentation.md](docs/IMDA_Presentation.md) — Minute-by-minute slide presentation content and expert Q&A reference.
-
-### 2. Streamlined Live Call Demonstration
-To run a clean, telemetry-only briefing visualization optimized for a live Zoom/Teams presentation (with HTTP downloads, logs, and progress indicators fully silenced):
-```bash
-python examples/demo_immune_brain.py --briefing
-```
 
 ---
 
