@@ -120,13 +120,9 @@ We provide multiple end-to-end examples in the [examples/](examples/) directory:
 | [`03_forensic_agent.py`](examples/03_forensic_agent.py) | Signed Audit Chains | Alpha |
 | [`demo_immune_brain.py`](examples/demo_immune_brain.py) | **Immune System Brain & PTV Attestation Bridge** | Stable |
 
-To run the flagship Immune System Brain briefing demo:
+To run the flagship Immune System Brain demo:
 ```bash
 python examples/demo_immune_brain.py
-```
-Or simulate a complete PTV bypass attack vector by running:
-```bash
-python examples/demo_immune_brain.py --no-ptv
 ```
 
 
