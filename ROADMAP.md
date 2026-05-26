@@ -66,6 +66,17 @@
 
 ---
 
+## 🛡️ v0.6.0 (Immune System Brain & PTV Synergy) — Target: Q4 2026
+
+**Scope: Verifiable Adaptive Governance (Immune Memory + ZK Policy Attestation).**
+
+- [ ] **Adaptive Memory Core**: Integration of the `VerifiedBrain` with local high-performance LanceDB vector embedding storage and Neo4j/local network graph memory.
+- [ ] **ZK-Policy Gate (PTV Synergy)**: Integrate the hardware-anchored zero-knowledge attestation (Groth16) with the NLI gate to generate cryptographically verifiable proof of policy-compliant knowledge transformation without leaking underlying dataset contents.
+- [ ] **Dynamic Quarantine Resolution**: Fully automated consensus agent protocol where multiple independent LLMs/Classifiers act as a jury to resolve quarantined antigens.
+- [ ] **AI Verify & IMDA Alignment**: Implementation of audit templates directly compliant with Singapore's Model AI Governance Framework and AI Verify tools.
+
+---
+
 ## 📋 External Validation — No date committed
 
 These items require third-party work and cannot be given internal target dates:
@@ -76,5 +87,6 @@ These items require third-party work and cannot be given internal target dates:
 
 ---
 
-*Roadmap updated: 2026-05-02*
+*Roadmap updated: 2026-05-26*
 *Next review: 2026-06-01*
+
