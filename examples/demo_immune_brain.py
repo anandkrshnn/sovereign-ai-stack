@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Sovereign AI Stack - Immune System Brain + PTV 
-Final Version - Optimized for IMDA Singapore Briefing
+Reference Implementation - Technical Verification Demo
 """
 
 import os
@@ -67,10 +67,10 @@ def print_banner(title):
     print(f"   {title}")
     print("=" * 70)
 
-def run_briefing_demo():
+def run_technical_demo():
     print("\n" + "+" * 70)
     print("|   SOVEREIGN AI STACK: IMMUNE SYSTEM BRAIN & PTV BRIDGE   |")
-    print("|          IMDA SINGAPORE TECHNICAL BRIEFING DEMO          |")
+    print("|                TECHNICAL VERIFICATION DEMO               |")
     print("+" * 70 + "\n")
 
     print("[*] Initializing Secure Enclave & NLI Gate...")
@@ -161,7 +161,7 @@ def run_briefing_demo():
     print(f"  [i] Enforcement Time: {duration3:.2f} ms\n")
 
     # Final Security Summary
-    print_banner("IMDA TECHNICAL BRIEFING: SECURITY PROPERTIES DEMONSTRATED")
+    print_banner("TECHNICAL DEMO: SECURITY PROPERTIES DEMONSTRATED")
     print("+----------------------------------+----------------------------------+----------------------------+--------+")
     print("| Security Property                | Threat Mitigated                 | Enforcement Layer          | Status |")
     print("+----------------------------------+----------------------------------+----------------------------+--------+")
@@ -173,10 +173,10 @@ def run_briefing_demo():
     print(f"| Adaptive Defense                 | Knowledge Flooding               | Autoimmune Safeguard       |  {COLOR_GREEN}PASS{COLOR_RESET}  |")
     print("+----------------------------------+----------------------------------+----------------------------+--------+\n")
 
-    print("SUCCESS: Demo completed successfully. Ready for IMDA briefing.\n")
+    print("SUCCESS: Demo completed successfully.\n")
 
 if __name__ == "__main__":
-    if "--briefing" in sys.argv:
-        run_briefing_demo()
+    if "--demo" in sys.argv or "--briefing" in sys.argv or len(sys.argv) == 1:
+        run_technical_demo()
     else:
-        print("Usage: python examples/demo_immune_brain.py --briefing")
+        print("Usage: python examples/demo_immune_brain.py --demo")

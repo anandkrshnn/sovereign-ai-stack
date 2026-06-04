@@ -3,8 +3,8 @@
 **A Technical Framework for Local-First RAG Verification and Forensic Auditability**
 
 > [!NOTE]
-> **Current Status: v0.6.0 Complete & Briefing Ready**  
-> The Sovereign AI Stack v0.6.0 (Immune System Brain & PTV ZK-Attestation Bridge reference implementation) is fully completed, tested, and validated. Streamlined briefing telemetry scripts and official compliance documentation are prepped and ready for the Q3 2026 IMDA Singapore Technical Review.
+> **Current Status: v0.6.0 Reference Implementation**  
+> The Sovereign AI Stack v0.6.0 (Immune System Brain & PTV ZK-Attestation Bridge reference implementation) is fully completed, tested, and validated. It provides a blueprint for local-first verifiable grounding and cryptographic attestation.
 
 > [!CAUTION]
 > **Experimental Research Preview (v0.1.0a5)**
