@@ -40,6 +40,7 @@ def abac_policy(tmp_path):
         yaml.dump(policy_data, f)
     return str(policy_path)
 
+@pytest.mark.sovereign(id="POL-002")
 def test_abac_matrix_integration(abac_policy):
     """Sovereign Certification: Verify Principal/Intent/Classification matrix."""
     engine = PolicyEngine(abac_policy)
@@ -71,6 +72,7 @@ def test_abac_matrix_integration(abac_policy):
     assert "c1" in decision.allowed_chunks
     assert "c2" in decision.allowed_chunks
 
+@pytest.mark.sovereign(id="AUD-006")
 def test_audit_tamper_detection(tmp_path):
     """Sovereign Certification: Prove detection of audit mutations."""
     logger = SovereignAuditLogger(base_dir=str(tmp_path), tenant_id="t1")

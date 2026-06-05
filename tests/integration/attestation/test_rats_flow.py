@@ -67,9 +67,17 @@ def test_attestation_roundtrip_hardware_native():
     
     # 2. Challenge
     challenge_nonce = hashlib.sha256(b"hardware_nonce").hexdigest()
+    challenge_bytes = challenge_nonce.encode("utf-8")
     
-    # 3. Attester Generates Quote
-    quote_data_bytes = f"TPM2B_ATTEST_BEYOND_SIMULATOR_{challenge_nonce}".encode()
+    # 3. Attester Generates Quote (constructing a valid TPMS_ATTEST binary layout)
+    quote_data_bytes = (
+        b"\xffTCG" +  # magic (4B)
+        b"\x80\x18" +  # type (2B)
+        b"\x00\x00" +  # qualifiedSigner length (2B)
+        len(challenge_bytes).to_bytes(2, byteorder="big") +  # extraData/nonce length (2B)
+        challenge_bytes  # extraData (nonce challenge bytes)
+    )
+    
     signature = private_key.sign(
         quote_data_bytes,
         padding.PSS(

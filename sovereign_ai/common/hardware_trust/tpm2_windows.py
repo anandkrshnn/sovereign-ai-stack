@@ -49,8 +49,15 @@ class WindowsTPMAnchor(SecureAnchor):
     def get_signing_algorithm(self) -> SigningAlgorithm:
         return SigningAlgorithm.RSA2048
 
+    def get_status(self) -> dict:
+        return {
+            "type": self.__class__.__name__,
+            "available": True,
+            "details": "Simulated/Mock (Transient RSA Key)"
+        }
+
     @property
     def is_hardware(self) -> bool:
-        return True
+        return False
 
 __all__ = ["WindowsTPMAnchor"]

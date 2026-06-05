@@ -1,22 +1,24 @@
-from typing import Union, Generator, Optional, List, AsyncGenerator
 import asyncio
-from .governed import GovernedRetriever, AsyncGovernedRetriever
-from .retriever import AsyncFTS5Retriever
-from .generator import QwenGenerator
-from .cache import SemanticCache
-from .schemas import RAGResponse, SearchResult
-from .prompts import DEFAULT_SYSTEM_PROMPT, RAG_USER_PROMPT
+from typing import AsyncGenerator, Generator, List, Optional, Union
+
 from ..common.hardware_trust import SecureAnchor
+from .cache import SemanticCache
+from .generator import QwenGenerator
+from .governed import AsyncGovernedRetriever, GovernedRetriever
+from .prompts import DEFAULT_SYSTEM_PROMPT, RAG_USER_PROMPT
+from .retriever import AsyncFTS5Retriever
+from .schemas import Document, RAGResponse, SearchResult
+
 
 class LocalRAG:
     """
     Sovereign AI RAG Orchestrator.
-    
+
     v0.4.0: Supports Data-at-Rest encryption via SQLCipher.
     """
-    
+
     def __init__(
-        self, 
+        self,
         db_path: Optional[str] = None,
         policy_path: Optional[str] = None,
         principal: str = "anonymous",
@@ -28,15 +30,15 @@ class LocalRAG:
         trusted_policy_key: Optional[str] = None,
         strict_policy: bool = False,
         anchor: Optional[SecureAnchor] = None,
-        attest: bool = False
+        attest: bool = False,
     ):
         self.governed = policy_path is not None
         self.use_reranker = use_reranker
         self.enable_verification = enable_verification
-        
+
         if self.governed:
             self.retriever = GovernedRetriever(
-                db_path=db_path, 
+                db_path=db_path,
                 policy_path=policy_path,
                 principal=principal,
                 password=password,
@@ -45,13 +47,14 @@ class LocalRAG:
                 trusted_policy_key=trusted_policy_key,
                 strict_policy=strict_policy,
                 anchor=anchor,
-                attest=attest
+                attest=attest,
             )
         else:
             # Legacy/Ungoverned Mode
             from .retriever import FTS5Retriever
+
             self.retriever = FTS5Retriever(db_path, password=password)
-            
+
         # Ensure we don't pass None as model_name to avoid overriding QwenGenerator's default
         if model_name:
             self.generator = QwenGenerator(model_name=model_name)
@@ -61,74 +64,74 @@ class LocalRAG:
         self.evaluator = None
         if self.enable_verification:
             from sovereign_ai.verify import SovereignEvaluator
+
             self.evaluator = SovereignEvaluator()
-    
-    def ask(self, query: str, top_k: int = 5, stream: bool = False) -> Union[RAGResponse, Generator[str, None, None]]:
+
+    def ask(
+        self, query: str, top_k: int = 5, stream: bool = False
+    ) -> Union[RAGResponse, Generator[str, None, None]]:
         """
-        Ask a question using the RAG pipeline. 
+        Ask a question using the RAG pipeline.
         In governed mode, retrieval passes through the Sovereign Airlock.
         """
         if self.governed:
             # Policy-mediated retrieval
             # When reranking is enabled, we fetch more candidates (100) and rerank to top_k
             results, decision = self.retriever.search(
-                query, 
-                top_k=100 if self.use_reranker else 20, 
-                rerank_top_k=top_k
+                query, top_k=100 if self.use_reranker else 20, rerank_top_k=top_k
             )
-            
+
             # Fail-closed: if policy denied everything, we don't even talk to the LLM
             if decision.action == "deny" and not results:
                 refusal = f"[Sovereign Access Denied] {decision.reason}"
                 if stream:
-                    def gen(): yield refusal
+
+                    def gen():
+                        yield refusal
+
                     return gen()
                 return RAGResponse(answer=refusal, sources=[], model_name=self.generator.model_name)
         else:
             # Standard retrieval
             results = self.retriever.search(query, top_k=top_k)
-        
+
         if not results:
             refusal = "[Insufficient Local Context] The local database does not have enough information to answer this query."
             if stream:
-                def gen(): yield refusal
+
+                def gen():
+                    yield refusal
+
                 return gen()
             return RAGResponse(answer=refusal, sources=[], model_name=self.generator.model_name)
-            
+
         # Context construction
         context_text = self._format_context(results)
-        
+
         # Generation
         messages = [
             {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
-            {"role": "user", "content": RAG_USER_PROMPT.format(context=context_text, query=query)}
+            {"role": "user", "content": RAG_USER_PROMPT.format(context=context_text, query=query)},
         ]
-        
+
         if stream:
             return self.generator.stream_generate(messages)
-        
+
         answer = self.generator.generate(messages)
-        
+
         # 🛡️ Sovereign Airlock: Egress Verification (NLI Grounding)
         metadata = {}
         if self.evaluator:
-            verification = self.evaluator.evaluate(
-                query=query,
-                context=context_text,
-                answer=answer
-            )
+            verification = self.evaluator.evaluate(query=query, context=context_text, answer=answer)
             metadata["verification"] = verification
             if not verification["passed"]:
                 answer = (
                     f"[Sovereign Verification Failed] The generated response could not be "
                     f"deterministically grounded in the local context (Score: {verification['grounding_score']:.2f})."
                 )
-        
+
         return RAGResponse(
-            answer=answer, 
-            sources=results, 
-            model_name=self.generator.model_name,
-            metadata=metadata
+            answer=answer, sources=results, model_name=self.generator.model_name, metadata=metadata
         )
 
     def _format_context(self, results: List[SearchResult]) -> str:
@@ -142,13 +145,15 @@ class LocalRAG:
         """Close database and logging connections."""
         self.retriever.close()
 
+
 class AsyncLocalRAG:
     """
     Asynchronous Sovereign AI RAG Orchestrator.
     Optimized for high-concurrency production environments.
     """
+
     def __init__(
-        self, 
+        self,
         db_path: Optional[str] = None,
         policy_path: Optional[str] = None,
         principal: str = "anonymous",
@@ -165,16 +170,16 @@ class AsyncLocalRAG:
         trusted_policy_key: Optional[str] = None,
         strict_policy: bool = False,
         anchor: Optional[SecureAnchor] = None,
-        attest: bool = False
+        attest: bool = False,
     ):
         self.governed = (policy_path is not None) or (tenant_id != "default")
         self.use_reranker = use_reranker
         self.tenant_id = tenant_id
-        
+
         # 🏗️ Sovereign Airlock: Always use governed mode if tenanting is active
         if self.governed:
             self.retriever = AsyncGovernedRetriever(
-                db_path=db_path, 
+                db_path=db_path,
                 policy_path=policy_path,
                 principal=principal,
                 tenant_id=tenant_id,
@@ -187,21 +192,33 @@ class AsyncLocalRAG:
                 trusted_policy_key=trusted_policy_key,
                 strict_policy=strict_policy,
                 anchor=anchor,
-                attest=attest
+                attest=attest,
             )
         else:
             self.retriever = AsyncFTS5Retriever(db_path, password=password)
-            
+
         self.generator = QwenGenerator(model_name=model_name) if model_name else QwenGenerator()
         self.cache = SemanticCache(cache_dir=cache_dir) if use_cache else None
-        
+
         self.evaluator = None
         if (policy_path is not None) or (tenant_id != "default"):
-             # In async/tenant mode, we default to enabling the evaluator if it's a governed environment
-             from sovereign_ai.verify import SovereignEvaluator
-             self.evaluator = SovereignEvaluator()
+            # In async/tenant mode, we default to enabling the evaluator if it's a governed environment
+            from sovereign_ai.verify import SovereignEvaluator
 
-    async def ask(self, query: str, intent: str = "general", top_k: int = 5, stream: bool = False) -> Union[RAGResponse, AsyncGenerator[str, None]]:
+            self.evaluator = SovereignEvaluator()
+
+    async def ingest(self, docs: List[Document], chunk_size: int = 1000, chunk_overlap: int = 200):
+        """Asynchronously ingest documents into the sovereign vault."""
+        if hasattr(self.retriever, "retriever"):
+            # Governed mode
+            await self.retriever.retriever.ingest(docs, chunk_size, chunk_overlap)
+        else:
+            # Ungoverned mode
+            await self.retriever.ingest(docs, chunk_size, chunk_overlap)
+
+    async def ask(
+        self, query: str, intent: str = "general", top_k: int = 5, stream: bool = False
+    ) -> Union[RAGResponse, AsyncGenerator[str, None]]:
         """
         Asynchronously ask a question with Semantic Caching and ABAC enforcement.
         """
@@ -213,51 +230,48 @@ class AsyncLocalRAG:
 
         # 2 & 3: Retrieval & Policy Enforcement
         if self.governed:
-            results, decision = await self.retriever.search(
-                query, 
-                intent=intent, 
-                top_k=top_k
-            )
-            
+            results, decision = await self.retriever.search(query, intent=intent, top_k=top_k)
+
             # 🛡️ Sovereign Hard Refusal (Fail-Closed)
             if decision.action == "deny":
                 refusal = f"[Sovereign Access Denied] {decision.reason}"
                 return RAGResponse(answer=refusal, sources=[], model_name=self.generator.model_name)
         else:
             results = await self.retriever.search(query, top_k=top_k)
-        
+
         if not results:
             refusal = "[Insufficient Local Context] No relevant context found."
             if stream:
-                async def gen(): yield refusal
+
+                async def gen():
+                    yield refusal
+
                 return gen()
             return RAGResponse(answer=refusal, sources=[], model_name=self.generator.model_name)
-            
+
         context_text = self._format_context(results)
         messages = [
             {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
-            {"role": "user", "content": RAG_USER_PROMPT.format(context=context_text, query=query)}
+            {"role": "user", "content": RAG_USER_PROMPT.format(context=context_text, query=query)},
         ]
-        
+
         if stream:
             # We wrap the sync generator in an async context for consistency
             async def async_stream_wrapper():
                 for chunk in self.generator.stream_generate(messages):
                     yield chunk
+
             return async_stream_wrapper()
-        
+
         # Generation is CPU/GPU bound, offload to thread to keep loop alive
         answer = await asyncio.to_thread(self.generator.generate, messages)
-        
+
         # 🛡️ Sovereign Airlock: Egress Verification (NLI Grounding)
         metadata = {}
         if self.evaluator:
             # Offload heavy NLI check to thread
             verification = await asyncio.to_thread(
-                self.evaluator.evaluate,
-                query=query,
-                context=context_text,
-                answer=answer
+                self.evaluator.evaluate, query=query, context=context_text, answer=answer
             )
             metadata["verification"] = verification
             if not verification["passed"]:
@@ -265,19 +279,16 @@ class AsyncLocalRAG:
                     f"[Sovereign Verification Failed] The generated response could not be "
                     f"deterministically grounded in the local context (Score: {verification['grounding_score']:.2f})."
                 )
-                results = [] # Strip sources for failed verification
+                results = []  # Strip sources for failed verification
 
         response = RAGResponse(
-            answer=answer, 
-            sources=results, 
-            model_name=self.generator.model_name,
-            metadata=metadata
+            answer=answer, sources=results, model_name=self.generator.model_name, metadata=metadata
         )
-        
+
         # 5. Cache Update
         if self.cache and not stream:
             await self.cache.set(query, response, tenant_id=self.tenant_id)
-            
+
         return response
 
     def _format_context(self, results: List[SearchResult]) -> str:

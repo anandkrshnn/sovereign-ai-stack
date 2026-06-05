@@ -55,21 +55,26 @@ _LABEL_ORDER = ["contradiction", "entailment", "neutral"]
 _ENTAILMENT_IDX = _LABEL_ORDER.index("entailment")  # == 1
 
 
+from .nli_calibration import PlattCalibrator, get_calibrator
+
+
 class SovereignEvaluator:
     """
     Deterministic NLI-based grounding and faithfulness judge.
 
     Scores are entailment probabilities in [0.0, 1.0] derived from
-    softmax over the three NLI logits.  The gate passes when both
-    grounding_score and faithfulness_score exceed their configured
-    thresholds (conjunction, not OR).
+    softmax over the three NLI logits, then calibrated using Platt Scaling.
+    The gate passes when both grounding_score and faithfulness_score exceed
+    their configured thresholds.
     """
 
     def __init__(self, config: Config | None = None) -> None:
         self.config = config or Config()
         self.tokenizer: AutoTokenizer | None = None
         self.model: AutoModelForSequenceClassification | None = None
+        self.calibrator: PlattCalibrator | None = None
         self._load_model()
+        self._load_calibrator()
 
     # ------------------------------------------------------------------
     # Model loading
@@ -88,6 +93,11 @@ class SovereignEvaluator:
         self.model = self.model.to(device)
         logger.info("NLI judge loaded on %s", device)
 
+    def _load_calibrator(self) -> None:
+        """Loads a calibrator for the current model."""
+        self.calibrator = get_calibrator(self.config.model_name)
+        logger.info("NLI calibrator loaded for %s", self.config.model_name)
+
     # ------------------------------------------------------------------
     # Public API (schema unchanged from previous implementation)
     # ------------------------------------------------------------------
@@ -97,16 +107,18 @@ class SovereignEvaluator:
         Score grounding and faithfulness of *answer* given *context*.
 
         Optimized v0.1.0a5: Batch inference for grounding and faithfulness.
+        Now includes Platt Calibration for higher precision.
         """
         premises = [context, f"{query}\n\n{context}"]
         hypotheses = [answer, answer]
 
-        probs = self._batch_entailment_probs(premises, hypotheses)
+        raw_probs = self._batch_entailment_probs(premises, hypotheses)
 
-        grounding_score = probs[0]
-        faithfulness_score = probs[1]
+        # Apply calibration
+        grounding_score = self.calibrator.calibrate(raw_probs[0])
+        faithfulness_score = self.calibrator.calibrate(raw_probs[1])
 
-        passed = (
+        passed = bool(
             grounding_score >= self.config.grounding_threshold
             and faithfulness_score >= self.config.faithfulness_threshold
         )
@@ -116,6 +128,7 @@ class SovereignEvaluator:
             "faithfulness_score": round(faithfulness_score, 4),
             "overall_score": round((grounding_score + faithfulness_score) / 2, 4),
             "passed": passed,
+            "raw_scores": [round(p, 4) for p in raw_probs],
         }
 
     # ------------------------------------------------------------------

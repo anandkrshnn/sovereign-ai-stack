@@ -80,12 +80,54 @@ class AttestationVerifier:
             return
 
         # 2. Measurement Validation (PCR Check)
-        # In a real RATS flow, we'd verify the quote_data blob against the PCRs.
-        # Here we check the reported measurement against reference values.
-        if quote.runtime_measurement == self.reference_values.get("app_hash"):
-            results["checks"]["measurements_valid"] = True
-        else:
-            results["errors"].append(f"TPM PCR Measurement mismatch. Got: {quote.runtime_measurement}")
+        try:
+            quote_bytes = base64.b64decode(quote.quote_data)
+            
+            # Parse the binary TPMS_ATTEST structure (standardized TPM 2.0 format)
+            # Format: magic (4B) | type (2B) | qualifiedSigner (2B+len) | extraData/nonce (2B+len) | ...
+            # TPM_GENERATED_VALUE = 0xff544347 (Magic constant: "\xffTCG")
+            if len(quote_bytes) < 8:
+                results["errors"].append("Invalid TPM Quote data size.")
+                return
+
+            magic = quote_bytes[0:4]
+            if magic != b"\xffTCG":
+                results["errors"].append("Invalid TPM Quote header: Bad magic bytes.")
+                return
+
+            # Extract extraData / nonce challenge offset
+            # qualifiedSigner is a TPM2B_NAME (2-byte length header + name bytes)
+            signer_len = int.from_bytes(quote_bytes[6:8], byteorder="big")
+            if len(quote_bytes) < 10 + signer_len:
+                results["errors"].append("TPM quote format too short for signer name.")
+                return
+
+            nonce_offset = 8 + signer_len
+            nonce_len = int.from_bytes(quote_bytes[nonce_offset:nonce_offset+2], byteorder="big")
+            if len(quote_bytes) < nonce_offset + 2 + nonce_len:
+                results["errors"].append("TPM quote format too short for nonce challenge.")
+                return
+
+            attested_nonce = quote_bytes[nonce_offset+2 : nonce_offset+2+nonce_len]
+
+            # Enforce strict challenge binding:
+            # The TPM-attested extraData MUST be cryptographically bound to our challenge nonce
+            expected_challenge_bytes = bundle.nonce.encode("utf-8")
+            if attested_nonce != expected_challenge_bytes:
+                results["errors"].append("Replay attempt detected: TPM-attested nonce challenge mismatch.")
+                return
+
+            # Verify reported runtime measurement matches reference integrity manifest
+            if quote.runtime_measurement == self.reference_values.get("app_hash"):
+                results["checks"]["measurements_valid"] = True
+            else:
+                results["errors"].append(
+                    f"TPM PCR Measurement mismatch. Got: {quote.runtime_measurement}, "
+                    f"Expected: {self.reference_values.get('app_hash')}"
+                )
+        except Exception as e:
+            results["errors"].append(f"TPM binary quote parsing failed: {e}")
+            return
 
         # 3. Cryptographic Signature Validation
         try:

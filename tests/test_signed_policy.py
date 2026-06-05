@@ -10,6 +10,7 @@ from sovereign_ai.common.audit import Principal
 from sovereign_ai.rag.schemas import SearchResult
 from cryptography.hazmat.primitives import serialization
 
+@pytest.mark.sovereign(id="POL-003")
 def test_signed_policy_lifecycle(tmp_path):
     # 1. Setup
     policy_file = tmp_path / "test_policy.yaml"

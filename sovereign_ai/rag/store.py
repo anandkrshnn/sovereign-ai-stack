@@ -142,17 +142,23 @@ class AsyncStore:
 
     async def connect(self):
         """Establish an async connection and handle encryption if needed."""
-        # Note: aiosqlite runs sqlite calls in a thread pool.
-        self.conn = await aiosqlite.connect(self.db_path)
+        if self.password:
+            if sqlcipher is None:
+                raise ImportError(
+                    "sqlcipher3-wheels is required for encrypted databases. "
+                    "Install it with: pip install sovereign-ai-stack[secure]"
+                )
+            # Enforce SQLCipher connection factory for cryptographic operations
+            self.conn = await aiosqlite.connect(self.db_path, factory=sqlcipher.connect)
+            escaped_pass = self.password.replace("'", "''")
+            await self.conn.execute(f"PRAGMA key = '{escaped_pass}'")
+        else:
+            self.conn = await aiosqlite.connect(self.db_path)
         
-        # Optimization for RAG workloads
+        # Optimization for RAG workloads (executed AFTER decryption key is set)
         await self.conn.execute("PRAGMA journal_mode=WAL")
         await self.conn.execute("PRAGMA foreign_keys=ON")
         await self.conn.execute("PRAGMA synchronous=NORMAL")
-        
-        if self.password:
-            escaped_pass = self.password.replace("'", "''")
-            await self.conn.execute(f"PRAGMA key = '{escaped_pass}'")
             
         await self._create_tables()
         await self.conn.commit()

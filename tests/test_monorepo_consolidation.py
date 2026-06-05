@@ -112,7 +112,7 @@ class TestAuditChain:
                 prev_hash = next_hash
         return prev_hash
 
-    @pytest.mark.sovereign(id="CHAIN-01")
+    @pytest.mark.sovereign(id="AUD-101")
     def test_write_and_verify_chain_roundtrip(self, tmp_path):
         """A correctly written chain must pass verify_chain."""
         from sovereign_ai.agent.forensics import AuditChainManager
@@ -125,7 +125,7 @@ class TestAuditChain:
         self._write_chain(log_path, entries)
         assert AuditChainManager.verify_chain(log_path) is True
 
-    @pytest.mark.sovereign(id="CHAIN-02")
+    @pytest.mark.sovereign(id="AUD-102")
     def test_tamper_detection_breaks_chain(self, tmp_path):
         """Mutating a field in any log entry must cause verify_chain to return False."""
         from sovereign_ai.agent.forensics import AuditChainManager
@@ -145,7 +145,7 @@ class TestAuditChain:
 
         assert AuditChainManager.verify_chain(log_path) is False
 
-    @pytest.mark.sovereign(id="CHAIN-03")
+    @pytest.mark.sovereign(id="AUD-103")
     def test_anchor_save_and_verify(self, tmp_path):
         """save_anchor must produce a .anchor file; verify_anchor must confirm it."""
         from sovereign_ai.agent.forensics import AuditChainManager
@@ -157,7 +157,7 @@ class TestAuditChain:
         assert (tmp_path / "audit.anchor").exists()
         assert AuditChainManager.verify_anchor(log_path, last_hash=final_hash) is True
 
-    @pytest.mark.sovereign(id="CHAIN-04")
+    @pytest.mark.sovereign(id="AUD-104")
     def test_empty_log_returns_genesis_hash(self, tmp_path):
         """An empty (non-existent) log must return the GENESIS_HASH."""
         from sovereign_ai.agent.forensics import AuditChainManager
@@ -165,7 +165,7 @@ class TestAuditChain:
         result = AuditChainManager.get_last_hash(log_path)
         assert result == AuditChainManager.GENESIS_HASH
 
-    @pytest.mark.sovereign(id="CHAIN-05")
+    @pytest.mark.sovereign(id="AUD-105")
     def test_calculate_next_hash_is_deterministic(self):
         """calculate_next_hash must be purely deterministic given same inputs."""
         from sovereign_ai.agent.forensics import AuditChainManager

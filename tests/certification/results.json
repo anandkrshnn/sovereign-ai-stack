@@ -3,56 +3,245 @@
     "test_id": "CAC-001",
     "node_id": "tests/cache/test_semantic_isolation.py::test_semantic_cache_tenant_isolation",
     "outcome": "passed",
-    "duration": 11.895399700035341,
-    "error": null
-  },
-  {
-    "test_id": "AUD-001",
-    "node_id": "tests/forensic/test_audit_chain_resilience.py::test_audit_chain_mutation_detection",
-    "outcome": "passed",
-    "duration": 0.013517900020815432,
-    "error": null
-  },
-  {
-    "test_id": "AUD-002",
-    "node_id": "tests/forensic/test_audit_chain_resilience.py::test_audit_chain_truncation_detection",
-    "outcome": "passed",
-    "duration": 0.019692900008521974,
+    "duration": 24.32389639999019,
     "error": null
   },
   {
     "test_id": "ISO-001",
     "node_id": "tests/isolation/test_cross_tenant_leakage.py::test_cross_tenant_query_leakage",
     "outcome": "passed",
-    "duration": 11.240005499974359,
+    "duration": 23.910763699997915,
     "error": null
   },
   {
     "test_id": "ISO-002",
     "node_id": "tests/isolation/test_cross_tenant_leakage.py::test_identical_text_collision_scoping",
     "outcome": "passed",
-    "duration": 27.77658569999039,
+    "duration": 48.38267250001081,
     "error": null
   },
   {
     "test_id": "ISO-004",
     "node_id": "tests/isolation/test_cross_tenant_leakage.py::test_metadata_poisoning_injection",
     "outcome": "passed",
-    "duration": 6.015350500005297,
+    "duration": 19.82060459999775,
     "error": null
   },
   {
     "test_id": "POL-001",
     "node_id": "tests/policy/test_fail_closed_behavior.py::test_policy_fail_closed_missing_roles",
     "outcome": "passed",
-    "duration": 6.239903200010303,
+    "duration": 11.954987599994638,
     "error": null
   },
   {
     "test_id": "POL-004",
     "node_id": "tests/policy/test_fail_closed_behavior.py::test_secret_scanner_guardrail",
     "outcome": "passed",
-    "duration": 0.003493299998808652,
+    "duration": 0.000305800000205636,
+    "error": null
+  },
+  {
+    "test_id": "IMPORT-01",
+    "node_id": "tests/test_monorepo_consolidation.py::TestImportSurface::test_top_level_package_imports",
+    "outcome": "passed",
+    "duration": 0.00014200000441633165,
+    "error": null
+  },
+  {
+    "test_id": "IMPORT-02",
+    "node_id": "tests/test_monorepo_consolidation.py::TestImportSurface::test_rag_public_all",
+    "outcome": "passed",
+    "duration": 0.00012119999155402184,
+    "error": null
+  },
+  {
+    "test_id": "IMPORT-03",
+    "node_id": "tests/test_monorepo_consolidation.py::TestImportSurface::test_rag_symbols_actually_importable",
+    "outcome": "passed",
+    "duration": 0.0005933000065851957,
+    "error": null
+  },
+  {
+    "test_id": "IMPORT-04",
+    "node_id": "tests/test_monorepo_consolidation.py::TestImportSurface::test_agent_forensics_exports",
+    "outcome": "passed",
+    "duration": 0.00019550000433810055,
+    "error": null
+  },
+  {
+    "test_id": "IMPORT-05",
+    "node_id": "tests/test_monorepo_consolidation.py::TestImportSurface::test_bridge_package_import",
+    "outcome": "passed",
+    "duration": 0.00017660000594332814,
+    "error": null
+  },
+  {
+    "test_id": "IMPORT-06",
+    "node_id": "tests/test_monorepo_consolidation.py::TestImportSurface::test_bridge_submodules_importable",
+    "outcome": "passed",
+    "duration": 0.08389029999671038,
+    "error": null
+  },
+  {
+    "test_id": "AUD-101",
+    "node_id": "tests/test_monorepo_consolidation.py::TestAuditChain::test_write_and_verify_chain_roundtrip",
+    "outcome": "passed",
+    "duration": 0.0015819999971427023,
+    "error": null
+  },
+  {
+    "test_id": "AUD-102",
+    "node_id": "tests/test_monorepo_consolidation.py::TestAuditChain::test_tamper_detection_breaks_chain",
+    "outcome": "passed",
+    "duration": 0.0022794999968027696,
+    "error": null
+  },
+  {
+    "test_id": "AUD-103",
+    "node_id": "tests/test_monorepo_consolidation.py::TestAuditChain::test_anchor_save_and_verify",
+    "outcome": "passed",
+    "duration": 0.003022299992153421,
+    "error": null
+  },
+  {
+    "test_id": "AUD-104",
+    "node_id": "tests/test_monorepo_consolidation.py::TestAuditChain::test_empty_log_returns_genesis_hash",
+    "outcome": "passed",
+    "duration": 0.00040669999725650996,
+    "error": null
+  },
+  {
+    "test_id": "AUD-105",
+    "node_id": "tests/test_monorepo_consolidation.py::TestAuditChain::test_calculate_next_hash_is_deterministic",
+    "outcome": "passed",
+    "duration": 0.00024419999681413174,
+    "error": null
+  },
+  {
+    "test_id": "RAG-01",
+    "node_id": "tests/test_monorepo_consolidation.py::TestRAGConsolidation::test_local_rag_ask_returns_rag_response",
+    "outcome": "passed",
+    "duration": 0.03818909999972675,
+    "error": null
+  },
+  {
+    "test_id": "RAG-02",
+    "node_id": "tests/test_monorepo_consolidation.py::TestRAGConsolidation::test_rag_response_schema_fields",
+    "outcome": "passed",
+    "duration": 0.028875300005893223,
+    "error": null
+  },
+  {
+    "test_id": "RAG-03",
+    "node_id": "tests/test_monorepo_consolidation.py::TestRAGConsolidation::test_rag_fail_closed_on_empty_db",
+    "outcome": "passed",
+    "duration": 0.019378899989533238,
+    "error": null
+  },
+  {
+    "test_id": "RAG-04",
+    "node_id": "tests/test_monorepo_consolidation.py::TestRAGConsolidation::test_rag_consolidation_docstring_present",
+    "outcome": "passed",
+    "duration": 0.0002837999927578494,
+    "error": null
+  },
+  {
+    "test_id": "BRIDGE-01",
+    "node_id": "tests/test_monorepo_consolidation.py::TestBridgeConsolidation::test_bridge_schemas_importable",
+    "outcome": "passed",
+    "duration": 0.00017759999900590628,
+    "error": null
+  },
+  {
+    "test_id": "BRIDGE-02",
+    "node_id": "tests/test_monorepo_consolidation.py::TestBridgeConsolidation::test_bridge_security_importable",
+    "outcome": "passed",
+    "duration": 0.00015110000094864517,
+    "error": null
+  },
+  {
+    "test_id": "BRIDGE-03",
+    "node_id": "tests/test_monorepo_consolidation.py::TestBridgeConsolidation::test_bridge_orchestrator_importable",
+    "outcome": "passed",
+    "duration": 0.00010760000441223383,
+    "error": null
+  },
+  {
+    "test_id": "PKG-01",
+    "node_id": "tests/test_monorepo_consolidation.py::TestPackageVersions::test_agent_version_string_present",
+    "outcome": "passed",
+    "duration": 0.0004917000042041764,
+    "error": null
+  },
+  {
+    "test_id": "PKG-02",
+    "node_id": "tests/test_monorepo_consolidation.py::TestPackageVersions::test_forensics_consolidation_docstring_present",
+    "outcome": "passed",
+    "duration": 0.00018739998631644994,
+    "error": null
+  },
+  {
+    "test_id": "E2E-01",
+    "node_id": "tests/test_monorepo_consolidation.py::TestEndToEndSmoke::test_rag_result_appended_to_audit_chain",
+    "outcome": "passed",
+    "duration": 0.02395519999845419,
+    "error": null
+  },
+  {
+    "test_id": "POL-003",
+    "node_id": "tests/test_signed_policy.py::test_signed_policy_lifecycle",
+    "outcome": "passed",
+    "duration": 0.004914600009215064,
+    "error": null
+  },
+  {
+    "test_id": "AUD-001",
+    "node_id": "tests/test_tamper_detection.py::test_chain_generation_and_valid_verification",
+    "outcome": "passed",
+    "duration": 0.003268100001150742,
+    "error": null
+  },
+  {
+    "test_id": "AUD-002",
+    "node_id": "tests/test_tamper_detection.py::test_detect_content_tampering",
+    "outcome": "passed",
+    "duration": 0.003516600001603365,
+    "error": null
+  },
+  {
+    "test_id": "AUD-003",
+    "node_id": "tests/test_tamper_detection.py::test_detect_sequence_gap",
+    "outcome": "passed",
+    "duration": 0.004546099997241981,
+    "error": null
+  },
+  {
+    "test_id": "AUD-004",
+    "node_id": "tests/test_tamper_detection.py::test_detect_hash_chain_break",
+    "outcome": "passed",
+    "duration": 0.0042468000028748065,
+    "error": null
+  },
+  {
+    "test_id": "AUD-005",
+    "node_id": "tests/test_tamper_detection.py::test_detect_malformed_json",
+    "outcome": "passed",
+    "duration": 0.0017560000123921782,
+    "error": null
+  },
+  {
+    "test_id": "POL-002",
+    "node_id": "tests/test_v100_certification.py::test_abac_matrix_integration",
+    "outcome": "passed",
+    "duration": 0.002035299999988638,
+    "error": null
+  },
+  {
+    "test_id": "AUD-006",
+    "node_id": "tests/test_v100_certification.py::test_audit_tamper_detection",
+    "outcome": "passed",
+    "duration": 0.005096400011098012,
     "error": null
   }
 ]

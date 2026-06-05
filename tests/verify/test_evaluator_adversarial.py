@@ -233,9 +233,8 @@ class TestOutputSchema:
     @pytest.mark.requires_model
     def test_output_keys_present(self, evaluator):
         result = evaluator.evaluate("query", "some context text", "some answer")
-        assert set(result.keys()) == {
-            "grounding_score", "faithfulness_score", "overall_score", "passed"
-        }
+        expected = {"grounding_score", "faithfulness_score", "overall_score", "passed"}
+        assert expected.issubset(result.keys())
 
     @pytest.mark.requires_model
     def test_scores_in_range(self, evaluator):

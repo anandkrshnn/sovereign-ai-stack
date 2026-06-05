@@ -77,11 +77,18 @@ _Sovereign AI Stack Gaia Release_
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(md)
     
-    print(f"Certification report generated: {output_path}")
-    if report.certified:
-        print("✅ STACK CERTIFIED")
-    else:
-        print("❌ CERTIFICATION FAILED")
+    try:
+        print(f"Certification report generated: {output_path}")
+        if report.certified:
+            print("✅ STACK CERTIFIED")
+        else:
+            print("❌ CERTIFICATION FAILED")
+    except UnicodeEncodeError:
+        print(f"Certification report generated: {output_path}")
+        if report.certified:
+            print("[PASS] STACK CERTIFIED")
+        else:
+            print("[FAIL] CERTIFICATION FAILED")
 
 if __name__ == "__main__":
     generate_report()

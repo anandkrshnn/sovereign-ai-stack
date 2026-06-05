@@ -10,6 +10,7 @@ def audit_log(tmp_path):
     # Use a mock principal for testing
     return SovereignAuditLogger(base_dir=str(tmp_path), tenant_id="test_tamper")
 
+@pytest.mark.sovereign(id="AUD-001")
 def test_chain_generation_and_valid_verification(audit_log):
     # Log 3 records
     for i in range(3):
@@ -19,6 +20,7 @@ def test_chain_generation_and_valid_verification(audit_log):
     is_valid = audit_log.chain.verify_chain()
     assert is_valid
 
+@pytest.mark.sovereign(id="AUD-002")
 def test_detect_content_tampering(audit_log):
     # 1. Setup valid chain
     for i in range(3):
@@ -40,6 +42,7 @@ def test_detect_content_tampering(audit_log):
     is_valid = audit_log.chain.verify_chain()
     assert not is_valid
 
+@pytest.mark.sovereign(id="AUD-003")
 def test_detect_sequence_gap(audit_log):
     # 1. Setup valid chain
     for i in range(3):
@@ -59,6 +62,7 @@ def test_detect_sequence_gap(audit_log):
     is_valid = audit_log.chain.verify_chain()
     assert not is_valid
 
+@pytest.mark.sovereign(id="AUD-004")
 def test_detect_hash_chain_break(audit_log):
     # 1. Setup valid chain
     for i in range(3):
@@ -78,6 +82,7 @@ def test_detect_hash_chain_break(audit_log):
     is_valid = audit_log.chain.verify_chain()
     assert not is_valid
 
+@pytest.mark.sovereign(id="AUD-005")
 def test_detect_malformed_json(audit_log):
     audit_log.log("test", "EVT_0", "admin", {"seq": 0})
     

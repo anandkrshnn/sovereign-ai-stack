@@ -43,6 +43,15 @@ class TPM2LinuxAnchor(SecureAnchor):
         self.tenant_id = tenant_id
         self.aik_handle = aik_handle
         self._ctx: Optional[Any] = None
+        self.hardware_active = False
+        
+        # Verify hardware availability
+        try:
+            ctx = self._get_context()
+            ctx.tr_from_tpmpublic(self.aik_handle)
+            self.hardware_active = True
+        except Exception:
+            logger.warning("🚨 [SIMULATION] TPM 2.0 Hardware initialization failed or AIK Handle 0x%x not found. Falling back to Software Simulation mode.", self.aik_handle)
 
     def _get_context(self) -> 'ESAPI':
         if self._ctx is None:
@@ -90,6 +99,8 @@ class TPM2LinuxAnchor(SecureAnchor):
             return b"TPM_SIGNED_" + digest # Fallback if parsing fails
             
         except Exception as e:
+            if self.hardware_active:
+                raise RuntimeError(f"TPM 2.0 hardware signing failure: {e}")
             if "0x00000081" in str(e) or "handle" in str(e).lower():
                 logger.warning(f"AIK Handle 0x{self.aik_handle:x} not found. Using simulation fallback.")
                 return b"TPM_SIM_SIGNED_" + digest
@@ -177,8 +188,8 @@ class TPM2LinuxAnchor(SecureAnchor):
                 signature=base64.b64encode(sig_bytes).decode()
             )
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            if self.hardware_active:
+                raise RuntimeError(f"Cryptographic hardware quote generation failed: {e}")
             logger.warning(f"TPM2 Quote failed ({e}). Falling back to simulation.")
             return AttestationQuote(
                 type=EvidenceType.MOCK_SIM,
@@ -205,9 +216,16 @@ class TPM2LinuxAnchor(SecureAnchor):
     def get_signing_algorithm(self) -> SigningAlgorithm:
         return SigningAlgorithm.RSA2048
 
+    def get_status(self) -> dict:
+        return {
+            "type": self.__class__.__name__,
+            "available": self.hardware_active,
+            "details": "Active (Hardware TPM)" if self.hardware_active else "Simulated/Mock Fallback (No Hardware TPM)"
+        }
+
     @property
     def is_hardware(self) -> bool:
-        return True
+        return self.hardware_active
 
     def __del__(self):
         if hasattr(self, "_ctx") and self._ctx:
