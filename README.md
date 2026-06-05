@@ -48,17 +48,21 @@ flowchart TD
 
 ## 🚀 One-Command Quickstart
 
+### PTV Live Demo (2 minutes — Zero Setup)
+
 ```bash
-# 1. Install via pip
-pip install sovereign-ai-stack
+# 1. Install via pip with demo dependencies
+pip install -e .[demo]
 
-# 2. Run the Local OpenAI-Compatible Gateway
-python -m sovereign_ai.bridge.main
-
-# 3. Witness the cryptographic ledger in action
-python examples/03_forensic_agent.py
+# 2. Run the PTV Live Demo
+python -m examples.ptv_live_demo
 ```
+Watch **Prove → Transform → Verify** in real-time with TPM simulator, NLI Gate, and tamper resistance.
 
+### Start the Local AI Gateway
+```bash
+python -m sovereign_ai.bridge.main
+```
 ---
 
 ## ⚖️ Competitor Differentiation
