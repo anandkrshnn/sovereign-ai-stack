@@ -175,3 +175,51 @@ GitHub: https://github.com/anandkrshnn/sovereign-ai-stack
 IETF: draft-anandakrishnan-rats-ptv-agent-identity-00
 
 #LocalAI #BuildingInPublic
+
+---
+
+## 5. GitHub Discussions (v2.0 Strategic Maturation & Refactor)
+
+**Category:** Announcements  
+**Title:** 🚀 Introducing Sovereign AI Stack v2.0: Hardware-Rooted Zero-Trust Governance  
+
+**Body:**
+
+Hello Sovereign AI Community,
+
+Since our early release, the Sovereign AI Stack has stood as a reference implementation for offline-first, local RAG with policy gating and audit logging. 
+
+Today, we are taking a massive leap forward. With the **v2.0 Strategic Maturation and Refactor**, we are shifting from an "interesting local prototype" to a **global reference architecture for provable, hardware-anchored sovereignty**.
+
+### 🌟 The Core Pillars of Sovereign AI v2.0
+
+To achieve true zero-trust AI infrastructure, we are refactoring our core components around five critical security and architectural pillars:
+
+1. **Attestation Isolation (SGX/SEV)**: Moving cryptographic verification into secure enclaves to establish isolated process boundaries and remote attestation TLS (RA-TLS).
+2. **TPM-Sealed Keys**: Binding database encryption keys to physical Platform Configuration Registers (PCRs) to ensure data-at-rest keys can never be unsealed on tampered platforms.
+3. **Async Audit Ledger**: Decoupling audit logging from the request-response path using asynchronous background workers that stream signed Merkle checkpoints to immutable WORM storage.
+4. **Ontology-Driven Policy Engine (OWL/RDF)**: Upgrading our simple policy gates to support role inheritance, wildcard expansion, and logical overlap resolution using formal ontologies.
+5. **Adversarial NLI Calibration**: Protecting the semantic airlock from jailbreaks and linguistic evasion by retraining our NLI evaluator on adversarial datasets and implementing an ensemble scorer.
+
+### 🛡️ Mapping to Global Standards
+
+By bringing hardware-level security to the AI control plane, we align the stack directly with international compliance standards:
+
+*   **EU AI Act**: Verifiable data logs, model grounding validation, and automated policy verification.
+*   **HIPAA & SOC 2**: End-to-end data-at-rest SQLCipher encryption with hardware-rooted key lifecycle management.
+*   **NIST Zero Trust (SP 800-207)**: Strict policy gating at the agent retrieval layer prior to model execution.
+
+### 🛠️ Get Involved: Contributors Wanted!
+
+We have drafted 5 high-impact GitHub issues mapping to these pillars. Whether you are a Rust systems engineer, a security researcher, a cryptographer, or an ML engineer, there is a track for you.
+
+👉 **Self-assign an issue today to start contributing:**
+*   **Pillar 1 (Attestation Isolation)**: Refactor AttestationVerifier into Enclave Microservice
+*   **Pillar 2 (TPM-Sealed Keys)**: Implement TPM-Sealed SQLCipher Key Management
+*   **Pillar 3 (Async Audit Ledger)**: Build Asynchronous Append-Only Audit Ledger
+*   **Pillar 4 (Ontology Policy Engine)**: Upgrade Policy Verifier to Ontology-Driven Model
+*   **Pillar 5 (Adversarial NLI Gate)**: Retrain NLI Gate with Adversarial Datasets
+
+Let's build the future of private, verifiable, and sovereign AI together. 
+
+*The Sovereign AI Stack Core Team*

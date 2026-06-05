@@ -43,6 +43,10 @@ The current forensic chain uses Ed25519 keys anchored to the OS keyring. The roa
 
 ## Development Setup
 
+If you are looking to contribute to the v2.0 roadmap pillars, please refer to our comprehensive [Sovereign AI Stack v2.0 Contributor Onboarding Guide](file:///c:/Users/Monika/Documents/GitHub/sovereign-ai-stack/docs/CONTRIBUTOR_ONBOARDING_v2.0.md) for architectural overviews, directory mappings, recommended tool suites, and implementation guidance.
+
+Standard local setup:
+
 ```bash
 git clone https://github.com/anandkrshnn/sovereign-ai-stack
 cd sovereign-ai-stack
