@@ -67,13 +67,11 @@ class MerkleTree:
                 current_hash = hashlib.sha256((current_hash + p["hash"]).encode()).hexdigest()
         return current_hash == root
 
-if __name__ == "__main__":
-    leaves = ["event_1", "event_2", "event_3", "event_4"]
-    tree = MerkleTree(leaves)
-    print(f"Merkle Root: {tree.root}")
-    
-    proof = tree.get_proof(2) # event_3
-    print(f"Proof for event_3: {proof}")
-    
-    is_valid = MerkleTree.verify_proof("event_3", proof, tree.root)
-    print(f"Verification: {is_valid}")
+    @staticmethod
+    async def verify_proof_async(leaf: str, proof: List[dict], root: str) -> bool:
+        """
+        Asynchronously verifies a proof, releasing the GIL via a threadpool.
+        Critical for parallel proof validation under heavy load.
+        """
+        import asyncio
+        return await asyncio.to_thread(MerkleTree.verify_proof, leaf, proof, root)

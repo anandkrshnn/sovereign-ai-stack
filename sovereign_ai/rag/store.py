@@ -2,7 +2,7 @@ import sqlite3
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 # Try to import SQLCipher, fallback to standard sqlite3
 try:
@@ -20,9 +20,29 @@ class Store:
     
     v0.4.0: Supports full-database encryption via SQLCipher if a password is provided.
     """
-    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None):
+    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None, anchor: Optional[Any] = None):
         self.db_path = Path(db_path)
+        self.anchor = anchor
         self.password = password
+        
+        # Dynamic unsealing if key is sealed
+        if self.anchor and self.password:
+            import base64
+            if isinstance(self.password, bytes) and self.password.startswith(b"SEALED:"):
+                try:
+                    sealed_data = self.password[len(b"SEALED:"):]
+                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                except Exception as e:
+                    logger.error(f"Failed to unseal storage key bytes: {e}")
+                    raise PermissionError("Failed to unseal storage key via secure anchor.") from e
+            elif isinstance(self.password, str) and self.password.startswith("SEALED:"):
+                try:
+                    sealed_data = base64.b64decode(self.password[len("SEALED:"):])
+                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                except Exception as e:
+                    logger.error(f"Failed to unseal storage key string: {e}")
+                    raise PermissionError("Failed to unseal storage key via secure anchor.") from e
+                    
         self.conn = None
         self._init_db()
 
@@ -135,9 +155,29 @@ class AsyncStore:
     Asynchronous Sovereign Storage Layer using aiosqlite.
     Provides non-blocking database operations for high-concurrency loops.
     """
-    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None):
+    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None, anchor: Optional[Any] = None):
         self.db_path = Path(db_path)
+        self.anchor = anchor
         self.password = password
+        
+        # Dynamic unsealing if key is sealed
+        if self.anchor and self.password:
+            import base64
+            if isinstance(self.password, bytes) and self.password.startswith(b"SEALED:"):
+                try:
+                    sealed_data = self.password[len(b"SEALED:"):]
+                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                except Exception as e:
+                    logger.error(f"Failed to unseal storage key bytes: {e}")
+                    raise PermissionError("Failed to unseal storage key via secure anchor.") from e
+            elif isinstance(self.password, str) and self.password.startswith("SEALED:"):
+                try:
+                    sealed_data = base64.b64decode(self.password[len("SEALED:"):])
+                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                except Exception as e:
+                    logger.error(f"Failed to unseal storage key string: {e}")
+                    raise PermissionError("Failed to unseal storage key via secure anchor.") from e
+                    
         self.conn: Optional[aiosqlite.Connection] = None
 
     async def connect(self):

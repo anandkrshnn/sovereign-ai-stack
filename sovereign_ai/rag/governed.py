@@ -37,7 +37,7 @@ class GovernedRetriever:
         anchor: Optional[SecureAnchor] = None,
         attest: bool = False
     ):
-        self.retriever = FTS5Retriever(db_path, password=password)
+        self.retriever = FTS5Retriever(db_path, password=password, anchor=anchor)
         self.policy_engine = PolicyEngine(policy_path, trusted_public_key=trusted_policy_key, strict_mode=strict_policy)
         
         # Determine base_dir for audit (v1.1.0a2 consolidation)
@@ -109,7 +109,7 @@ class AsyncGovernedRetriever:
         anchor: Optional[SecureAnchor] = None,
         attest: bool = False
     ):
-        self.retriever = AsyncFTS5Retriever(db_path, password=password)
+        self.retriever = AsyncFTS5Retriever(db_path, password=password, anchor=anchor)
         self.policy_engine = PolicyEngine(policy_path, trusted_public_key=trusted_policy_key, strict_mode=strict_policy)
         
         # Determine base_dir for audit (v1.1.0a2 consolidation)

@@ -42,6 +42,16 @@ class SecureAnchor(ABC):
         """Returns the algorithm used by this anchor."""
         pass
 
+    @abstractmethod
+    def seal_key(self, plaintext_key: bytes) -> bytes:
+        """Seals a plaintext key using the anchor's security boundaries."""
+        pass
+
+    @abstractmethod
+    def unseal_key(self, sealed_key: bytes) -> bytes:
+        """Unseals a sealed key using the anchor's security boundaries."""
+        pass
+
     @property
     def algorithm(self) -> SigningAlgorithm:
         """Property access for signing algorithm."""

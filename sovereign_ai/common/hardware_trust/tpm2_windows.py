@@ -49,6 +49,28 @@ class WindowsTPMAnchor(SecureAnchor):
     def get_signing_algorithm(self) -> SigningAlgorithm:
         return SigningAlgorithm.RSA2048
 
+    def seal_key(self, plaintext_key: bytes) -> bytes:
+        """Seals a plaintext key using the anchor's public key (RSA OAEP)."""
+        return self._key.public_key().encrypt(
+            plaintext_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+
+    def unseal_key(self, sealed_key: bytes) -> bytes:
+        """Unseals a key using the anchor's private key (RSA OAEP)."""
+        return self._key.decrypt(
+            sealed_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+
     def get_status(self) -> dict:
         return {
             "type": self.__class__.__name__,

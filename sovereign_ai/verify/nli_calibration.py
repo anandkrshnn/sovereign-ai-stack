@@ -29,6 +29,9 @@ class PlattCalibrator:
         calibrated_p = 1.0 / (1.0 + math.exp(self.A * logit + self.B))
         return calibrated_p
 
+    def predict(self, probability: float) -> float:
+        return self.calibrate(probability)
+
     def calibrate_batch(self, probabilities: List[float]) -> List[float]:
         return [self.calibrate(p) for p in probabilities]
 
@@ -70,3 +73,4 @@ def get_calibrator(model_name: str) -> PlattCalibrator:
         return PlattCalibrator(A=-1.1, B=0.1)
 
     return PlattCalibrator()
+

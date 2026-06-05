@@ -77,8 +77,14 @@ class SovereignOrchestrator:
 
         # Internal Verification Airlock (The Gatekeeper)
         # Phase 3: Matured Evaluator (Calibrated) + Policy Verifier (Z3)
-        self.evaluator = SovereignEvaluator()
-        self.policy_verifier = PolicyVerifier()
+        self.verifier_url = os.getenv("SOVEREIGN_VERIFIER_URL")
+        self.verifier_key = os.getenv("SOVEREIGN_VERIFIER_KEY", "sovereign_trust_preview_2026")
+        
+        self.evaluator = None
+        self.policy_verifier = None
+        if not self.verifier_url:
+            self.evaluator = SovereignEvaluator()
+            self.policy_verifier = PolicyVerifier()
         self._halted_tenants: Set[str] = set()
 
         # Background Tasks
@@ -384,9 +390,36 @@ class SovereignOrchestrator:
                 policies = self._load_tenant_policies(tenant_id, principal)
 
                 with tracer.start_as_current_span("sov_pre_auth_z3") as aspan:
-                    if not self.policy_verifier.is_authorized(
-                        principal, resource, action, policies
-                    ):
+                    authorized = False
+                    if self.verifier_url:
+                        payload = {
+                            "principal": principal,
+                            "resource": resource,
+                            "action": action,
+                            "policies": policies,
+                            "check_type": "authorize"
+                        }
+                        headers = {"X-API-Key": self.verifier_key}
+                        try:
+                            client = await self.get_client()
+                            resp = await client.post(
+                                f"{self.verifier_url}/verify/policy",
+                                json=payload,
+                                headers=headers,
+                                timeout=10.0
+                            )
+                            if resp.status_code == 200:
+                                authorized = resp.json().get("is_authorized", False)
+                            else:
+                                logger.error(f"Isolated Policy Verifier returned {resp.status_code}")
+                        except Exception as e:
+                            logger.critical(f"Isolated Policy Verifier unreachable: {e}")
+                    else:
+                        authorized = self.policy_verifier.is_authorized(
+                            principal, resource, action, policies
+                        )
+
+                    if not authorized:
                         audit.log(
                             "pre_auth_denied",
                             principal_obj,
@@ -539,13 +572,37 @@ class SovereignOrchestrator:
                             )
 
                             # 🛡️ PHASE 3: VERIFICATION (Calibrated NLI)
-                            if context_text and self.evaluator:
+                            if context_text and (self.evaluator or self.verifier_url):
                                 with tracer.start_as_current_span(
                                     "sov_verification_airlock"
                                 ) as vspan:
-                                    eval_res = self.evaluator.evaluate(
-                                        last_message, context_text, response_text
-                                    )
+                                    if self.verifier_url:
+                                        payload = {
+                                            "query": last_message,
+                                            "context": context_text,
+                                            "answer": response_text
+                                        }
+                                        headers = {"X-API-Key": self.verifier_key}
+                                        try:
+                                            client = await self.get_client()
+                                            resp = await client.post(
+                                                f"{self.verifier_url}/verify/nli",
+                                                json=payload,
+                                                headers=headers,
+                                                timeout=10.0
+                                            )
+                                            if resp.status_code == 200:
+                                                eval_res = resp.json()
+                                            else:
+                                                logger.error(f"Isolated NLI Verifier returned {resp.status_code}")
+                                                eval_res = {"grounding_score": 0.0, "passed": False}
+                                        except Exception as e:
+                                            logger.critical(f"Isolated NLI Verifier unreachable: {e}")
+                                            eval_res = {"grounding_score": 0.0, "passed": False}
+                                    else:
+                                        eval_res = self.evaluator.evaluate(
+                                            last_message, context_text, response_text
+                                        )
                                     # Allow bypass if testing
                                     if os.getenv("TESTING") == "1":
                                         eval_res["passed"] = True

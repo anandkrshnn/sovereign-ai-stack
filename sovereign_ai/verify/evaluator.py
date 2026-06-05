@@ -131,6 +131,45 @@ class SovereignEvaluator:
             "raw_scores": [round(p, 4) for p in raw_probs],
         }
 
+    def evaluate_with_threshold(self, query: str, context: str, answer: str, threshold: float = 0.85) -> Dict:
+        """
+        Evaluate and strictly enforce a cutoff threshold. If scores fall below,
+        it logs the failure to low_confidence.log and fails-closed.
+        """
+        result = self.evaluate(query, context, answer)
+        
+        grounding = result["grounding_score"]
+        faithfulness = result["faithfulness_score"]
+        
+        passed = grounding >= threshold and faithfulness >= threshold
+        result["passed"] = passed
+        
+        if not passed:
+            log_msg = (
+                f"REJECTED: threshold={threshold} | "
+                f"grounding={grounding} | faithfulness={faithfulness} | "
+                f"query='{query}' | answer='{answer}'"
+            )
+            # Log to dedicated low_confidence.log
+            with open("low_confidence.log", "a", encoding="utf-8") as f:
+                f.write(log_msg + "\n")
+            logger.warning(log_msg)
+            
+    async def evaluate_async(self, query: str, context: str, answer: str) -> Dict:
+        """
+        Asynchronously score grounding and faithfulness, releasing the GIL
+        via a threadpool. Critical for high-throughput pipeline integration.
+        """
+        import asyncio
+        return await asyncio.to_thread(self.evaluate, query, context, answer)
+
+    async def evaluate_with_threshold_async(self, query: str, context: str, answer: str, threshold: float = 0.85) -> Dict:
+        """
+        Asynchronously evaluate and strictly enforce a cutoff threshold.
+        """
+        import asyncio
+        return await asyncio.to_thread(self.evaluate_with_threshold, query, context, answer, threshold)
+
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------

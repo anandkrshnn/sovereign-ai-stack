@@ -50,6 +50,48 @@ def verify_api_key(x_api_key: str = Header(...)):
         raise HTTPException(status_code=403, detail="Invalid Verifier API Key")
     return x_api_key
 
+# Lazy-loaded verifier components
+_policy_verifier = None
+_nli_evaluator = None
+
+def get_policy_verifier():
+    global _policy_verifier
+    if _policy_verifier is None:
+        from sovereign_ai.verify.policy_z3 import PolicyVerifier
+        _policy_verifier = PolicyVerifier()
+    return _policy_verifier
+
+def get_nli_evaluator():
+    global _nli_evaluator
+    if _nli_evaluator is None:
+        from sovereign_ai.verify.evaluator import SovereignEvaluator
+        _nli_evaluator = SovereignEvaluator()
+    return _nli_evaluator
+
+class PolicyVerificationRequest(BaseModel):
+    principal: str
+    resource: str
+    action: str
+    policies: List[Dict[str, Any]]
+    check_type: str = "authorize"  # "authorize", "reachability", "conflicts"
+
+class PolicyVerificationResponse(BaseModel):
+    is_authorized: bool = False
+    is_reachable: Optional[bool] = None
+    conflicts: Optional[List[str]] = None
+
+class NLIVerificationRequest(BaseModel):
+    query: str
+    context: str
+    answer: str
+
+class NLIVerificationResponse(BaseModel):
+    grounding_score: float
+    faithfulness_score: float
+    overall_score: float
+    passed: bool
+    raw_scores: Optional[List[float]] = None
+
 @app.get("/health")
 def health_check():
     return {"status": "operational", "timestamp": datetime.now(timezone.utc)}
@@ -87,6 +129,45 @@ def verify_attestation(request: VerificationRequest, api_key: str = Depends(veri
         checks=results["checks"],
         errors=results["errors"],
         evidence_type=request.bundle.quote.type if request.bundle.quote else EvidenceType.MOCK_SIM
+    )
+
+@app.post("/verify/policy", response_model=PolicyVerificationResponse)
+def verify_policy(request: PolicyVerificationRequest, api_key: str = Depends(verify_api_key)):
+    """
+    Performs formal ABAC SMT verification inside the isolated service.
+    """
+    verifier = get_policy_verifier()
+    
+    is_auth = False
+    is_reach = None
+    conflicts = None
+    
+    if request.check_type == "authorize":
+        is_auth = verifier.is_authorized(request.principal, request.resource, request.action, request.policies)
+    elif request.check_type == "reachability":
+        is_reach = verifier.check_reachability(request.principal, request.resource, request.policies)
+    elif request.check_type == "conflicts":
+        conflicts = verifier.detect_conflicts(request.policies)
+        
+    return PolicyVerificationResponse(
+        is_authorized=is_auth,
+        is_reachable=is_reach,
+        conflicts=conflicts
+    )
+
+@app.post("/verify/nli", response_model=NLIVerificationResponse)
+def verify_nli(request: NLIVerificationRequest, api_key: str = Depends(verify_api_key)):
+    """
+    Performs Cross-Encoder NLI grounding checks inside the isolated service.
+    """
+    evaluator = get_nli_evaluator()
+    res = evaluator.evaluate(request.query, request.context, request.answer)
+    return NLIVerificationResponse(
+        grounding_score=res["grounding_score"],
+        faithfulness_score=res["faithfulness_score"],
+        overall_score=res["overall_score"],
+        passed=res["passed"],
+        raw_scores=res.get("raw_scores")
     )
 
 if __name__ == "__main__":

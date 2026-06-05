@@ -58,6 +58,24 @@ class SoftwareSimulatorAnchor(SecureAnchor):
     def get_signing_algorithm(self) -> SigningAlgorithm:
         return SigningAlgorithm.ED25519
 
+    def seal_key(self, plaintext_key: bytes) -> bytes:
+        """Seals a plaintext key using a derived key (AES CFB)."""
+        derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        iv = b"\x00" * 16
+        encryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).encryptor()
+        return encryptor.update(plaintext_key) + encryptor.finalize()
+
+    def unseal_key(self, sealed_key: bytes) -> bytes:
+        """Unseals a key using a derived key (AES CFB)."""
+        derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        iv = b"\x00" * 16
+        decryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).decryptor()
+        return decryptor.update(sealed_key) + decryptor.finalize()
+
     @property
     def is_hardware(self) -> bool:
         return False

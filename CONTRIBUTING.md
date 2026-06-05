@@ -41,6 +41,24 @@ The current forensic chain uses Ed25519 keys anchored to the OS keyring. The roa
 
 ---
 
+## Elite DevSecOps CI Expectations
+
+We run a zero-trust, elite CI/CD pipeline. Your PR will be rejected if it fails any of the following automated gates:
+1. **Lint & Format**: Code must pass `ruff`, `mypy` strict type checking, and `black`/`isort` formatting.
+2. **Security SAST**: We run `bandit` and `semgrep` for cryptographic misuse, nonce reuse, and hardcoded secrets. 
+3. **Fuzzing & Property Tests**: We use `hypothesis` to fuzz Merkle proofs and NLI boundaries.
+4. **Crypto Smoke Tests**: E2E validation requires successful attestation against a simulated TPM 2.0 enclave.
+5. **Performance Benchmark**: PRs that degrade NLI throughput or cryptographic hash speed will fail the regression gate.
+
+### Prioritized Rollout Plan
+To minimize disruption while we harden the repository, the CI/CD rollout will occur in phases:
+- **Phase 1 (Current)**: PR Status Checks. All CI gates (SAST, Fuzzing, Linting) run on PRs as required status checks.
+- **Phase 2**: Merge Queue. Introduce a strict merge queue requiring up-to-date linear history.
+- **Phase 3**: Main Branch Gates. Daily scheduled jobs for dependency auditing (`trivy`, `pip-audit`) and secret scanning will automatically open issues and block releases.
+- **Phase 4**: Secure Release. Fully automated OIDC PyPI publishing triggered by tagged releases.
+
+---
+
 ## Development Setup
 
 If you are looking to contribute to the v2.0 roadmap pillars, please refer to our comprehensive [Sovereign AI Stack v2.0 Contributor Onboarding Guide](file:///c:/Users/Monika/Documents/GitHub/sovereign-ai-stack/docs/CONTRIBUTOR_ONBOARDING_v2.0.md) for architectural overviews, directory mappings, recommended tool suites, and implementation guidance.

@@ -53,7 +53,7 @@ class LocalRAG:
             # Legacy/Ungoverned Mode
             from .retriever import FTS5Retriever
 
-            self.retriever = FTS5Retriever(db_path, password=password)
+            self.retriever = FTS5Retriever(db_path, password=password, anchor=anchor)
 
         # Ensure we don't pass None as model_name to avoid overriding QwenGenerator's default
         if model_name:
@@ -171,6 +171,7 @@ class AsyncLocalRAG:
         strict_policy: bool = False,
         anchor: Optional[SecureAnchor] = None,
         attest: bool = False,
+        enable_verification: bool = True,
     ):
         self.governed = (policy_path is not None) or (tenant_id != "default")
         self.use_reranker = use_reranker
@@ -195,13 +196,13 @@ class AsyncLocalRAG:
                 attest=attest,
             )
         else:
-            self.retriever = AsyncFTS5Retriever(db_path, password=password)
+            self.retriever = AsyncFTS5Retriever(db_path, password=password, anchor=anchor)
 
         self.generator = QwenGenerator(model_name=model_name) if model_name else QwenGenerator()
         self.cache = SemanticCache(cache_dir=cache_dir) if use_cache else None
 
         self.evaluator = None
-        if (policy_path is not None) or (tenant_id != "default"):
+        if enable_verification and ((policy_path is not None) or (tenant_id != "default")):
             # In async/tenant mode, we default to enabling the evaluator if it's a governed environment
             from sovereign_ai.verify import SovereignEvaluator
 

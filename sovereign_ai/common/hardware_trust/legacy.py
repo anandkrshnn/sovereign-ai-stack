@@ -46,6 +46,49 @@ class LegacyRawAnchor(SecureAnchor):
     def get_signing_algorithm(self) -> SigningAlgorithm:
         return SigningAlgorithm.ED25519
 
+    def _get_encryption_key(self) -> bytes:
+        if hasattr(self.raw_key, "private_bytes"):
+            try:
+                # Try raw format first (e.g., Ed25519)
+                raw_bytes = self.raw_key.private_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PrivateFormat.Raw,
+                    encryption_algorithm=serialization.NoEncryption()
+                )
+            except Exception:
+                try:
+                    # Fallback to DER/PKCS8 (e.g., RSA, EC)
+                    raw_bytes = self.raw_key.private_bytes(
+                        encoding=serialization.Encoding.DER,
+                        format=serialization.PrivateFormat.PKCS8,
+                        encryption_algorithm=serialization.NoEncryption()
+                    )
+                except Exception:
+                    raw_bytes = b"fallback_legacy_raw_bytes"
+        elif isinstance(self.raw_key, bytes):
+            raw_bytes = self.raw_key
+        else:
+            raw_bytes = str(self.raw_key).encode()
+        return hashlib.sha256(raw_bytes).digest()
+
+    def seal_key(self, plaintext_key: bytes) -> bytes:
+        """Seals a plaintext key using a derived key (AES CFB)."""
+        derived_key = self._get_encryption_key()
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        iv = b"\x00" * 16
+        encryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).encryptor()
+        return encryptor.update(plaintext_key) + encryptor.finalize()
+
+    def unseal_key(self, sealed_key: bytes) -> bytes:
+        """Unseals a key using a derived key (AES CFB)."""
+        derived_key = self._get_encryption_key()
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        iv = b"\x00" * 16
+        decryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).decryptor()
+        return decryptor.update(sealed_key) + decryptor.finalize()
+
     @property
     def is_hardware(self) -> bool:
         return False

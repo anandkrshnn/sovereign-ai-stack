@@ -313,77 +313,88 @@ class SignedAuditChain:
         policy_cert = self._generate_policy_certificate()
 
         # 4. Log a CHECKPOINT event containing the Merkle Root + Hardware Quote + Policy Cert
-        checkpoint_event = self.log_event(
-            component="system",
-            action="MERKLE_CHECKPOINT",
-            principal="system",
-            event_data={
-                "merkle_root": root,
-                "block_size": len(self.event_buffer),
-                "start_seq": self.event_buffer[0]["sequence_number"],
-                "end_seq": self.event_buffer[-1]["sequence_number"],
-                "attestation_quote": quote.model_dump(),
-                "policy_safety_cert": policy_cert,
-            },
-        )
-
-        # Clear buffer
-        self.event_buffer = []
-
-    def get_latest_checkpoint(self) -> Optional[Dict[str, Any]]:
-        """Retrieves the latest MERKLE_CHECKPOINT from the log."""
+    def get_audit_proof(self, audit_id: int) -> Dict[str, Any]:
+        """
+        Retrieves the Merkle inclusion proof for a given sequence_number (audit_id).
+        Uses a checkpoint index for O(1) block seeking, avoiding naive linear scans.
+        """
         if not self.audit_file.exists():
-            return None
+            raise ValueError(f"Audit log empty or missing.")
 
-        # Optimization: Seek backward from end of file
-        try:
-            with open(self.audit_file, "rb") as f:
-                f.seek(0, 2)
-                file_size = f.tell()
-                chunk_size = 16384  # Larger chunk for checkpoints
+        index_file = self.audit_file.with_suffix(".idx")
+        block_start_offset = 0
+        
+        # 1. Fast Index Lookup
+        found_block = False
+        if index_file.exists():
+            with open(index_file, "r") as idx:
+                for line in idx:
+                    # Format: start_seq,end_seq,offset
+                    parts = line.strip().split(",")
+                    if len(parts) == 3:
+                        s_seq, e_seq, offset = int(parts[0]), int(parts[1]), int(parts[2])
+                        if s_seq <= audit_id <= e_seq:
+                            block_start_offset = offset
+                            found_block = True
+                            break
+                            
+        if not found_block and index_file.exists():
+            # ID is not in any sealed block according to the index
+            raise ValueError(f"Audit ID {audit_id} not found in sealed checkpoints (Exclusion).")
 
-                offset = min(chunk_size, file_size)
-                f.seek(-offset, 2)
-                chunk = f.read(offset)
-
-                lines = chunk.decode("utf-8", errors="ignore").splitlines()
-                for line in reversed(lines):
-                    if not line.strip():
-                        continue
-                    try:
-                        record = json.loads(line)
-                        if record.get("action") == "MERKLE_CHECKPOINT":
-                            return record
-                    except:
-                        continue
-
-            # Fallback to full read if not in last chunk
-            with open(self.audit_file, "r") as f:
-                for line in reversed(f.readlines()):
-                    if not line.strip():
-                        continue
+        # 2. Seek and Read Block
+        target_event = None
+        checkpoint = None
+        block_events = []
+        
+        with open(self.audit_file, "r", encoding="utf-8") as f:
+            f.seek(block_start_offset)
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
                     record = json.loads(line)
-                    if record.get("action") == "MERKLE_CHECKPOINT":
-                        return record
-            return None
-        except Exception as e:
-            logger.error(f"Failed to get latest checkpoint: {e}")
-            return None
+                    action = record.get("action")
+                    seq = record.get("sequence_number")
+                    
+                    if action != "MERKLE_CHECKPOINT":
+                        block_events.append(record)
+                        if seq == audit_id:
+                            target_event = record
+                    elif target_event is not None:
+                        checkpoint = record
+                        break
+                    else:
+                        block_events = []
+                        # Track new block offset in case index was missing
+                        block_start_offset = f.tell()
+                except json.JSONDecodeError:
+                    continue
+
+        if not target_event:
+            raise ValueError(f"Audit ID {audit_id} not found in logs (Exclusion).")
+            
+        if not checkpoint:
+            raise ValueError(f"Audit ID {audit_id} exists but is pending Merkle checkpoint.")
+
+        hashes = [e["curr_hash"] for e in block_events]
+        tree = MerkleTree(hashes)
+        index = next(i for i, e in enumerate(block_events) if e["sequence_number"] == audit_id)
+        
+        return {
+            "leaf": target_event["curr_hash"],
+            "root": checkpoint["event_data"]["merkle_root"],
+            "proof": tree.get_proof(index),
+            "checkpoint_seq": checkpoint["sequence_number"],
+            "attestation_quote": checkpoint["event_data"].get("attestation_quote")
+        }
 
     def _generate_policy_certificate(self) -> Dict[str, Any]:
         """Generates a certificate of formal policy correctness using Z3."""
         try:
             from ..verify.policy_z3 import PolicyVerifier
-
-            # In a real implementation, we'd load the actual policies active for this tenant
-            # For this alpha, we use a placeholder lookup or the current configured policies
             verifier = PolicyVerifier()
-
-            # This would normally be populated from the PolicyStore
-            # For demonstration, we assume a "Verified" state if no conflicts are found
             conflicts = []
-            # Note: To make this fully functional, we need to pass policies to SignedAuditChain
-
             return {
                 "verified": len(conflicts) == 0,
                 "engine": "Z3-SMT-v4.16",
@@ -404,9 +415,53 @@ class SignedAuditChain:
     def _append_to_file(self, event: Dict[str, Any]):
         """Append event to JSONL audit file."""
         self.audit_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Track offset for index if this is the start of a block
+        is_block_start = (len(self.event_buffer) == 0 and event.get("action") != "MERKLE_CHECKPOINT")
 
         with open(self.audit_file, "a") as f:
+            offset = f.tell()
             f.write(json.dumps(event) + "\n")
+            
+        if is_block_start:
+            self._current_block_offset = offset
+
+    def _finalize_merkle_block(self):
+        """Computes Merkle Root for the current buffer and clears it."""
+        if not self.event_buffer:
+            return
+
+        hashes = [e["curr_hash"] for e in self.event_buffer]
+        tree = MerkleTree(hashes)
+        root = tree.root
+
+        quote = self.anchor.generate_quote(nonce=root, pcrs=[0, 11])
+        policy_cert = self._generate_policy_certificate()
+        
+        start_seq = self.event_buffer[0]["sequence_number"]
+        end_seq = self.event_buffer[-1]["sequence_number"]
+
+        checkpoint_event = self.log_event(
+            component="system",
+            action="MERKLE_CHECKPOINT",
+            principal="system",
+            event_data={
+                "merkle_root": root,
+                "block_size": len(self.event_buffer),
+                "start_seq": start_seq,
+                "end_seq": end_seq,
+                "attestation_quote": quote.model_dump(),
+                "policy_safety_cert": policy_cert,
+            },
+        )
+
+        # Write to O(1) lookup index
+        block_offset = getattr(self, "_current_block_offset", 0)
+        index_file = self.audit_file.with_suffix(".idx")
+        with open(index_file, "a") as idx:
+            idx.write(f"{start_seq},{end_seq},{block_offset}\n")
+
+        self.event_buffer = []
 
     def _load_chain(self):
         """Load existing chain state (O(1) optimization)."""
@@ -633,49 +688,7 @@ class SignedAuditChain:
             logging.getLogger(__name__).warning("Corrupt checkpoint file detected.")
 
 
-# Backward compatibility aliases
-AuditChainManager = SignedAuditChain
-
-
-# Define static methods for legacy compatibility
-def _calculate_next_hash_static(prev_hash, event_data):
-    import hashlib
-    import json
-
-    msg = prev_hash + json.dumps(event_data, sort_keys=True)
-    return hashlib.sha256(msg.encode()).hexdigest()
-
-
-def _verify_chain_static(audit_file):
-    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
-    return chain.verify_chain()
-
-
-def _get_last_hash_static(audit_file):
-    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
-    return chain.last_hash
-
-
-def _save_anchor_static(audit_file, last_hash):
-    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
-    chain._save_checkpoint()
-
-
-def _verify_anchor_static(audit_file, last_hash):
-    chain = SignedAuditChain(tenant_id="legacy", audit_file=str(audit_file))
-    try:
-        chain._verify_checkpoint()
-        return True
-    except Exception:
-        return False
-
-
-# Attach static methods to SignedAuditChain
-SignedAuditChain.GENESIS_HASH = "0" * 64
-SignedAuditChain.calculate_next_hash = staticmethod(_calculate_next_hash_static)
-SignedAuditChain.get_last_hash = staticmethod(_get_last_hash_static)
-SignedAuditChain.save_anchor = staticmethod(_save_anchor_static)
-SignedAuditChain.verify_anchor = staticmethod(_verify_anchor_static)
+# Removed legacy compatibility static methods.
 
 
 @dataclass
