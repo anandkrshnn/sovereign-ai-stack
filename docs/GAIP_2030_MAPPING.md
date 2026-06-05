@@ -37,4 +37,25 @@ The Sovereign AI Stack provides mathematical guarantees rather than policy-based
 
 ---
 
+## 4. Compliance Matrix
+
+| Requirement | Sovereign AI Stack Implementation | Evidence | Maturity |
+| :--- | :--- | :--- | :--- |
+| **Forensic Audits (4.1)** | O(1) Merkle Checkpoints, JSONL Ledger | `common/audit.py`, `common/merkle.py` | 🟢 High |
+| **Hallucination Immunity (5.3)** | 0.85 NLI Gate (DeBERTa-v3), Fail-Closed | `verify/evaluator.py` | 🟢 High |
+| **Hardware Trust (6.2)** | TPM 2.0 (ESYS) Attestation | `common/hardware_trust/` | 🟡 Medium (SGX isolation targeted for v3.0) |
+
+## 5. PTV Integration (IETF Draft Alignment)
+
+The Sovereign AI Stack explicitly aligns with the **IETF Provenance Tracking and Verification (PTV)** draft standards. Our cryptographic Merkle inclusion proofs are designed to interoperate with standardized provenance headers, ensuring that audit trails can be independently verified across organizational boundaries without exposing the underlying local databases.
+
+## 6. Roadmap to Full Certification
+
+While Sovereign AI Stack v2.0 fulfills the core mathematical requirements of GAIP-2030, formal certification requires organizational and physical security controls. Our technical roadmap to support full certification includes:
+- **v2.5**: Integration with centralized HSMs for cloud-deployed variants.
+- **v3.0**: Full Trusted Execution Environment (TEE) isolation (Intel SGX / AMD SEV) for the NLI Grounding Gate and Audit Ledger.
+- **v3.5**: Formally verified cryptographic primitives using standard provers.
+
+---
+
 *This document is a living architecture mapping. For full implementation details, see our `docs/architecture.md` and the `verify/` module source code.*
