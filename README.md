@@ -48,16 +48,24 @@ flowchart TD
 
 ## 🚀 One-Command Quickstart
 
-### PTV Live Demo (2 minutes — Zero Setup)
+### Try the PTV Airlock Live (Browser Demo)
+
+[![Open in Gradio](https://img.shields.io/badge/Try_Live_Demo-FF6B6B?logo=gradio)]()
+
+Watch hardware attestation, NLI rejection of hallucinations, and tamper-proof Merkle verification in real time via an interactive Web UI.
 
 ```bash
 # 1. Install via pip with demo dependencies
 pip install -e .[demo]
 
-# 2. Run the PTV Live Demo
+# 2. Run the PTV Web UI
+python -m examples.ptv_web_ui
+```
+
+### Or use the CLI Demo
+```bash
 python -m examples.ptv_live_demo
 ```
-Watch **Prove → Transform → Verify** in real-time with TPM simulator, NLI Gate, and tamper resistance.
 
 ### Start the Local AI Gateway
 ```bash

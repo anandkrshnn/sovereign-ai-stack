@@ -84,6 +84,7 @@ tpm2 = [
 # Demo features
 demo = [
     "rich>=13.0",
+    "gradio>=4.0.0",
 ]
 
 # All features
