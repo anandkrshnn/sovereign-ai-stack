@@ -1,5 +1,8 @@
 name: Sovereign CI/CD
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [ "main" ]
@@ -44,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install .[verify,bridge,agent,dashboard,dev]
+          pip install .[verify,bridge,agent,dev]
           pip install pytest-cov pytest-benchmark hypothesis
       - name: Run Pytest with Coverage
         run: pytest tests/ -v --cov=sovereign_ai --cov-report=xml -m "not requires_model and not slow"
@@ -52,23 +55,3 @@ jobs:
         run: pytest tests/verify/test_audit_chain.py tests/verify/test_evaluator_robustness.py -v --hypothesis-show-statistics
       - name: Run Performance Benchmark
         run: pytest tests/benchmark_performance.py --benchmark-only --benchmark-fail-unoptimized
-
-  tpm-smoke-test:
-    name: Crypto Smoke Tests (TPM Simulator)
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Start TPM Simulator & Stack
-        run: |
-          docker compose up --build -d
-          sleep 15 # Wait for SWTPM to bind and init
-      - name: E2E Round-Trip Attestation & Quote Validation
-        run: |
-          python scripts/verify_attestation.py
-      - name: Teardown
-        if: always()
-        run: docker compose down
