@@ -22,13 +22,14 @@ Marker used: @pytest.mark.requires_model
 """
 
 import pytest
-from sovereign_ai.verify.evaluator import SovereignEvaluator
-from sovereign_ai.verify.config import Config
 
+from sovereign_ai.verify.config import Config
+from sovereign_ai.verify.evaluator import SovereignEvaluator
 
 # ---------------------------------------------------------------------------
 # Shared fixture — loaded once per session to avoid reloading the model
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def evaluator():
@@ -46,6 +47,7 @@ def evaluator():
 # Clearly grounded answers — should PASS
 # ---------------------------------------------------------------------------
 
+
 class TestGroundedAnswers:
     """Answers that are directly supported by the provided context."""
 
@@ -57,12 +59,12 @@ class TestGroundedAnswers:
             "the risk of Reye's syndrome."
         )
         query = "Can aspirin be given to children?"
-        answer = "Aspirin should not be given to children under 16 due to the risk of Reye's syndrome."
+        answer = (
+            "Aspirin should not be given to children under 16 due to the risk of Reye's syndrome."
+        )
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is True, (
-            f"Expected grounded answer to pass. Scores: {result}"
-        )
+        assert result["passed"] is True, f"Expected grounded answer to pass. Scores: {result}"
         assert result["grounding_score"] >= 0.85
 
     @pytest.mark.requires_model
@@ -73,12 +75,12 @@ class TestGroundedAnswers:
             "the Companies Act 2013."
         )
         query = "How long must financial audit logs be retained?"
-        answer = "Financial audit logs must be kept for 7 years, as required by the Companies Act 2013."
+        answer = (
+            "Financial audit logs must be kept for 7 years, as required by the Companies Act 2013."
+        )
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is True, (
-            f"Expected paraphrase to pass. Scores: {result}"
-        )
+        assert result["passed"] is True, f"Expected paraphrase to pass. Scores: {result}"
 
     @pytest.mark.requires_model
     def test_conservative_answer_passes(self, evaluator):
@@ -92,14 +94,15 @@ class TestGroundedAnswers:
         answer = "Data principals have the right to access, correct, and erase their personal data."
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is True, (
-            f"Expected conservative subset answer to pass. Scores: {result}"
-        )
+        assert (
+            result["passed"] is True
+        ), f"Expected conservative subset answer to pass. Scores: {result}"
 
 
 # ---------------------------------------------------------------------------
 # Deliberate hallucinations — must FAIL and be BLOCKED
 # ---------------------------------------------------------------------------
+
 
 class TestHallucinations:
     """
@@ -127,24 +130,20 @@ class TestHallucinations:
             f"CRITICAL: contradicted fact was NOT blocked. Scores: {result}\n"
             "The grounding gate failed to catch a direct contradiction."
         )
-        assert result["grounding_score"] < 0.85, (
-            f"Grounding score too high for a contradicted answer: {result['grounding_score']}"
-        )
+        assert (
+            result["grounding_score"] < 0.85
+        ), f"Grounding score too high for a contradicted answer: {result['grounding_score']}"
 
     @pytest.mark.requires_model
     def test_fabricated_statistic_fails(self, evaluator):
         """Answer invents a number not present in the context."""
-        context = (
-            "LanceDB supports approximate nearest neighbour search using IVF-PQ indexing."
-        )
+        context = "LanceDB supports approximate nearest neighbour search using IVF-PQ indexing."
         query = "What indexing does LanceDB use?"
         # Hallucinated statistic
         answer = "LanceDB uses IVF-PQ indexing and achieves 99.8% recall at 1ms latency."
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is False, (
-            f"Fabricated statistic was not blocked. Scores: {result}"
-        )
+        assert result["passed"] is False, f"Fabricated statistic was not blocked. Scores: {result}"
 
     @pytest.mark.requires_model
     def test_out_of_scope_claim_fails(self, evaluator):
@@ -161,9 +160,9 @@ class TestHallucinations:
         )
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is False, (
-            f"Out-of-scope drug claim was not blocked. Scores: {result}"
-        )
+        assert (
+            result["passed"] is False
+        ), f"Out-of-scope drug claim was not blocked. Scores: {result}"
 
     @pytest.mark.requires_model
     def test_empty_context_fails(self, evaluator):
@@ -173,9 +172,9 @@ class TestHallucinations:
         answer = "Data must be retained for 7 years."
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is False, (
-            f"Answer against empty context was not blocked. Scores: {result}"
-        )
+        assert (
+            result["passed"] is False
+        ), f"Answer against empty context was not blocked. Scores: {result}"
 
     @pytest.mark.requires_model
     def test_irrelevant_context_fails(self, evaluator):
@@ -185,14 +184,15 @@ class TestHallucinations:
         answer = "Hypertension is defined as blood pressure above 140/90 mmHg."
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is False, (
-            f"Answer with irrelevant context was not blocked. Scores: {result}"
-        )
+        assert (
+            result["passed"] is False
+        ), f"Answer with irrelevant context was not blocked. Scores: {result}"
 
 
 # ---------------------------------------------------------------------------
 # Partial hallucinations — should also FAIL (gate is strict)
 # ---------------------------------------------------------------------------
+
 
 class TestPartialHallucinations:
     """
@@ -218,14 +218,15 @@ class TestPartialHallucinations:
         )
 
         result = evaluator.evaluate(query, context, answer)
-        assert result["passed"] is False, (
-            f"Partial hallucination (grounded + invented) was not blocked. Scores: {result}"
-        )
+        assert (
+            result["passed"] is False
+        ), f"Partial hallucination (grounded + invented) was not blocked. Scores: {result}"
 
 
 # ---------------------------------------------------------------------------
 # Score output structure
 # ---------------------------------------------------------------------------
+
 
 class TestOutputSchema:
     """The evaluate() return dict must always have the correct shape."""
@@ -245,7 +246,5 @@ class TestOutputSchema:
     @pytest.mark.requires_model
     def test_overall_is_mean(self, evaluator):
         result = evaluator.evaluate("query", "context text", "answer text")
-        expected = round(
-            (result["grounding_score"] + result["faithfulness_score"]) / 2, 4
-        )
+        expected = round((result["grounding_score"] + result["faithfulness_score"]) / 2, 4)
         assert abs(result["overall_score"] - expected) < 1e-4

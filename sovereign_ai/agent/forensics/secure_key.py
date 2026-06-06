@@ -1,7 +1,9 @@
-import keyring
+from typing import Any
+import base64
 import os
 from pathlib import Path
-import base64
+
+import keyring
 
 
 class SecureKeyManager:
@@ -32,6 +34,7 @@ class SecureKeyManager:
         Stores the resulting key in the OS keyring.
         """
         import getpass
+
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
@@ -133,12 +136,13 @@ class SecureKeyManager:
         return f.decrypt(wrapped_data).decode()
 
     @staticmethod
-    def create_forensic_key_manager(vault_root: Path) -> "VaultKeyManager":
+    def create_forensic_key_manager(vault_root: Path) -> "Any":
         """
         Explicit investigative bridge: Provisions a KeyManager from the OS enclave.
         This is an operator-invoked action for authorized decryption.
         """
-        from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
+        from sovereign_ai.agent.forensics.vault_key_manager import \
+            VaultKeyManager
 
         key = SecureKeyManager.get_trace_key()
         return VaultKeyManager(vault_root, key)

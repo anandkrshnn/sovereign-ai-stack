@@ -1,5 +1,6 @@
-from .audit import Principal
 from typing import Dict
+
+from .audit import Principal
 
 
 class IdentityHub:

@@ -1,6 +1,7 @@
 import re
-from typing import List, Dict
-from .config import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP
+from typing import Dict, List
+
+from .config import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 
 
 class RecursiveCharacterTextSplitter:

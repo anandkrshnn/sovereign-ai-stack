@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
 import hashlib
-from typing import Dict, Any, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, Field
-from .schemas import EvidenceType, AttestationQuote
+
+from .schemas import AttestationQuote, EvidenceType
 
 
 class EvidenceBundle(BaseModel):
@@ -67,10 +69,10 @@ class AttestationVerifier:
         """
         Deep validation for native TPM 2.0 quotes using RSA-PSS verification.
         """
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding, rsa
-        from cryptography.hazmat.primitives import serialization
         import base64
+
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
         quote = bundle.quote
 

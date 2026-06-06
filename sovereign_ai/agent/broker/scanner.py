@@ -1,11 +1,14 @@
-import re
-import math
 import gc
 import json
+import math
+import re
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
-from typing import List, Dict, Optional
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+from concurrent.futures import as_completed
 from dataclasses import dataclass
+from typing import Dict, List, Optional
+
 from sovereign_ai.agent.config import Config
 
 # Per-scanner wall-clock budgets from the Performance Baseline Specification (§6).
@@ -150,9 +153,9 @@ class AdaptiveEntropyScanner(BaseScanner):
                 violations.append(
                     ScanViolation(
                         scanner_name=self.name(),
-                        plugin_id="context-entropy-key"
-                        if is_contextual
-                        else "high-entropy-detector",
+                        plugin_id=(
+                            "context-entropy-key" if is_contextual else "high-entropy-detector"
+                        ),
                         confidence=0.9 if is_contextual else 0.6,
                         snippet_redacted=token[:4] + "****",
                         _raw_match=token,

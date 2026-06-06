@@ -1,8 +1,9 @@
-import os
-import time
 import asyncio
 import logging
+import os
+import time
 from typing import Optional
+
 import lancedb
 import pyarrow as pa
 from sentence_transformers import SentenceTransformer

@@ -6,12 +6,12 @@ Manages both:
 2. Asymmetric keys (Ed25519) for audit signing
 """
 
-import keyring
-
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives.asymmetric import ed25519
-from cryptography.hazmat.primitives import serialization
 import base64
+
+import keyring
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
 
 
 class SecureKeyManager:

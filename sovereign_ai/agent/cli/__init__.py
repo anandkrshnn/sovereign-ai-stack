@@ -1,7 +1,8 @@
+from typing import Optional
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from typing import Optional
 
 # Lazy imports to keep CLI responsive
 # from sovereign_ai.agent.cli.daemon import start_daemon_process, status_daemon, stop_daemon
@@ -132,9 +133,10 @@ def request_cmd(
     ),
 ):
     """Execute a single agent intent through the sovereign firewall."""
-    from pathlib import Path
     import json
     import sys
+    from pathlib import Path
+
     from sovereign_ai.agent.broker.engine import LocalPermissionBroker
     from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
 

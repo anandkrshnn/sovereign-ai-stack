@@ -1,33 +1,40 @@
-import pytest
-import sqlite3
-import shutil
-import os
 import json
+import os
+import shutil
+import sqlite3
 import time
 from pathlib import Path
 from unittest.mock import MagicMock
+
+import pytest
 
 # Force NullKeyring for CI/headless environments
 try:
     import keyring
     from keyring.backends.null import Keyring as NullKeyring
+
     keyring.set_keyring(NullKeyring())
 except Exception:
     pass
 
-from sovereign_ai.rag.store import Store
-from sovereign_ai.rag.retriever import FTS5Retriever
-from sovereign_ai.rag.main import LocalRAG
+from sovereign_ai import Config, SovereignPipeline
 from sovereign_ai.rag.generator import QwenGenerator
-from sovereign_ai import SovereignPipeline, Config
+from sovereign_ai.rag.main import LocalRAG
+from sovereign_ai.rag.retriever import FTS5Retriever
 from sovereign_ai.rag.schemas import Document
+from sovereign_ai.rag.store import Store
+
 
 def pytest_addoption(parser):
-    parser.addoption("--sovereign-cert", action="store_true", help="Run in GAIP-2030 certification mode")
+    parser.addoption(
+        "--sovereign-cert", action="store_true", help="Run in GAIP-2030 certification mode"
+    )
+
 
 @pytest.fixture(scope="session")
 def sovereign_cert(request):
     return request.config.getoption("--sovereign-cert")
+
 
 @pytest.fixture(scope="function")
 def sovereign_test_env(tmp_path):
@@ -36,17 +43,17 @@ def sovereign_test_env(tmp_path):
         "base_dir": tmp_path,
         "tenants": {},
     }
-    
+
     # Create tenants with overlapping but isolated data
     for tenant_id in ["tenant_alpha", "tenant_beta", "tenant_gamma"]:
         tenant_dir = tmp_path / tenant_id
         tenant_dir.mkdir()
-        
+
         db_path = tenant_dir / "rag.db"
         audit_path = tenant_dir / "audit.jsonl"
         cache_dir = tenant_dir / "cache"
         policy_path = tenant_dir / "policy.yaml"
-        
+
         # Default "Allow-Self" policy
         with open(policy_path, "w") as f:
             f.write(f"""
@@ -63,26 +70,28 @@ allow:
             tenant_id=tenant_id,
             principal=f"user@{tenant_id}",
             use_cache=True,
-            cache_dir=str(cache_dir)
+            cache_dir=str(cache_dir),
         )
-        
+
         env["tenants"][tenant_id] = {
             "config": config,
             "db_path": db_path,
             "audit_path": audit_path,
-            "cache_dir": cache_dir
+            "cache_dir": cache_dir,
         }
-    
+
     return env
+
 
 # Global results collection for certification report
 CERT_RESULTS = []
+
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
-    
+
     if report.when == "call" and item.config.getoption("--sovereign-cert"):
         marker = item.get_closest_marker("sovereign")
         if marker:
@@ -90,14 +99,17 @@ def pytest_runtest_makereport(item, call):
             # Try to get test_id from marker if it exists (e.g. @pytest.mark.sovereign(id="ISO-001"))
             if marker.kwargs.get("id"):
                 test_id = marker.kwargs["id"]
-                
-            CERT_RESULTS.append({
-                "test_id": test_id,
-                "node_id": item.nodeid,
-                "outcome": report.outcome,
-                "duration": report.duration,
-                "error": str(report.longrepr) if report.failed else None
-            })
+
+            CERT_RESULTS.append(
+                {
+                    "test_id": test_id,
+                    "node_id": item.nodeid,
+                    "outcome": report.outcome,
+                    "duration": report.duration,
+                    "error": str(report.longrepr) if report.failed else None,
+                }
+            )
+
 
 def pytest_sessionfinish(session, exitstatus):
     if session.config.getoption("--sovereign-cert"):
@@ -106,11 +118,13 @@ def pytest_sessionfinish(session, exitstatus):
         with open(output_path, "w") as f:
             json.dump(CERT_RESULTS, f, indent=2)
 
+
 @pytest.fixture
 def temp_db(tmp_path):
     """Fixture for a temporary SQLite database."""
     db_path = tmp_path / "test_rag.db"
     return str(db_path)
+
 
 @pytest.fixture
 def store(temp_db):
@@ -119,12 +133,14 @@ def store(temp_db):
     yield s
     s.close()
 
+
 @pytest.fixture
 def retriever(temp_db):
     """Fixture for a clean FTS5Retriever instance."""
     r = FTS5Retriever(temp_db)
     yield r
     r.close()
+
 
 @pytest.fixture
 def mock_generator():
@@ -134,6 +150,7 @@ def mock_generator():
     mock.generate.return_value = "Mocked answer based on context."
     mock.stream_generate.return_value = iter(["Mocked ", "streaming ", "answer."])
     return mock
+
 
 @pytest.fixture
 def rag_instance(temp_db, mock_generator):

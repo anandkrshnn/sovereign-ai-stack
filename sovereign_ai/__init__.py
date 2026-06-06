@@ -4,17 +4,15 @@ Sovereign AI Stack - Local RAG with Cryptographic Verification
 
 __version__ = "0.1.0a5"
 
+from .agent.forensics.audit_chain import AuditChainManager as SignedAuditChain
 # --- Core Platform Facade ---
-from .pipeline import SovereignPipeline, Config
-
+from .pipeline import Config, SovereignPipeline
 # --- RAG & Retrieval ---
-from .rag import LocalRAG, AsyncLocalRAG
+from .rag import AsyncLocalRAG, LocalRAG
 from .rag.governed import GovernedRetriever as HybridRetriever
-from .rag.schemas import Document, SearchResult, RAGResponse, AuditRecord
-
+from .rag.schemas import AuditRecord, Document, RAGResponse, SearchResult
 # --- Verification & Forensics ---
 from .verify import SovereignEvaluator
-from .agent.forensics.audit_chain import AuditChainManager as SignedAuditChain
 
 # --- Agentic Workflows ---
 try:

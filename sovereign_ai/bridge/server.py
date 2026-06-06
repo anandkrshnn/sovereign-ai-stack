@@ -1,9 +1,13 @@
 import os
 
 import uvicorn
+import json
+import logging
+logger = logging.getLogger(__name__)
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
+    OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -63,7 +67,7 @@ orchestrator = SovereignOrchestrator(
 )
 
 
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import StreamingResponse
 
 from .metrics import CONTENT_TYPE_LATEST, generate_latest, metrics
 

@@ -1,10 +1,13 @@
-import pytest
-import time
-import subprocess
-import httpx
 import hashlib
+import subprocess
+import time
+
+import httpx
+import pytest
+
 from sovereign_ai.common.hardware_trust import get_secure_anchor
 from sovereign_ai.common.rats import EvidenceBundle
+
 
 @pytest.fixture(scope="module")
 def verifier_service():
@@ -12,9 +15,9 @@ def verifier_service():
     proc = subprocess.Popen(
         ["python", "sovereign_ai/services/verifier.py"],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
     )
-    
+
     # Wait for service to start
     ready = False
     for _ in range(10):
@@ -25,15 +28,16 @@ def verifier_service():
                 break
         except Exception:
             time.sleep(1)
-    
+
     if not ready:
         proc.terminate()
         pytest.fail("Verifier service failed to start for integration tests.")
-    
+
     yield "http://127.0.0.1:8080"
-    
+
     proc.terminate()
     proc.wait()
+
 
 def test_verifier_service_roundtrip(verifier_service):
     """
@@ -43,27 +47,25 @@ def test_verifier_service_roundtrip(verifier_service):
     anchor = get_secure_anchor("service_test", backend="mock")
     nonce = hashlib.sha256(b"integration_test_nonce").hexdigest()
     quote = anchor.generate_quote(nonce, [0, 11])
-    
+
     bundle = EvidenceBundle(
-        nonce=nonce,
-        merkle_root="0x123",
-        quote=quote,
-        bundle_signature="sig_abc"
+        nonce=nonce, merkle_root="0x123", quote=quote, bundle_signature="sig_abc"
     )
 
     payload = {
-        "bundle": bundle.model_dump(mode='json'),
+        "bundle": bundle.model_dump(mode="json"),
         "expected_nonce": nonce,
-        "reference_version": "v0.1.0a2"
+        "reference_version": "v0.1.0a2",
     }
-    
+
     headers = {"X-API-Key": "sovereign_trust_preview_2026"}
     resp = httpx.post(f"{base_url}/verify", json=payload, headers=headers)
-    
+
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_valid"] is True
     assert data["checks"]["nonce_fresh"] is True
+
 
 def test_verifier_service_invalid_api_key(verifier_service):
     """Ensures the verifier service rejects unauthorized requests."""

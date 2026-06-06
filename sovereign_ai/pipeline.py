@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Union, AsyncGenerator
+from typing import AsyncGenerator, List, Optional, Union
+
 from .rag.main import AsyncLocalRAG
-from .rag.schemas import RAGResponse, Document
+from .rag.schemas import Document, RAGResponse
 
 
 @dataclass
@@ -108,6 +109,7 @@ class SovereignPipeline:
         Explicit async initialization. Must be called if remote attestation is required.
         """
         import os
+
         from .common.schemas import SecurityHalt
 
         if os.getenv("SOVEREIGN_ENV") == "production" and not getattr(
@@ -130,8 +132,10 @@ class SovereignPipeline:
                 "remote_verifier_url required when require_remote_attestation is True"
             )
 
-        import httpx
         import uuid
+
+        import httpx
+
         from .common.schemas import SecurityHalt
 
         nonce = str(uuid.uuid4())

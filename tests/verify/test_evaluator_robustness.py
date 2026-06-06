@@ -1,9 +1,12 @@
 import pytest
+
 from sovereign_ai.verify.evaluator import SovereignEvaluator
+
 
 @pytest.fixture(scope="module")
 def evaluator():
     return SovereignEvaluator()
+
 
 def test_adversarial_syntactic_mimicry(evaluator):
     # Tests if the model is tricked by high lexical overlap with swapped entities
@@ -12,6 +15,7 @@ def test_adversarial_syntactic_mimicry(evaluator):
     answer = "MegaCorp finalized the acquisition of DataSys for $500M in a landmark deal, outbidding TechCorp."
     result = evaluator.evaluate_with_threshold(query, context, answer, threshold=0.85)
     assert not result["passed"]
+
 
 @pytest.mark.xfail(reason="Known gap")
 def test_adversarial_multi_hop_negation(evaluator):
@@ -24,6 +28,7 @@ def test_adversarial_multi_hop_negation(evaluator):
     result = evaluator.evaluate_with_threshold(query, context, answer, threshold=0.50)
     assert result["passed"]
 
+
 def test_adversarial_multi_hop_negation_hallucination(evaluator):
     # The answer incorrectly interprets the double negation
     query = "Is the patient clear for surgery?"
@@ -31,6 +36,7 @@ def test_adversarial_multi_hop_negation_hallucination(evaluator):
     answer = "The patient lacks contraindications for surgery and is clear."
     result = evaluator.evaluate_with_threshold(query, context, answer, threshold=0.85)
     assert not result["passed"]
+
 
 def test_adversarial_numerical_jargon_blindness(evaluator):
     # Tests if the model catches a critical number swap buried in dense jargon
@@ -40,13 +46,17 @@ def test_adversarial_numerical_jargon_blindness(evaluator):
     result = evaluator.evaluate_with_threshold(query, context, answer, threshold=0.85)
     assert not result["passed"]
 
+
 def test_adversarial_temporal_inconsistency(evaluator):
     # Tests if the model catches timeline contradictions
     query = "When was the vulnerability patched?"
     context = "The CVE-2023-1234 vulnerability was disclosed on March 5th. A hotfix was deployed to production servers on March 12th."
-    answer = "The vulnerability was patched to production servers prior to its disclosure on March 5th."
+    answer = (
+        "The vulnerability was patched to production servers prior to its disclosure on March 5th."
+    )
     result = evaluator.evaluate_with_threshold(query, context, answer, threshold=0.85)
     assert not result["passed"]
+
 
 @pytest.mark.xfail(reason="Known gap")
 def test_adversarial_premise_injection(evaluator):
@@ -56,6 +66,7 @@ def test_adversarial_premise_injection(evaluator):
     answer = "The system has suffered a catastrophic failure."
     result = evaluator.evaluate_with_threshold(query, context, answer, threshold=0.85)
     assert not result["passed"]
+
 
 def test_adversarial_subtle_quantifier_shift(evaluator):
     # Tests 'some' vs 'all' quantifier shift

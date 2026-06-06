@@ -1,7 +1,9 @@
-import typer
 import os
+
+import typer
 from rich.console import Console
 from rich.panel import Panel
+
 from .audit import BridgeAuditLogger
 
 app = typer.Typer(help="sovereign-ai bridge — GAIP-2030 Developer Gateway Control Plane")

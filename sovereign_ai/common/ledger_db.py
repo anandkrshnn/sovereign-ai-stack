@@ -5,8 +5,9 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from sqlalchemy import Column, Integer, String, JSON, select
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import JSON, Column, Integer, String, select
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
 from sqlalchemy.ext.declarative import declarative_base
 
 from .hardware_trust import SecureAnchor, SoftwareSimulatorAnchor
@@ -99,15 +100,20 @@ class DatabaseAuditChain:
                 pub_key = self.anchor.get_public_key()
                 if pub_key:
                     from cryptography.hazmat.primitives import serialization
+
                     from .schemas import SigningAlgorithm
 
                     pub_bytes = pub_key.public_bytes(
-                        encoding=serialization.Encoding.Raw
-                        if self.anchor.algorithm == SigningAlgorithm.ED25519
-                        else serialization.Encoding.X962,
-                        format=serialization.PublicFormat.Raw
-                        if self.anchor.algorithm == SigningAlgorithm.ED25519
-                        else serialization.PublicFormat.UncompressedPoint,
+                        encoding=(
+                            serialization.Encoding.Raw
+                            if self.anchor.algorithm == SigningAlgorithm.ED25519
+                            else serialization.Encoding.X962
+                        ),
+                        format=(
+                            serialization.PublicFormat.Raw
+                            if self.anchor.algorithm == SigningAlgorithm.ED25519
+                            else serialization.PublicFormat.UncompressedPoint
+                        ),
                     )
                     record_dict["public_key"] = base64.b64encode(pub_bytes).decode("utf-8")
 

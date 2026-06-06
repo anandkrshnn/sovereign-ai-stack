@@ -1,9 +1,9 @@
-import logging
 import hashlib
-from typing import List, Dict, Any, Optional
+import logging
+from typing import Any, Dict, List, Optional
 
-from sovereign_ai.policy.events import KnowledgeEvent
 from sovereign_ai.gates.nli_gate import NLIAdaptiveGate
+from sovereign_ai.policy.events import KnowledgeEvent
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +44,9 @@ class EvaluatorOrchestrator:
         # Adaptive Metrics
         self.recent_challenges_count = 0
         self.evaluation_window_size = 10
-        self.recent_rejection_history: List[
-            bool
-        ] = []  # Tracks last N updates (True if rejected/quarantined)
+        self.recent_rejection_history: List[bool] = (
+            []
+        )  # Tracks last N updates (True if rejected/quarantined)
 
     def propose_update(
         self,

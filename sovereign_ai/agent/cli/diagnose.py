@@ -1,10 +1,12 @@
 import os
-import requests
+
 import psutil
+import requests
 from rich.console import Console
 from rich.table import Table
-from sovereign_ai.agent.config import Config
+
 from sovereign_ai.agent import __version__
+from sovereign_ai.agent.config import Config
 
 console = Console()
 
@@ -69,8 +71,9 @@ def run_diagnose():
         table.add_row("Sandbox Path", "[bold green][READY][/bold green]", str(sandbox))
 
     # 4. IPC (Pipe/Socket)
-    from sovereign_ai.agent.cli.ipc import PIPE_NAME
     import time
+
+    from sovereign_ai.agent.cli.ipc import PIPE_NAME
 
     time.sleep(0.5)  # Allow cold-start daemon to bind pipe
 

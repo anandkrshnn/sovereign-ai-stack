@@ -1,11 +1,14 @@
 from pathlib import Path
+
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
 from rich.console import Console
+
 from sovereign_ai.agent.cli.ipc import send_ipc_command
-from sovereign_ai.agent.cli.terminal_ui import render_airlock_modal, print_banner
+from sovereign_ai.agent.cli.terminal_ui import (print_banner,
+                                                render_airlock_modal)
 
 console = Console()
 

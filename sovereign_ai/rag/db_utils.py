@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 try:
     from sqlcipher3 import dbapi2 as sqlcipher

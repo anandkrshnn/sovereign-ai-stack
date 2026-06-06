@@ -1,6 +1,8 @@
 import base64
 from pathlib import Path
-from .hardware_trust import SecureAnchor, SoftwareSimulatorAnchor, WindowsTPMAnchor
+
+from .hardware_trust import (SecureAnchor, SoftwareSimulatorAnchor,
+                             WindowsTPMAnchor)
 
 
 class PolicySigner:
@@ -38,6 +40,7 @@ class PolicySigner:
 if __name__ == "__main__":
     import argparse
     import os
+
     from cryptography.hazmat.primitives import serialization
 
     parser = argparse.ArgumentParser(description="Sovereign AI Policy Signer")

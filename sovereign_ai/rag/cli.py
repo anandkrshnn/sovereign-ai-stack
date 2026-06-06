@@ -1,20 +1,22 @@
-import typer
 import json
-import uuid
 import os
-from typing import Optional, List
+import uuid
 from pathlib import Path
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.live import Live
+from typing import List, Optional
 
+import typer
+from rich.console import Console
+from rich.live import Live
+from rich.panel import Panel
+from rich.table import Table
+
+from ..common.audit import SignedAuditChain, SovereignAuditLogger
+from .config import DEFAULT_DB_PATH
+from .db_utils import (decrypt_database, encrypt_database, get_db_status,
+                       rekey_database)
 from .main import LocalRAG
 from .schemas import Document
-from .config import DEFAULT_DB_PATH
-from ..common.audit import SovereignAuditLogger, SignedAuditChain
-from .db_utils import get_db_status, encrypt_database, decrypt_database, rekey_database
-from .sovereign_score import compute_sovereign_score, ScoreConfig
+from .sovereign_score import ScoreConfig, compute_sovereign_score
 
 app = typer.Typer(help="sovereign-ai rag — Local-first vectorless RAG")
 console = Console()
@@ -58,9 +60,11 @@ def doctor():
     table.add_row("Key Provider", status["type"], status.get("backend", "Unknown"))
     table.add_row(
         "OS Enclave",
-        "[green]Healthy[/green]"
-        if status.get("available")
-        else "[yellow]Missing (Fallback)[/yellow]",
+        (
+            "[green]Healthy[/green]"
+            if status.get("available")
+            else "[yellow]Missing (Fallback)[/yellow]"
+        ),
     )
 
     # Check for SQLCipher

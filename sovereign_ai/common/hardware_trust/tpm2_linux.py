@@ -1,12 +1,14 @@
-import os
-import hashlib
-import logging
 import base64
 import ctypes
-from typing import List, Optional, Any
+import hashlib
+import logging
+import os
+from typing import Any, List, Optional
+
 from cryptography.hazmat.primitives.asymmetric import ed25519
+
+from ..schemas import AttestationQuote, EvidenceType, SigningAlgorithm
 from .base import SecureAnchor
-from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 
 
 def secure_zero(data: bytearray | bytes):
@@ -18,23 +20,11 @@ def secure_zero(data: bytearray | bytes):
 
 
 try:
-    from tpm2_pytss import (
-        ESAPI,
-        TPM2B_DIGEST,
-        TPM2B_NONCE,
-        TPM2B_DATA,
-        TPML_PCR_SELECTION,
-        TPMS_PCR_SELECTION,
-        TPM2_ALG,
-        TPM2_HANDLE,
-        ESYS_TR,
-        TPMT_SIG_SCHEME,
-        TPMU_SIG_SCHEME,
-        TPMS_SCHEME_HASH,
-        TPMT_TK_HASHCHECK,
-        TPM2_ST,
-        TPM2_RH,
-    )
+    from tpm2_pytss import (ESAPI, ESYS_TR, TPM2_ALG, TPM2_HANDLE, TPM2_RH,
+                            TPM2_ST, TPM2B_DATA, TPM2B_DIGEST, TPM2B_NONCE,
+                            TPML_PCR_SELECTION, TPMS_PCR_SELECTION,
+                            TPMS_SCHEME_HASH, TPMT_SIG_SCHEME,
+                            TPMT_TK_HASHCHECK, TPMU_SIG_SCHEME)
 
     HAS_PYTSS = True
 except ImportError:
@@ -83,15 +73,9 @@ class TPM2LinuxAnchor(SecureAnchor):
         """
         Signs a payload using the TPM-resident AIK via Esys_Sign.
         """
-        from tpm2_pytss import (
-            TPMT_SIG_SCHEME,
-            TPM2_ALG,
-            TPMU_SIG_SCHEME,
-            TPMS_SCHEME_HASH,
-            TPMT_TK_HASHCHECK,
-            TPM2_ST,
-            TPM2_RH,
-        )
+        from tpm2_pytss import (TPM2_ALG, TPM2_RH, TPM2_ST, TPMS_SCHEME_HASH,
+                                TPMT_SIG_SCHEME, TPMT_TK_HASHCHECK,
+                                TPMU_SIG_SCHEME)
 
         ctx = self._get_context()
         digest = hashlib.sha256(payload).digest()
@@ -150,22 +134,15 @@ class TPM2LinuxAnchor(SecureAnchor):
         """
         Generates a native TPM2_Quote using Esys_Quote.
         """
-        from tpm2_pytss import (
-            TPML_PCR_SELECTION,
-            TPMS_PCR_SELECTION,
-            TPM2_ALG,
-            TPMT_SIG_SCHEME,
-            TPMU_SIG_SCHEME,
-            TPMS_SCHEME_HASH,
-        )
+        from tpm2_pytss import (TPM2_ALG, TPML_PCR_SELECTION,
+                                TPMS_PCR_SELECTION, TPMS_SCHEME_HASH,
+                                TPMT_SIG_SCHEME, TPMU_SIG_SCHEME)
 
         self._get_context()
         logger.info(f"Generating native TPM2 quote (PCRs: {pcrs})")
 
         # 1. PCR Selection
-        TPML_PCR_SELECTION(
-            pcrSelections=[TPMS_PCR_SELECTION(hash=TPM2_ALG.SHA256, pcrSelect=pcrs)]
-        )
+        TPML_PCR_SELECTION(pcrSelections=[TPMS_PCR_SELECTION(hash=TPM2_ALG.SHA256, pcrSelect=pcrs)])
 
         # 2. Signature Scheme
         TPMT_SIG_SCHEME(
@@ -232,7 +209,8 @@ class TPM2LinuxAnchor(SecureAnchor):
     def _read_pcr(self, pcr_index: int) -> str:
         """Reads a specific PCR value from the TPM."""
         try:
-            from tpm2_pytss import TPML_PCR_SELECTION, TPMS_PCR_SELECTION, TPM2_ALG
+            from tpm2_pytss import (TPM2_ALG, TPML_PCR_SELECTION,
+                                    TPMS_PCR_SELECTION)
 
             ctx = self._get_context()
             pcr_sel = TPML_PCR_SELECTION(
@@ -280,8 +258,10 @@ class TPM2LinuxAnchor(SecureAnchor):
                     logger.error(f"TPM seal failed: {e}")
 
             derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
             from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.ciphers import (Cipher,
+                                                                algorithms,
+                                                                modes)
 
             iv = b"\x00" * 16
             encryptor = Cipher(
@@ -315,8 +295,10 @@ class TPM2LinuxAnchor(SecureAnchor):
                     logger.error(f"TPM unseal failed: {e}")
 
             derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
             from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.ciphers import (Cipher,
+                                                                algorithms,
+                                                                modes)
 
             iv = b"\x00" * 16
             decryptor = Cipher(
@@ -333,9 +315,11 @@ class TPM2LinuxAnchor(SecureAnchor):
         return {
             "type": self.__class__.__name__,
             "available": self.hardware_active,
-            "details": "Active (Hardware TPM)"
-            if self.hardware_active
-            else "Simulated/Mock Fallback (No Hardware TPM)",
+            "details": (
+                "Active (Hardware TPM)"
+                if self.hardware_active
+                else "Simulated/Mock Fallback (No Hardware TPM)"
+            ),
         }
 
     @property

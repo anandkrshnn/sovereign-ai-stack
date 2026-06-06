@@ -1,11 +1,12 @@
-import logging
 import asyncio
-from typing import List, Dict, Tuple
+import logging
+from typing import Dict, List, Tuple
+
 import torch
 import torch.nn.functional as F
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from sovereign_ai.common.airlock import SovereignAirlock, AirlockResult
+from sovereign_ai.common.airlock import AirlockResult, SovereignAirlock
 
 logger = logging.getLogger(__name__)
 

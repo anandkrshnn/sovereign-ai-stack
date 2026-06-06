@@ -1,11 +1,12 @@
-import sys
-import os
 import logging
+import os
+import sys
+
 from .base import SecureAnchor
-from .mock_sim import SoftwareSimulatorAnchor
-from .tpm2_windows import WindowsTPMAnchor
-from .tpm2_linux import TPM2LinuxAnchor, HAS_PYTSS
 from .legacy import LegacyRawAnchor
+from .mock_sim import SoftwareSimulatorAnchor
+from .tpm2_linux import HAS_PYTSS, TPM2LinuxAnchor
+from .tpm2_windows import WindowsTPMAnchor
 
 logger = logging.getLogger("hardware_trust")
 

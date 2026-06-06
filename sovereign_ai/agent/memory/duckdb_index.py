@@ -1,7 +1,7 @@
 import json
-import time
 import threading
-from typing import Dict, List, Any, Optional
+import time
+from typing import Any, Dict, List, Optional
 
 
 class HotMemoryIndex:

@@ -1,7 +1,8 @@
 import logging
-from typing import Dict, Any, Optional
-from sovereign_ai.policy.events import KnowledgeEvent
+from typing import Any, Dict, Optional
+
 from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
+from sovereign_ai.policy.events import KnowledgeEvent
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,10 @@
 import asyncio
-import click
-import uuid
 import sys
-from ..pipeline import SovereignPipeline, Config
+import uuid
+
+import click
+
+from ..pipeline import Config, SovereignPipeline
 from ..rag.schemas import Document
 
 
@@ -116,6 +118,7 @@ def attest(tenant, nonce, backend):
     """Generate a hardware-attested integrity quote."""
     import hashlib
     import json
+
     from ..common.hardware_trust import get_secure_anchor
 
     if not nonce:

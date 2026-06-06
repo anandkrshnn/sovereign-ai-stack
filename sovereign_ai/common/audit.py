@@ -19,12 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519
 
-from .hardware_trust import (
-    LegacyRawAnchor,
-    SecureAnchor,
-    SoftwareSimulatorAnchor,
-    get_secure_anchor,
-)
+from .hardware_trust import (LegacyRawAnchor, SecureAnchor,
+                             SoftwareSimulatorAnchor, get_secure_anchor)
 from .merkle import MerkleTree
 from .schemas import SigningAlgorithm
 
@@ -260,12 +256,16 @@ class SignedAuditChain:
         if pub_key:
             try:
                 public_key_bytes = pub_key.public_bytes(
-                    encoding=serialization.Encoding.Raw
-                    if self.anchor.algorithm == SigningAlgorithm.ED25519
-                    else serialization.Encoding.X962,
-                    format=serialization.PublicFormat.Raw
-                    if self.anchor.algorithm == SigningAlgorithm.ED25519
-                    else serialization.PublicFormat.UncompressedPoint,
+                    encoding=(
+                        serialization.Encoding.Raw
+                        if self.anchor.algorithm == SigningAlgorithm.ED25519
+                        else serialization.Encoding.X962
+                    ),
+                    format=(
+                        serialization.PublicFormat.Raw
+                        if self.anchor.algorithm == SigningAlgorithm.ED25519
+                        else serialization.PublicFormat.UncompressedPoint
+                    ),
                 )
                 event["public_key"] = base64.b64encode(public_key_bytes).decode("utf-8")
             except Exception:

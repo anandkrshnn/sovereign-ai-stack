@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
 
-from ..schemas import SigningAlgorithm, AttestationQuote
+from ..schemas import AttestationQuote, SigningAlgorithm
 
 
 class SecureAnchor(ABC):

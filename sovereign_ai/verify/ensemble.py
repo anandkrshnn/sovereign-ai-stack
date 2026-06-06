@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
 import asyncio
-from sovereign_ai.common.airlock import NLIEntailmentAirlock
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
+
+from sovereign_ai.common.airlock import NLIEntailmentAirlock
 
 
 class VerificationGate(ABC):

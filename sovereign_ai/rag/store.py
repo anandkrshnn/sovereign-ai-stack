@@ -1,7 +1,7 @@
-import sqlite3
 import logging
+import sqlite3
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional
 
 # Try to import SQLCipher, fallback to standard sqlite3
 try:

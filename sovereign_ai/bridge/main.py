@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Request
-from sovereign_ai import SovereignPipeline, Config
 import os
 import time
+
+from fastapi import FastAPI, Request
+
+from sovereign_ai import Config, SovereignPipeline
 
 app = FastAPI(title="Sovereign AI Bridge", version="1.1.0")
 

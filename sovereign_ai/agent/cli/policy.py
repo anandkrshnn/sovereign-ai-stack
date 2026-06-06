@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
+
 from rich.console import Console
 from rich.table import Table
 
-from sovereign_ai.agent.forensics.vault_context import VaultContext
 from sovereign_ai.agent.broker.engine_core import PolicyEngine
+from sovereign_ai.agent.forensics.vault_context import VaultContext
 
 console = Console()
 
@@ -29,8 +30,8 @@ def policy_deploy(file_path: str, signature_path: str = None, key_path: str = No
     Imports policies directly to the LPB Candidate queue.
     Enforces cryptographic signature verification to prevent tampering.
     """
-    import hmac
     import hashlib
+    import hmac
 
     console.print("[FILE] [bold cyan]Policy Deployment Service[/bold cyan]")
 

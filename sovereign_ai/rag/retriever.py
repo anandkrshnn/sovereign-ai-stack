@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from .config import DEFAULT_DB_PATH, DEFAULT_SNIPPET_TOKENS
 from .schemas import Document, SearchResult

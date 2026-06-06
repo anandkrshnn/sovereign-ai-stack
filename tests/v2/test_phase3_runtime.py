@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import shutil
+from unittest.mock import AsyncMock
 
 import pytest
 import yaml
@@ -10,8 +11,6 @@ from sovereign_ai.bridge.orchestrator import SovereignOrchestrator
 from sovereign_ai.bridge.schemas import ChatCompletionRequest, ChatMessage
 from sovereign_ai.common.schemas import SecurityHalt
 
-
-from unittest.mock import AsyncMock
 
 @pytest.fixture
 def base_dir():
@@ -73,9 +72,7 @@ async def test_runtime_enforcement_logic(base_dir):
         use_cache=False,
     )
     # We mock the LLM call to return exactly what's in the ingestion context
-    orchestrator._call_llm_atomic = AsyncMock(
-        return_value="The vault is safe and secure."
-    )
+    orchestrator._call_llm_atomic = AsyncMock(return_value="The vault is safe and secure.")
 
     # Force evaluator to PASS
     orchestrator.evaluator.evaluate = lambda q, c, a: {

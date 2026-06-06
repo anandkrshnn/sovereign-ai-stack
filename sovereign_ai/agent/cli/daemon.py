@@ -1,10 +1,11 @@
 import os
-import sys
 import subprocess
-import psutil
+import sys
 import time
 from pathlib import Path
 from typing import Optional
+
+import psutil
 from rich.console import Console
 
 console = Console()

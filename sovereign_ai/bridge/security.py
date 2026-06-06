@@ -1,11 +1,13 @@
-import os
-import hmac
 import hashlib
-import time
+import hmac
 import json
+import os
+import time
 from typing import Optional
+
+from fastapi import HTTPException, Request
 from jose import jwt
-from fastapi import Request, HTTPException
+
 from sovereign_ai.bridge.schemas import TenantContext
 
 
@@ -78,9 +80,11 @@ class SovereignIdentityHub:
             return TenantContext(
                 tenant_id=tenant_id,
                 principal=principal,
-                scopes=payload.get("scope", "").split(" ")
-                if isinstance(payload.get("scope"), str)
-                else payload.get("scopes", []),
+                scopes=(
+                    payload.get("scope", "").split(" ")
+                    if isinstance(payload.get("scope"), str)
+                    else payload.get("scopes", [])
+                ),
                 is_authenticated=True,
             )
         except HTTPException:

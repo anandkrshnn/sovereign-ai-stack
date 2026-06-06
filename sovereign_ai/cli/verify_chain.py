@@ -1,5 +1,6 @@
 import argparse
 import sys
+
 from sovereign_ai.common.audit import SovereignAuditLogger
 
 

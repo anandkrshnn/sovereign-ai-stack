@@ -1,11 +1,12 @@
-import os
 import hashlib
+import os
 from typing import List
-from cryptography.hazmat.primitives.asymmetric import ed25519
-from cryptography.hazmat.primitives import serialization
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
+
+from ..schemas import AttestationQuote, EvidenceType, SigningAlgorithm
 from .base import SecureAnchor
-from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 
 
 class SoftwareSimulatorAnchor(SecureAnchor):
@@ -64,8 +65,9 @@ class SoftwareSimulatorAnchor(SecureAnchor):
     def seal_key(self, plaintext_key: bytes) -> bytes:
         """Seals a plaintext key using a derived key (AES CFB)."""
         derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
+                                                            modes)
 
         iv = b"\x00" * 16
         encryptor = Cipher(
@@ -76,8 +78,9 @@ class SoftwareSimulatorAnchor(SecureAnchor):
     def unseal_key(self, sealed_key: bytes) -> bytes:
         """Unseals a key using a derived key (AES CFB)."""
         derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
+                                                            modes)
 
         iv = b"\x00" * 16
         decryptor = Cipher(

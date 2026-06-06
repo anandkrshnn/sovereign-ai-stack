@@ -1,8 +1,8 @@
-import os
 import asyncio
-from typing import Dict, Any, Optional
-from multiprocessing.connection import Listener, Client
+import os
+from multiprocessing.connection import Client, Listener
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 
 # v1.1.0a2 uses versioned isolation and secure runtime pathing
@@ -99,7 +99,7 @@ def _handle_ipc_message(msg: Any) -> Dict[str, Any]:
         request_id = msg.get("params", {}).get("request_id")
         choice = msg.get("params", {}).get("choice")  # a, d, p, s
 
-        from sovereign_ai.agent.api.app import pending_requests, current_agent
+        from sovereign_ai.agent.api.app import current_agent, pending_requests
 
         if request_id not in pending_requests:
             return {"error": "invalid_request_id"}

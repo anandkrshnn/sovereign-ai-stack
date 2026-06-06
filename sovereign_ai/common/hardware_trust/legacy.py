@@ -1,9 +1,10 @@
 import hashlib
-from typing import List, Any
-from .base import SecureAnchor
-from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
+from typing import Any, List
 
 from cryptography.hazmat.primitives import serialization
+
+from ..schemas import AttestationQuote, EvidenceType, SigningAlgorithm
+from .base import SecureAnchor
 
 
 class LegacyRawAnchor(SecureAnchor):
@@ -76,8 +77,9 @@ class LegacyRawAnchor(SecureAnchor):
     def seal_key(self, plaintext_key: bytes) -> bytes:
         """Seals a plaintext key using a derived key (AES CFB)."""
         derived_key = self._get_encryption_key()
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
+                                                            modes)
 
         iv = b"\x00" * 16
         encryptor = Cipher(
@@ -88,8 +90,9 @@ class LegacyRawAnchor(SecureAnchor):
     def unseal_key(self, sealed_key: bytes) -> bytes:
         """Unseals a key using a derived key (AES CFB)."""
         derived_key = self._get_encryption_key()
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
+                                                            modes)
 
         iv = b"\x00" * 16
         decryptor = Cipher(

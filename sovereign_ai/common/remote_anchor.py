@@ -1,8 +1,8 @@
 import json
 import time
-from pathlib import Path
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 
 @dataclass

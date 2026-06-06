@@ -1,9 +1,9 @@
 import logging
-from typing import Optional, Tuple, Dict, Any
+from typing import Any, Dict, Optional, Tuple
 
-from sovereign_ai.policy.events import KnowledgeEvent
-from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
 from sovereign_ai.gates.nli_gate import NLIAdaptiveGate
+from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
+from sovereign_ai.policy.events import KnowledgeEvent
 
 logger = logging.getLogger(__name__)
 

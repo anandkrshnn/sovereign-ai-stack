@@ -26,14 +26,14 @@ Phase 1 consolidation note:
 Version: 0.4.0
 """
 
-from .main import LocalRAG, AsyncLocalRAG
-from .retriever import FTS5Retriever, AsyncFTS5Retriever
-from .generator import QwenGenerator
-from .governed import GovernedRetriever, AsyncGovernedRetriever
-from .schemas import RAGResponse, SearchResult
-from .cache import SemanticCache
-from .policy import PolicyEngine
 from ..common.audit import SovereignAuditLogger
+from .cache import SemanticCache
+from .generator import QwenGenerator
+from .governed import AsyncGovernedRetriever, GovernedRetriever
+from .main import AsyncLocalRAG, LocalRAG
+from .policy import PolicyEngine
+from .retriever import AsyncFTS5Retriever, FTS5Retriever
+from .schemas import RAGResponse, SearchResult
 
 # Backward compatibility alias
 RAGAuditLogger = SovereignAuditLogger

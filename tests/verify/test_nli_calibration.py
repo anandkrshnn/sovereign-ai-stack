@@ -1,18 +1,20 @@
-import pytest
 import numpy as np
-from sklearn.metrics import roc_auc_score, brier_score_loss
+import pytest
+from sklearn.metrics import brier_score_loss, roc_auc_score
+
 from sovereign_ai.verify.nli_calibration import PlattCalibrator
+
 
 def test_platt_calibration_improves_reliability():
     np.random.seed(42)
-    
+
     # Simulate uncalibrated outputs (confident but often wrong)
     # 0 = hallucination, 1 = true entailment
-    y_true = np.array([1]*500 + [0]*500)
-    
+    y_true = np.array([1] * 500 + [0] * 500)
+
     # Overly confident distributions
     probs_true = np.random.normal(loc=0.9, scale=0.1, size=500)
-    probs_false = np.random.normal(loc=0.8, scale=0.2, size=500) 
+    probs_false = np.random.normal(loc=0.8, scale=0.2, size=500)
     raw_probs = np.clip(np.concatenate([probs_true, probs_false]), 0.01, 0.99)
 
     # Initial metrics

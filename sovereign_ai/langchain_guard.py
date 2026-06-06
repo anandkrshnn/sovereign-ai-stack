@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from langchain_core.language_models import BaseLLM
 from langchain_core.runnables import Runnable, RunnableConfig
 
-from sovereign_ai.pipeline import SovereignPipeline, Config
+from sovereign_ai.pipeline import Config, SovereignPipeline
 
 
 class SovereignLangChainGuard(Runnable):

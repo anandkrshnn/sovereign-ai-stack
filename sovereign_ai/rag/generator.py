@@ -1,9 +1,12 @@
-import torch
 import threading
-from typing import List, Dict, Generator
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from typing import Dict, Generator, List
 
-from .config import DEFAULT_MODEL, GEN_MAX_NEW_TOKENS, GEN_TEMPERATURE, GEN_TOP_P
+import torch
+from transformers import (AutoModelForCausalLM, AutoTokenizer,
+                          TextIteratorStreamer)
+
+from .config import (DEFAULT_MODEL, GEN_MAX_NEW_TOKENS, GEN_TEMPERATURE,
+                     GEN_TOP_P)
 
 
 class QwenGenerator:

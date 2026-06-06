@@ -1,15 +1,15 @@
-import hashlib
 import asyncio
+import hashlib
 import os
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
-from ..common.audit import SovereignAuditLogger, Principal
-from .retriever import FTS5Retriever, AsyncFTS5Retriever
-from .policy import PolicyEngine, AccessRequest
-from .reranker import BGEReranker
-from .vector_store import PgVectorStore
-from .schemas import SearchResult, PolicyDecision
+from ..common.audit import Principal, SovereignAuditLogger
 from ..common.hardware_trust import SecureAnchor
+from .policy import AccessRequest, PolicyEngine
+from .reranker import BGEReranker
+from .retriever import AsyncFTS5Retriever, FTS5Retriever
+from .schemas import PolicyDecision, SearchResult
+from .vector_store import PgVectorStore
 
 
 class GovernedRetriever:

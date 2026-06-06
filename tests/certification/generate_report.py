@@ -1,34 +1,43 @@
 import json
 import os
 import sys
-from pathlib import Path
 from datetime import datetime
-from .schema import SovereignCertificationReport, CertificationMetric, TestResult
+from pathlib import Path
 
-def generate_report(results_path: str = "tests/certification/results.json", output_path: str = "CERTIFICATION.md"):
+from .schema import (CertificationMetric, SovereignCertificationReport,
+                     TestResult)
+
+
+def generate_report(
+    results_path: str = "tests/certification/results.json", output_path: str = "CERTIFICATION.md"
+):
     """
     Generate the formal Sovereign AI Certification Report from structured test result evidence.
     """
     if not os.path.exists(results_path):
-        print(f"Error: Results file not found at {results_path}. Run 'pytest --sovereign-cert' first.")
+        print(
+            f"Error: Results file not found at {results_path}. Run 'pytest --sovereign-cert' first."
+        )
         sys.exit(1)
-        
+
     with open(results_path, "r") as f:
         raw_results = json.load(f)
-        
+
     metrics = []
     for r in raw_results:
-        metrics.append(CertificationMetric(
-            test_id=r["test_id"],
-            node_id=r["node_id"],
-            result=TestResult.PASS if r["outcome"] == "passed" else TestResult.FAIL,
-            duration=r["duration"],
-            error=r["error"]
-        ))
-        
+        metrics.append(
+            CertificationMetric(
+                test_id=r["test_id"],
+                node_id=r["node_id"],
+                result=TestResult.PASS if r["outcome"] == "passed" else TestResult.FAIL,
+                duration=r["duration"],
+                error=r["error"],
+            )
+        )
+
     report = SovereignCertificationReport(metrics=metrics)
     report.calculate_scores()
-    
+
     # Generate Markdown
     md = f"""# 🛡️ Sovereign Chaos Certification Report
 
@@ -48,7 +57,7 @@ def generate_report(results_path: str = "tests/certification/results.json", outp
 ## 🔍 Detailed Forensic Results
 
 """
-    
+
     # Group by category
     categories = {"ISO": "Isolation", "POL": "Policy", "CAC": "Cache", "AUD": "Forensics"}
     for prefix, cat_name in categories.items():
@@ -57,7 +66,7 @@ def generate_report(results_path: str = "tests/certification/results.json", outp
         if not cat_metrics:
             md += "_No tests run in this category._\n\n"
             continue
-            
+
         for m in cat_metrics:
             status_icon = "✅" if m.result == TestResult.PASS else "❌"
             md += f"- {status_icon} **{m.test_id}**: {m.result.value.upper()} ({m.duration:.3f}s)\n"
@@ -76,7 +85,7 @@ _Sovereign AI Stack Gaia Release_
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(md)
-    
+
     try:
         print(f"Certification report generated: {output_path}")
         if report.certified:
@@ -89,6 +98,7 @@ _Sovereign AI Stack Gaia Release_
             print("[PASS] STACK CERTIFIED")
         else:
             print("[FAIL] CERTIFICATION FAILED")
+
 
 if __name__ == "__main__":
     generate_report()

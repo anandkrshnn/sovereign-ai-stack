@@ -1,8 +1,9 @@
 # localagent/models/ollama.py
 import json
 import re
+from typing import Dict, List, Optional, Tuple
+
 import requests
-from typing import Tuple, Optional, Dict, List
 
 
 class OllamaClient:

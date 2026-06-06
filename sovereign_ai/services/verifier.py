@@ -1,14 +1,15 @@
-from fastapi import FastAPI, HTTPException, Depends, Header
-from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field
-from datetime import datetime, timezone
 import hashlib
-import uvicorn
-
-from sovereign_ai.common.rats import EvidenceBundle, AttestationVerifier
-from sovereign_ai.common.schemas import EvidenceType
 import logging
 import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import uvicorn
+from fastapi import Depends, FastAPI, Header, HTTPException
+from pydantic import BaseModel, Field
+
+from sovereign_ai.common.rats import AttestationVerifier, EvidenceBundle
+from sovereign_ai.common.schemas import EvidenceType
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

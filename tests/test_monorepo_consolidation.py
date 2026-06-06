@@ -16,14 +16,16 @@ Run in certification mode:
 """
 
 import json
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Force NullKeyring globally so any keyring call in SecureKeyManager is a no-op
 try:
     import keyring
     from keyring.backends.null import Keyring as NullKeyring
+
     keyring.set_keyring(NullKeyring())
 except Exception:
     pass
@@ -33,13 +35,15 @@ except Exception:
 # IMPORT SURFACE TESTS
 # ---------------------------------------------------------------------------
 
+
 class TestImportSurface:
     """[IMPORT-*] All consolidated packages must be importable cleanly."""
 
     @pytest.mark.sovereign(id="IMPORT-01")
     def test_top_level_package_imports(self):
         """sovereign_ai top-level must expose SovereignPipeline and Config."""
-        from sovereign_ai import SovereignPipeline, Config  # noqa: F401
+        from sovereign_ai import Config, SovereignPipeline  # noqa: F401
+
         assert SovereignPipeline is not None
         assert Config is not None
 
@@ -47,11 +51,16 @@ class TestImportSurface:
     def test_rag_public_all(self):
         """sovereign_ai.rag __all__ must contain the 12 consolidated symbols."""
         import sovereign_ai.rag as rag_pkg
+
         required = {
-            "LocalRAG", "AsyncLocalRAG",
-            "RAGResponse", "SearchResult",
-            "GovernedRetriever", "AsyncGovernedRetriever",
-            "FTS5Retriever", "AsyncFTS5Retriever",
+            "LocalRAG",
+            "AsyncLocalRAG",
+            "RAGResponse",
+            "SearchResult",
+            "GovernedRetriever",
+            "AsyncGovernedRetriever",
+            "FTS5Retriever",
+            "AsyncFTS5Retriever",
             "QwenGenerator",
             "SemanticCache",
             "PolicyEngine",
@@ -64,6 +73,7 @@ class TestImportSurface:
     def test_rag_symbols_actually_importable(self):
         """Every symbol declared in __all__ must be resolvable (no ImportError)."""
         import sovereign_ai.rag as rag_pkg
+
         for name in rag_pkg.__all__:
             obj = getattr(rag_pkg, name, None)
             assert obj is not None, f"sovereign_ai.rag.{name} is in __all__ but not importable"
@@ -71,11 +81,9 @@ class TestImportSurface:
     @pytest.mark.sovereign(id="IMPORT-04")
     def test_agent_forensics_exports(self):
         """agent.forensics must export AuditChainManager, SecureKeyManager, VaultContext."""
-        from sovereign_ai.agent.forensics import (
-            AuditChainManager,
-            SecureKeyManager,
-            VaultContext,
-        )  # noqa: F401
+        from sovereign_ai.agent.forensics import (  # noqa: F401
+            AuditChainManager, SecureKeyManager, VaultContext)
+
         assert AuditChainManager is not None
         assert SecureKeyManager is not None
         assert VaultContext is not None
@@ -89,13 +97,14 @@ class TestImportSurface:
     def test_bridge_submodules_importable(self):
         """Core bridge sub-modules must all import cleanly."""
         from sovereign_ai.bridge import orchestrator  # noqa: F401
-        from sovereign_ai.bridge import security      # noqa: F401
-        from sovereign_ai.bridge import schemas       # noqa: F401
+        from sovereign_ai.bridge import schemas  # noqa: F401
+        from sovereign_ai.bridge import security  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
 # AUDIT CHAIN TESTS  (sovereign_ai.agent.forensics.AuditChainManager)
 # ---------------------------------------------------------------------------
+
 
 class TestAuditChain:
     """[CHAIN-*] AuditChainManager hash-chain correctness."""
@@ -103,6 +112,7 @@ class TestAuditChain:
     def _write_chain(self, log_path: Path, entries: list) -> str:
         """Helper: write a valid hash-chained JSONL file and return final hash."""
         from sovereign_ai.agent.forensics import AuditChainManager
+
         prev_hash = AuditChainManager.GENESIS_HASH
         with open(log_path, "w", encoding="utf-8") as f:
             for entry in entries:
@@ -116,11 +126,12 @@ class TestAuditChain:
     def test_write_and_verify_chain_roundtrip(self, tmp_path):
         """A correctly written chain must pass verify_chain."""
         from sovereign_ai.agent.forensics import AuditChainManager
+
         log_path = tmp_path / "audit.jsonl"
         entries = [
             {"event": "policy_check", "action": "allow", "principal": "analyst@alpha"},
-            {"event": "rag_query",    "query": "What is sovereign AI?"},
-            {"event": "agent_step",   "tool": "search", "result": "ok"},
+            {"event": "rag_query", "query": "What is sovereign AI?"},
+            {"event": "agent_step", "tool": "search", "result": "ok"},
         ]
         self._write_chain(log_path, entries)
         assert AuditChainManager.verify_chain(log_path) is True
@@ -129,10 +140,11 @@ class TestAuditChain:
     def test_tamper_detection_breaks_chain(self, tmp_path):
         """Mutating a field in any log entry must cause verify_chain to return False."""
         from sovereign_ai.agent.forensics import AuditChainManager
+
         log_path = tmp_path / "audit.jsonl"
         entries = [
             {"event": "policy_check", "action": "allow"},
-            {"event": "rag_query",    "query": "original query"},
+            {"event": "rag_query", "query": "original query"},
         ]
         self._write_chain(log_path, entries)
 
@@ -149,6 +161,7 @@ class TestAuditChain:
     def test_anchor_save_and_verify(self, tmp_path):
         """save_anchor must produce a .anchor file; verify_anchor must confirm it."""
         from sovereign_ai.agent.forensics import AuditChainManager
+
         log_path = tmp_path / "audit.jsonl"
         entries = [{"event": "bridge_forward", "status": "success"}]
         final_hash = self._write_chain(log_path, entries)
@@ -161,6 +174,7 @@ class TestAuditChain:
     def test_empty_log_returns_genesis_hash(self, tmp_path):
         """An empty (non-existent) log must return the GENESIS_HASH."""
         from sovereign_ai.agent.forensics import AuditChainManager
+
         log_path = tmp_path / "empty_audit.jsonl"
         result = AuditChainManager.get_last_hash(log_path)
         assert result == AuditChainManager.GENESIS_HASH
@@ -169,6 +183,7 @@ class TestAuditChain:
     def test_calculate_next_hash_is_deterministic(self):
         """calculate_next_hash must be purely deterministic given same inputs."""
         from sovereign_ai.agent.forensics import AuditChainManager
+
         entry = {"event": "test", "value": 42}
         h1 = AuditChainManager.calculate_next_hash("genesis", entry)
         h2 = AuditChainManager.calculate_next_hash("genesis", entry)
@@ -180,6 +195,7 @@ class TestAuditChain:
 # RAG MODULE TESTS  (sovereign_ai.rag.*)
 # ---------------------------------------------------------------------------
 
+
 class TestRAGConsolidation:
     """[RAG-*] LocalRAG API and RAGResponse contract."""
 
@@ -187,18 +203,17 @@ class TestRAGConsolidation:
     def test_local_rag_ask_returns_rag_response(self, temp_db, mock_generator):
         """LocalRAG.ask() with a seeded DB must return a typed RAGResponse."""
         from sovereign_ai.rag.main import LocalRAG
-        from sovereign_ai.rag.store import Store
-        from sovereign_ai.rag.schemas import RAGResponse
-
         # Seed with one document
         from sovereign_ai.rag.retriever import FTS5Retriever
-        from sovereign_ai.rag.schemas import Document
+        from sovereign_ai.rag.schemas import Document, RAGResponse
+        from sovereign_ai.rag.store import Store
+
         retriever = FTS5Retriever(temp_db)
         doc = Document(
             doc_id="doc-001",
             source="test-source",
             content="Sovereign AI ensures local data residency and zero-trust attestation.",
-            classification="public"
+            classification="public",
         )
         retriever.ingest([doc])
         retriever.close()
@@ -216,17 +231,16 @@ class TestRAGConsolidation:
     def test_rag_response_schema_fields(self, temp_db, mock_generator):
         """RAGResponse must carry .answer, .sources, and .model_name."""
         from sovereign_ai.rag.main import LocalRAG
-        from sovereign_ai.rag.store import Store
-        from sovereign_ai.rag.schemas import RAGResponse
-
         from sovereign_ai.rag.retriever import FTS5Retriever
-        from sovereign_ai.rag.schemas import Document
+        from sovereign_ai.rag.schemas import Document, RAGResponse
+        from sovereign_ai.rag.store import Store
+
         retriever = FTS5Retriever(temp_db)
         doc = Document(
             doc_id="doc-002",
             source="test-source",
             content="The PTV protocol binds Ed25519 keys to agent identities at runtime.",
-            classification="internal"
+            classification="internal",
         )
         retriever.ingest([doc])
         retriever.close()
@@ -257,6 +271,7 @@ class TestRAGConsolidation:
     def test_rag_consolidation_docstring_present(self):
         """sovereign_ai.rag.__doc__ must mention the consolidation notice."""
         import sovereign_ai.rag as rag_pkg
+
         assert rag_pkg.__doc__ is not None
         assert "local-rag" in rag_pkg.__doc__
         assert "deprecated" in rag_pkg.__doc__.lower()
@@ -266,6 +281,7 @@ class TestRAGConsolidation:
 # BRIDGE MODULE TESTS  (sovereign_ai.bridge.*)
 # ---------------------------------------------------------------------------
 
+
 class TestBridgeConsolidation:
     """[BRIDGE-*] Bridge orchestrator and security layer importable and coherent."""
 
@@ -273,24 +289,28 @@ class TestBridgeConsolidation:
     def test_bridge_schemas_importable(self):
         """Bridge schemas (AgentRequest, AgentResponse or similar) must be importable."""
         from sovereign_ai.bridge import schemas
+
         assert schemas is not None
 
     @pytest.mark.sovereign(id="BRIDGE-02")
     def test_bridge_security_importable(self):
         """Bridge security module must be importable (rate-limiting, auth guards)."""
         from sovereign_ai.bridge import security
+
         assert security is not None
 
     @pytest.mark.sovereign(id="BRIDGE-03")
     def test_bridge_orchestrator_importable(self):
         """Bridge orchestrator (28 KB — the core logic) must be importable."""
         from sovereign_ai.bridge import orchestrator
+
         assert orchestrator is not None
 
 
 # ---------------------------------------------------------------------------
 # PACKAGE VERSION TESTS
 # ---------------------------------------------------------------------------
+
 
 class TestPackageVersions:
     """[PKG-*] Version strings and package metadata."""
@@ -299,6 +319,7 @@ class TestPackageVersions:
     def test_agent_version_string_present(self):
         """sovereign_ai.agent must declare a __version__."""
         import sovereign_ai.agent as agent_pkg
+
         assert hasattr(agent_pkg, "__version__")
         assert isinstance(agent_pkg.__version__, str)
         assert len(agent_pkg.__version__) > 0
@@ -307,6 +328,7 @@ class TestPackageVersions:
     def test_forensics_consolidation_docstring_present(self):
         """forensics __init__.__doc__ must reference the consolidation note."""
         from sovereign_ai.agent import forensics
+
         assert forensics.__doc__ is not None
         assert "local-agent" in forensics.__doc__ or "consolidation" in forensics.__doc__.lower()
 
@@ -314,6 +336,7 @@ class TestPackageVersions:
 # ---------------------------------------------------------------------------
 # END-TO-END SMOKE TEST  (rag → forensics chain)
 # ---------------------------------------------------------------------------
+
 
 class TestEndToEndSmoke:
     """
@@ -330,9 +353,10 @@ class TestEndToEndSmoke:
         4. Verify the chain is intact.
         """
         import sqlite3
+
+        from sovereign_ai.agent.forensics import AuditChainManager
         from sovereign_ai.rag.main import LocalRAG
         from sovereign_ai.rag.store import Store
-        from sovereign_ai.agent.forensics import AuditChainManager
 
         db_path = str(tmp_path / "rag.db")
         log_path = tmp_path / "audit.jsonl"
@@ -340,12 +364,13 @@ class TestEndToEndSmoke:
         # Seed
         from sovereign_ai.rag.retriever import FTS5Retriever
         from sovereign_ai.rag.schemas import Document
+
         retriever = FTS5Retriever(db_path)
         doc = Document(
             doc_id="doc-e2e",
             source="test-source",
             content="Sovereign AI stacks bind hardware attestation to agent decision traces.",
-            classification="public"
+            classification="public",
         )
         retriever.ingest([doc])
         retriever.close()

@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def compute_sovereign_score(config: Any, metrics: Dict[str, Any]) -> Dict[str, Any]:

@@ -1,18 +1,19 @@
-import os
 import json
+import os
 import re
-import requests
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from .broker.engine import LocalPermissionBroker
-from .sandbox.chroot import SandboxPath
-from .memory.memory_service import MemoryService
-from .forensics.trace.decision_trace import DecisionTrace
-from .forensics.audit_chain import AuditChainManager
-from .config import Config
-from .forensics.vault_context import VaultContext
+import requests
+
 from ..common.audit import Principal
+from .broker.engine import LocalPermissionBroker
+from .config import Config
+from .forensics.audit_chain import AuditChainManager
+from .forensics.trace.decision_trace import DecisionTrace
+from .forensics.vault_context import VaultContext
+from .memory.memory_service import MemoryService
+from .sandbox.chroot import SandboxPath
 
 
 class AgentCore:

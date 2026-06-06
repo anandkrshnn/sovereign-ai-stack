@@ -5,7 +5,8 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from z3 import And, Bool, BoolVal, Const, Context, EnumSort, Not, Or, Solver, sat, unsat
+    from z3 import (And, Bool, BoolVal, Const, Context, EnumSort, Not, Or,
+                    Solver, sat, unsat)
 
     HAS_Z3 = True
 except ImportError:
@@ -176,28 +177,40 @@ class PolicyVerifier:
 
                 # Policy 1 condition
                 c1 = And(
-                    p_const == p_map[p1["principal"]]
-                    if p1["principal"] != "any"
-                    else BoolVal(True, ctx=ctx),
-                    r_const == r_map[p1["resource"]]
-                    if p1["resource"] != "any"
-                    else BoolVal(True, ctx=ctx),
-                    a_const == a_map[p1["action"]]
-                    if p1["action"] != "any"
-                    else BoolVal(True, ctx=ctx),
+                    (
+                        p_const == p_map[p1["principal"]]
+                        if p1["principal"] != "any"
+                        else BoolVal(True, ctx=ctx)
+                    ),
+                    (
+                        r_const == r_map[p1["resource"]]
+                        if p1["resource"] != "any"
+                        else BoolVal(True, ctx=ctx)
+                    ),
+                    (
+                        a_const == a_map[p1["action"]]
+                        if p1["action"] != "any"
+                        else BoolVal(True, ctx=ctx)
+                    ),
                 )
 
                 # Policy 2 condition
                 c2 = And(
-                    p_const == p_map[p2["principal"]]
-                    if p2["principal"] != "any"
-                    else BoolVal(True, ctx=ctx),
-                    r_const == r_map[p2["resource"]]
-                    if p2["resource"] != "any"
-                    else BoolVal(True, ctx=ctx),
-                    a_const == a_map[p2["action"]]
-                    if p2["action"] != "any"
-                    else BoolVal(True, ctx=ctx),
+                    (
+                        p_const == p_map[p2["principal"]]
+                        if p2["principal"] != "any"
+                        else BoolVal(True, ctx=ctx)
+                    ),
+                    (
+                        r_const == r_map[p2["resource"]]
+                        if p2["resource"] != "any"
+                        else BoolVal(True, ctx=ctx)
+                    ),
+                    (
+                        a_const == a_map[p2["action"]]
+                        if p2["action"] != "any"
+                        else BoolVal(True, ctx=ctx)
+                    ),
                 )
 
                 # Conflict exists if both can be true simultaneously
@@ -245,12 +258,16 @@ class PolicyVerifier:
 
         for pol in policies:
             cond = And(
-                p_const == p_map[pol["principal"]]
-                if pol["principal"] != "any"
-                else BoolVal(True, ctx=ctx),
-                r_const == r_map[pol["resource"]]
-                if pol["resource"] != "any"
-                else BoolVal(True, ctx=ctx),
+                (
+                    p_const == p_map[pol["principal"]]
+                    if pol["principal"] != "any"
+                    else BoolVal(True, ctx=ctx)
+                ),
+                (
+                    r_const == r_map[pol["resource"]]
+                    if pol["resource"] != "any"
+                    else BoolVal(True, ctx=ctx)
+                ),
             )
             if pol.get("effect") == "allow":
                 allow_exprs.append(cond)

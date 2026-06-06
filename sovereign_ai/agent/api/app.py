@@ -1,19 +1,21 @@
-import os
-import json
 import asyncio
-from pathlib import Path
-from typing import Dict, List, Optional, Any
+import json
+import os
+import random
+from contextlib import asynccontextmanager
 from datetime import datetime
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sovereign_ai.agent.core_loop import AgentCore as SovereignAIAgent
+
 from sovereign_ai.agent.api.bridge import BridgeSecurityManager
-import uvicorn
-import random
 from sovereign_ai.agent.config import Config
-from contextlib import asynccontextmanager
+from sovereign_ai.agent.core_loop import AgentCore as SovereignAIAgent
 
 # Global State: Total singleton isolation
 current_agent = None

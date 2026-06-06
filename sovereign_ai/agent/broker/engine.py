@@ -1,19 +1,20 @@
-import uuid
-import time
+import hashlib
 import json
 import os
-from pathlib import Path
-from typing import Dict, Optional, List
+import random
+import threading
+import time
+import uuid
 from datetime import datetime
-from sovereign_ai.agent.forensics.audit_chain import AuditChainManager
-from sovereign_ai.agent.forensics.secure_key import SecureKeyManager
+from pathlib import Path
+from typing import Dict, List, Optional
+
 from sovereign_ai.agent.broker.resource_quota import ResourceQuota
 from sovereign_ai.agent.broker.scanner import ScannerManager
-from sovereign_ai.agent.config import Config
-import random
-import hashlib
 from sovereign_ai.agent.cli.daemon import get_daemon_dir
-import threading
+from sovereign_ai.agent.config import Config
+from sovereign_ai.agent.forensics.audit_chain import AuditChainManager
+from sovereign_ai.agent.forensics.secure_key import SecureKeyManager
 
 
 class LocalPermissionBroker:
@@ -45,7 +46,8 @@ class LocalPermissionBroker:
                 if master_passphrase:
                     SecureKeyManager.wrap_key_to_vault(vault_root, master_passphrase)
 
-                from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
+                from sovereign_ai.agent.forensics.vault_key_manager import \
+                    VaultKeyManager
 
                 self.key_manager = VaultKeyManager(
                     vault_root,
@@ -58,7 +60,8 @@ class LocalPermissionBroker:
                         recovered_key = SecureKeyManager.unwrap_key_from_vault(
                             vault_root, master_passphrase
                         )
-                        from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
+                        from sovereign_ai.agent.forensics.vault_key_manager import \
+                            VaultKeyManager
 
                         self.key_manager = VaultKeyManager(vault_root, recovered_key)
                         print(

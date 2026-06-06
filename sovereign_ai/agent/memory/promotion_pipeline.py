@@ -1,4 +1,5 @@
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
 from sovereign_ai.agent.memory.lancedb_store import LanceDBStore
 
 PROMOTION_PIPELINE_MAX_QUEUED = 500

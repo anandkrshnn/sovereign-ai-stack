@@ -1,15 +1,16 @@
 import os
+from pathlib import Path
 from typing import Optional
+
+import yaml
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
-import yaml
 
-from .store import Store
 from ..common.audit import SovereignAuditLogger
-from .db_utils import get_db_status
 from .config import DEFAULT_DB_PATH
+from .db_utils import get_db_status
+from .store import Store
 
 app = FastAPI(title="Sovereign Hub")
 

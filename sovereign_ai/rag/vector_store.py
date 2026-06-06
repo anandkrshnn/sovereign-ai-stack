@@ -1,9 +1,10 @@
-import os
-import json
 import asyncio
+import json
 import logging
+import os
 import uuid
 from typing import List, Optional
+
 import numpy as np
 
 try:
@@ -18,6 +19,7 @@ except ImportError:
     lancedb = None
 
 from sentence_transformers import SentenceTransformer
+
 from .schemas import Chunk, SearchResult
 
 logger = logging.getLogger(__name__)
@@ -238,9 +240,11 @@ class PgVectorStore:
                         chunk_id=r["chunk_id"],
                         text=r["text"],
                         score=float(r["score"]),
-                        metadata=json.loads(r["metadata"])
-                        if isinstance(r["metadata"], str)
-                        else r["metadata"],
+                        metadata=(
+                            json.loads(r["metadata"])
+                            if isinstance(r["metadata"], str)
+                            else r["metadata"]
+                        ),
                     )
                 )
             return results

@@ -1,5 +1,6 @@
-from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry
 from typing import Dict, Set
+
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
 # Cardinality Guardrails (cncf best practices)
 MAX_TENANTS = 100

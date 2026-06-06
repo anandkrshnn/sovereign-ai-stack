@@ -1,6 +1,6 @@
 import abc
-from typing import List, Dict, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -71,8 +71,10 @@ class NLIEntailmentAirlock(SovereignAirlock):
         return AirlockResult(
             is_safe=is_safe,
             score=entailment_score,
-            reason="Verified"
-            if is_safe
-            else f"Insufficient Grounding (Score: {entailment_score:.2f} < {self.threshold})",
+            reason=(
+                "Verified"
+                if is_safe
+                else f"Insufficient Grounding (Score: {entailment_score:.2f} < {self.threshold})"
+            ),
             metadata={"model": self.model_name, "threshold": self.threshold},
         )

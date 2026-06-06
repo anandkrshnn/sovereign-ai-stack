@@ -4,10 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
-
-
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SovereignError(Exception):

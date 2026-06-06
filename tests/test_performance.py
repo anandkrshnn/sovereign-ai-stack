@@ -1,8 +1,11 @@
-import pytest
-import time
 import asyncio
-from sovereign_ai.pipeline import SovereignPipeline, Config
+import time
+
+import pytest
+
 from sovereign_ai.common.audit import SignedAuditChain
+from sovereign_ai.pipeline import Config, SovereignPipeline
+
 
 @pytest.mark.benchmark
 @pytest.mark.requires_model
@@ -16,15 +19,15 @@ def test_pipeline_latency_gate(benchmark, tmp_path):
     tenant_id = f"test_perf_{int(time.time())}"
     try:
         config = Config(
-            tenant_id=tenant_id, 
+            tenant_id=tenant_id,
             principal="analyst",
             db_path=db_path,
-            cache_dir=str(tmp_path / "cache")
+            cache_dir=str(tmp_path / "cache"),
         )
         pipeline = SovereignPipeline(config)
     except Exception as e:
         pytest.skip(f"Pipeline initialization failed: {e}")
-        
+
     query = "What is the recommended treatment protocol for hypertension?"
 
     latencies = []
@@ -41,7 +44,7 @@ def test_pipeline_latency_gate(benchmark, tmp_path):
 
     # Run benchmark with warmup to avoid model load spikes
     benchmark.pedantic(run_pipeline, iterations=1, rounds=20, warmup_rounds=5)
-    
+
     # Enforce p95 gate (excluding the 5 warmup rounds)
     actual_latencies = latencies[5:]
     if actual_latencies:
@@ -49,7 +52,10 @@ def test_pipeline_latency_gate(benchmark, tmp_path):
         p95_idx = int(len(actual_latencies) * 0.95)
         p95_ms = actual_latencies[p95_idx] * 1000
         print(f"\nMeasured p95 Latency (excl. warmup): {p95_ms:.2f} ms")
-        assert p95_ms < 150, f"Performance regression: p95 latency {p95_ms:.2f}ms exceeds 150ms gate"
+        assert (
+            p95_ms < 150
+        ), f"Performance regression: p95 latency {p95_ms:.2f}ms exceeds 150ms gate"
+
 
 @pytest.mark.benchmark
 @pytest.mark.slow
@@ -60,7 +66,7 @@ def test_audit_signing_latency(benchmark, tmp_path):
     """
     audit_file = tmp_path / "perf_audit.jsonl"
     chain = SignedAuditChain(tenant_id="perf_test", audit_file=str(audit_file))
-    
+
     latencies = []
 
     def sign_event():
@@ -69,12 +75,12 @@ def test_audit_signing_latency(benchmark, tmp_path):
             component="test",
             action="perf_check",
             principal="system",
-            event_data={"metric": "latency", "value": 1.0}
+            event_data={"metric": "latency", "value": 1.0},
         )
         latencies.append(time.perf_counter() - start)
-        
+
     benchmark.pedantic(sign_event, iterations=1, rounds=50)
-    
+
     if latencies:
         avg_ms = (sum(latencies) / len(latencies)) * 1000
         print(f"\nMeasured Average Signing Latency: {avg_ms:.2f} ms")

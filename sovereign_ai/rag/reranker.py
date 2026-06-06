@@ -1,7 +1,8 @@
-from typing import List, Optional
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import torch
 import logging
+from typing import List, Optional
+
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from .schemas import SearchResult
 

@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
-from sovereign_ai.common.hardware_trust import get_secure_anchor, SecureAnchor
+
+from sovereign_ai.common.hardware_trust import SecureAnchor, get_secure_anchor
 
 logger = logging.getLogger("sovereign_ai.agent.tpm_signer")
 

@@ -1,9 +1,11 @@
 import hashlib
-from typing import List, Any
+from typing import Any, List
+
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+
+from ..schemas import AttestationQuote, EvidenceType, SigningAlgorithm
 from .base import SecureAnchor
-from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives import serialization, hashes
 
 
 class WindowsTPMAnchor(SecureAnchor):
