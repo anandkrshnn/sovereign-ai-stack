@@ -13,7 +13,8 @@ async def test_remote_attestation_enforcement_missing_url():
     )
     
     with pytest.raises(SecurityHalt) as excinfo:
-        SovereignPipeline(config)
+        pipeline = SovereignPipeline(config)
+        await pipeline.initialize()
     
     assert "remote_verifier_url required" in str(excinfo.value)
 
@@ -30,7 +31,8 @@ async def test_remote_attestation_enforcement_unreachable():
     # This will attempt a real network call
     with pytest.raises(SecurityHalt) as excinfo:
         # We use a separate thread or just run it because __init__ triggers it
-        SovereignPipeline(config)
+        pipeline = SovereignPipeline(config)
+        await pipeline.initialize()
     
     assert "Verifier Unreachable" in str(excinfo.value)
 

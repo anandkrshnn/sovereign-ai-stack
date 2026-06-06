@@ -5,7 +5,7 @@ from ..common.hardware_trust import SecureAnchor
 from .cache import SemanticCache
 from .generator import QwenGenerator
 from .governed import AsyncGovernedRetriever, GovernedRetriever
-from .prompts import DEFAULT_SYSTEM_PROMPT, RAG_USER_PROMPT
+from .prompts import RAG_USER_PROMPT
 from .retriever import AsyncFTS5Retriever
 from .schemas import Document, RAGResponse, SearchResult
 
@@ -110,7 +110,7 @@ class LocalRAG:
 
         # Generation
         messages = [
-            {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
+            {"role": "system", "content": "You are a helpful sovereign AI assistant."},
             {"role": "user", "content": RAG_USER_PROMPT.format(context=context_text, query=query)},
         ]
 
@@ -252,7 +252,7 @@ class AsyncLocalRAG:
 
         context_text = self._format_context(results)
         messages = [
-            {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
+            {"role": "system", "content": "You are a helpful sovereign AI assistant."},
             {"role": "user", "content": RAG_USER_PROMPT.format(context=context_text, query=query)},
         ]
 
