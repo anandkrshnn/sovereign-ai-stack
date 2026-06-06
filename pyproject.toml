@@ -69,23 +69,12 @@ agent = [
     "cryptography>=41.0.0",
 ]
 
-# Dashboard
-dashboard = [
-    "streamlit>=1.38.0",
-    "plotly>=5.18.0",
-    "pandas>=2.0.0",
-]
 
 # Hardware Attestation
 tpm2 = [
     "tpm2-pytss>=2.1.0",
 ]
 
-# Demo features
-demo = [
-    "rich>=13.0",
-    "gradio>=4.0.0",
-]
 
 # Database backend features (PostgreSQL/SQLite)
 postgres = [
@@ -96,14 +85,9 @@ postgres = [
 
 # All features
 full = [
-    "sovereign-ai-stack[verify,bridge,agent,dashboard,tpm2,langchain]",
+    "sovereign-ai-stack[verify,bridge,agent,tpm2]",
 ]
 
-# Ecosystem Integrations
-langchain = [
-    "langchain-core>=0.1.0",
-    "langchain>=0.1.0",
-]
 
 # Development
 dev = [
