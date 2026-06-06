@@ -9,12 +9,31 @@ This repository contains an experimental local-first AI pipeline with:
 
 See [LIMITATIONS.md](LIMITATIONS.md) for known failure modes before using.
 
-## Running locally
+## Quickstart (Local Evaluation)
 
-```bash
-pip install -e .
-python -m sovereign_ai.pipeline
-```
+The entire stack runs locally. You will need [Ollama](https://ollama.com) installed and running.
+
+1. **Install Ollama and pull the default model:**
+   ```bash
+   ollama serve &
+   ollama pull mistral
+   ```
+
+2. **Install the package and dependencies:**
+   ```bash
+   pip install -e .[verify]
+   ```
+
+3. **Ingest a document:**
+   ```bash
+   echo "The launch code is 12345." > secret.txt
+   sovereign ingest secret.txt --tenant demo-tenant
+   ```
+
+4. **Query the vault with verification:**
+   ```bash
+   sovereign ask "What is the launch code?" --tenant demo-tenant --verify
+   ```
 
 ## Tests
 

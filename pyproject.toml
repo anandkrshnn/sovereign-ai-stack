@@ -5,7 +5,7 @@ description = "Local-first RAG with policy gating and audit-friendly logging —
 authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 
 keywords = [
     "sovereign-ai",
@@ -109,8 +109,8 @@ Issues = "https://github.com/anandkrshnn/sovereign-ai-stack/issues"
 Changelog = "https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/CHANGELOG.md"
 
 [project.scripts]
-sovereign = "sovereign_ai.cli:main"
-sovereign-ai = "sovereign_ai.cli:main"
+sovereign = "sovereign_ai.cli.main:main"
+sovereign-ai = "sovereign_ai.cli.main:main"
 
 [build-system]
 requires = ["setuptools>=68.0.0", "wheel"]
