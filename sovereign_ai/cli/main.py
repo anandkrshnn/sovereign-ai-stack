@@ -2,8 +2,8 @@ import asyncio
 import click
 import uuid
 import sys
-from .pipeline import SovereignPipeline, Config
-from .rag.schemas import Document
+from ..pipeline import SovereignPipeline, Config
+from ..rag.schemas import Document
 
 @click.group()
 def main():
@@ -13,7 +13,7 @@ def main():
 @main.command()
 def version():
     """Display the version of the Sovereign AI Stack."""
-    from . import __version__
+    from .. import __version__
     click.echo(f"Sovereign AI Stack v{__version__}")
 
 @main.command()
@@ -74,7 +74,7 @@ def audit():
 @click.option("--base-dir", default="data", help="Base directory for logs.")
 def verify(tenant, base_dir):
     """Verify the integrity of the forensic audit chain."""
-    from .common.audit import SovereignAuditLogger
+    from ..common.audit import SovereignAuditLogger
     logger = SovereignAuditLogger(base_dir, tenant)
     if logger.verify_integrity():
         click.echo(f"Audit chain for tenant '{tenant}' is VALID (100% Integrity).")
@@ -92,7 +92,7 @@ def trust():
 @click.option("--backend", default="auto", type=click.Choice(["auto", "mock", "tpm2_linux", "tpm2_windows"]))
 def status(tenant, backend):
     """Check hardware trust status."""
-    from .common.hardware_trust import get_secure_anchor
+    from ..common.hardware_trust import get_secure_anchor
     anchor = get_secure_anchor(tenant, backend=backend)
     
     click.echo(f"Anchor Type: {anchor.__class__.__name__}")
@@ -107,7 +107,7 @@ def attest(tenant, nonce, backend):
     """Generate a hardware-attested integrity quote."""
     import hashlib
     import json
-    from .common.hardware_trust import get_secure_anchor
+    from ..common.hardware_trust import get_secure_anchor
     
     if not nonce:
         nonce = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()

@@ -1,8 +1,8 @@
 import logging
 from typing import Optional, Tuple, Dict, Any
 
-from sovereign_ai.immune.events import KnowledgeEvent
-from sovereign_ai.immune.brain import VerifiedBrain
+from sovereign_ai.policy.events import KnowledgeEvent
+from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
 from sovereign_ai.gates.nli_gate import NLIAdaptiveGate
 
 logger = logging.getLogger(__name__)
@@ -10,23 +10,23 @@ logger = logging.getLogger(__name__)
 class ChallengerAgent:
     """
     The T-cell Challenger Agent (Adaptive Immunity).
-    Actively audits incoming knowledge proposals (antigens) by performing 
+    Actively audits incoming knowledge proposals (proposals) by performing 
     rigorous, targeted pairwise consistency checks against existing verified facts.
     """
     def __init__(self, nli_gate: Optional[NLIAdaptiveGate] = None):
         self.nli_gate = nli_gate
 
-    def challenge(self, event: KnowledgeEvent, brain: VerifiedBrain) -> Tuple[bool, Optional[str], Dict[str, Any]]:
+    def challenge(self, event: KnowledgeEvent, brain: EvaluatorOrchestrator) -> Tuple[bool, Optional[str], Dict[str, Any]]:
         """
-        Audits a proposed KnowledgeEvent against the VerifiedBrain's Layer 1.
+        Audits a proposed KnowledgeEvent against the EvaluatorOrchestrator's Layer 1.
         
         Returns:
         - is_challenged (bool): True if a contradiction is detected.
-        - conflicting_knowledge (str | None): The specific fact that contradicts the antigen.
+        - conflicting_knowledge (str | None): The specific fact that contradicts the proposal.
         - audit_metadata (dict): The probability details of the audit.
         """
         gate = self.nli_gate or brain.nli_gate
-        logger.info("Challenger T-cell auditing proposed antigen: %s", event.event_id)
+        logger.info("Challenger T-cell auditing proposed proposal: %s", event.event_id)
 
         # Retrieve related facts from Layer 1
         # In a full system, this uses Vector + BM25 keyword retrieval.
@@ -50,11 +50,11 @@ class ChallengerAgent:
                 # Increment brain challenge counter
                 brain.recent_challenges_count += 1
                 
-                # Inject the contradiction into the brain's audit list for dynamic autoimmune boost
+                # Inject the contradiction into the brain's audit list for dynamic dynamic boost
                 brain.recent_rejection_history.append(True)
                 if len(brain.recent_rejection_history) > brain.evaluation_window_size:
                     brain.recent_rejection_history.pop(0)
-                brain.apply_autoimmune_safeguard()
+                brain.apply_dynamic_thresholding()
                 
                 # Quarantine the conflicting event if it is already accepted, or prevent insertion
                 return True, existing_fact, {

@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 @dataclass
 class KnowledgeEvent:
     """
-    Represents an atomic, cryptographically signed proposed change (Antigen) 
+    Represents an atomic, cryptographically signed proposed change (Proposal) 
     to the Sovereign AI Stack's Company Brain.
     """
     payload: str  # The core content/statement being proposed

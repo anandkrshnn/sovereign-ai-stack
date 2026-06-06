@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from typing import List, Dict, Any, Tuple
 import torch
 import torch.nn.functional as F
@@ -16,7 +17,7 @@ class NLIAdaptiveGate(SovereignAirlock):
     An advanced Natural Language Inference (NLI) gate featuring:
     - Entailment Mode (strict verification)
     - Consistency Mode (fail-closed contradiction prevention)
-    - Dynamic thresholds (Autoimmune Safeguard)
+    - Dynamic thresholds (Dynamic Thresholding)
     - Quarantine boundaries for high-uncertainty claims
     """
     def __init__(
@@ -46,7 +47,7 @@ class NLIAdaptiveGate(SovereignAirlock):
 
     def set_thresholds(self, entailment: float, contradiction: float) -> None:
         """
-        Dynamically adjusts the thresholds (e.g., during Autoimmune response).
+        Dynamically adjusts the thresholds (e.g., during Dynamic response).
         """
         self.entailment_threshold = entailment
         self.contradiction_threshold = contradiction
@@ -81,12 +82,13 @@ class NLIAdaptiveGate(SovereignAirlock):
     async def verify(self, claim: str, context: List[str]) -> AirlockResult:
         """
         Standard Airlock compliance check. Requires strict ENTAILMENT.
+        Runs in asyncio.to_thread to release the GIL during PyTorch inference.
         """
         if not context:
             return AirlockResult(is_safe=False, score=0.0, reason="No context provided", metadata={})
 
         combined_context = " ".join(context)
-        probs = self.get_probabilities(combined_context, claim)
+        probs = await asyncio.to_thread(self.get_probabilities, combined_context, claim)
         entailment = probs["entailment"]
 
         is_safe = entailment >= self.entailment_threshold
@@ -101,7 +103,7 @@ class NLIAdaptiveGate(SovereignAirlock):
 
     def verify_consistency(self, proposed_update: str, current_knowledge: List[str]) -> Tuple[str, Dict[str, float], str]:
         """
-        Executes Innate Immunity logic. Checks if the proposed antigen is logically consistent 
+        Executes Innate Immunity logic. Checks if the proposed proposal is logically consistent 
         with existing knowledge.
         
         Decisions:
@@ -127,5 +129,5 @@ class NLIAdaptiveGate(SovereignAirlock):
         if entailment >= self.entailment_threshold:
             return "ACCEPT", probs, f"Strong Logical Entailment (Entailment: {entailment:.3f} >= {self.entailment_threshold})"
         
-        # 3. High Neutral/Unsure (Borderline / New Antigen) -> Quarantine Zone
+        # 3. High Neutral/Unsure (Borderline / New Proposal) -> Quarantine Zone
         return "QUARANTINE", probs, f"Unverified / Neutral Information (Contradiction: {contradiction:.3f}, Entailment: {entailment:.3f})"

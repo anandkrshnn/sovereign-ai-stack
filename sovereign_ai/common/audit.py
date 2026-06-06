@@ -1,3 +1,4 @@
+import logging
 """
 Forensic Audit Chain with Ed25519 Signatures
 
@@ -8,6 +9,7 @@ Every event is signed with Ed25519 private key, verifiable by anyone with public
 import base64
 import hashlib
 import json
+import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,6 +66,15 @@ class SecurityHalt(Exception):
 
     pass
 
+logger = logging.getLogger(__name__)
+
+def _calculate_next_hash_static(prev_hash: str, entry: Dict[str, Any]) -> str:
+    """Deterministic SHA-256 link calculation for legacy compatibility."""
+    import hashlib
+    import json
+    entry_copy = {k: v for k, v in entry.items() if k not in ("curr_hash", "chain_hash", "signature")}
+    canonical = json.dumps(entry_copy, sort_keys=True)
+    return hashlib.sha256(f"{prev_hash}{canonical}".encode()).hexdigest()
 
 class SignedAuditChain:
     """
@@ -273,6 +284,8 @@ class SignedAuditChain:
         # 5. Persist to file
         with open(self.audit_file, "a") as f:
             f.write(json.dumps(event) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
 
         # 6. Update checkpoint (truncation protection)
         self._save_checkpoint()

@@ -4,7 +4,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from sovereign_ai.cli import main as app
+from sovereign_ai.cli.main import main as app
 
 runner = CliRunner()
 
@@ -20,7 +20,7 @@ def test_cli_version():
     assert "Sovereign AI Stack v" in result.stdout
 
 def test_cli_ingest(mock_docs_file):
-    with patch("sovereign_ai.cli.SovereignPipeline") as mock_pipeline_cls:
+    with patch("sovereign_ai.cli.main.SovereignPipeline") as mock_pipeline_cls:
         mock_pipeline = mock_pipeline_cls.return_value
         mock_pipeline.ingest = AsyncMock()
         mock_pipeline.close = AsyncMock()
@@ -31,7 +31,7 @@ def test_cli_ingest(mock_docs_file):
         assert "Ingested" in result.stdout
 
 def test_cli_ask():
-    with patch("sovereign_ai.cli.SovereignPipeline") as mock_pipeline_cls:
+    with patch("sovereign_ai.cli.main.SovereignPipeline") as mock_pipeline_cls:
         mock_pipeline = mock_pipeline_cls.return_value
         mock_pipeline.ask = AsyncMock()
         mock_pipeline.close = AsyncMock()

@@ -2,10 +2,17 @@ import os
 import hashlib
 import logging
 import base64
+import ctypes
 from typing import List, Optional, Dict, Any
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from .base import SecureAnchor
 from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
+
+def secure_zero(data: bytearray | bytes):
+    """Best-effort memory wipe."""
+    if isinstance(data, (bytes, bytearray)):
+        ctypes.memset(ctypes.byref((ctypes.c_char * len(data)).from_buffer_copy(data)), 0, len(data))
+
 
 try:
     from tpm2_pytss import (
@@ -218,63 +225,76 @@ class TPM2LinuxAnchor(SecureAnchor):
 
     def seal_key(self, plaintext_key: bytes) -> bytes:
         """Seals a plaintext key using the TPM (if active) or software fallback."""
-        if self.hardware_active:
-            import subprocess
-            import tempfile
-            try:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    key_path = os.path.join(tmpdir, "secret.key")
-                    with open(key_path, "wb") as f:
-                        f.write(plaintext_key)
-                    sealed_path = os.path.join(tmpdir, "sealed.dat")
-                    cmd = [
-                        "tpm2_create",
-                        "-C", "owner",
-                        "-i", key_path,
-                        "-u", os.path.join(tmpdir, "pub.key"),
-                        "-r", sealed_path,
-                        "-L", "sha256:0,11"
-                    ]
-                    res = subprocess.run(cmd, capture_output=True)
-                    if res.returncode == 0:
-                        with open(sealed_path, "rb") as f:
-                            return f.read()
-            except Exception as e:
-                logger.error(f"TPM seal failed: {e}")
-        
-        derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-        from cryptography.hazmat.backends import default_backend
-        iv = b"\x00" * 16
-        encryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).encryptor()
-        return encryptor.update(plaintext_key) + encryptor.finalize()
+        try:
+            if self.hardware_active:
+                import subprocess
+                import tempfile
+                try:
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        key_path = os.path.join(tmpdir, "secret.key")
+                        with open(key_path, "wb") as f:
+                            f.write(plaintext_key)
+                        sealed_path = os.path.join(tmpdir, "sealed.dat")
+                        cmd = [
+                            "tpm2_create",
+                            "-C", "owner",
+                            "-i", key_path,
+                            "-u", os.path.join(tmpdir, "pub.key"),
+                            "-r", sealed_path,
+                            "-L", "sha256:0,11"
+                        ]
+                        res = subprocess.run(cmd, capture_output=True)
+                        if res.returncode == 0:
+                            with open(sealed_path, "rb") as f:
+                                return f.read()
+                except Exception as e:
+                    logger.error(f"TPM seal failed: {e}")
+            
+            derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            from cryptography.hazmat.backends import default_backend
+            iv = b"\x00" * 16
+            encryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).encryptor()
+            return encryptor.update(plaintext_key) + encryptor.finalize()
+        finally:
+            if 'plaintext_key' in locals():
+                secure_zero(plaintext_key)
+                del plaintext_key
 
     def unseal_key(self, sealed_key: bytes) -> bytes:
         """Unseals a key using the TPM (if active) or software fallback."""
-        if self.hardware_active:
-            import subprocess
-            import tempfile
-            try:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    sealed_path = os.path.join(tmpdir, "sealed.dat")
-                    with open(sealed_path, "wb") as f:
-                        f.write(sealed_key)
-                    cmd = [
-                        "tpm2_unseal",
-                        "-c", sealed_path
-                    ]
-                    res = subprocess.run(cmd, capture_output=True)
-                    if res.returncode == 0:
-                        return res.stdout
-            except Exception as e:
-                logger.error(f"TPM unseal failed: {e}")
-                
-        derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-        from cryptography.hazmat.backends import default_backend
-        iv = b"\x00" * 16
-        decryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).decryptor()
-        return decryptor.update(sealed_key) + decryptor.finalize()
+        plaintext_key = None
+        try:
+            if self.hardware_active:
+                import subprocess
+                import tempfile
+                try:
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        sealed_path = os.path.join(tmpdir, "sealed.dat")
+                        with open(sealed_path, "wb") as f:
+                            f.write(sealed_key)
+                        cmd = [
+                            "tpm2_unseal",
+                            "-c", sealed_path
+                        ]
+                        res = subprocess.run(cmd, capture_output=True)
+                        if res.returncode == 0:
+                            plaintext_key = res.stdout
+                            return plaintext_key
+                except Exception as e:
+                    logger.error(f"TPM unseal failed: {e}")
+                    
+            derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            from cryptography.hazmat.backends import default_backend
+            iv = b"\x00" * 16
+            decryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).decryptor()
+            plaintext_key = decryptor.update(sealed_key) + decryptor.finalize()
+            return plaintext_key
+        finally:
+            if 'plaintext_key' in locals() and plaintext_key is not None:
+                secure_zero(plaintext_key)
+                del plaintext_key
 
     def get_status(self) -> dict:
         return {

@@ -119,56 +119,41 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
 {context}
 """
 
-            # 3. Execution Loop (ReAct)
+            # 3. Strictly Linear Execution (No auto-correction or multi-step looping)
             current_prompt = f"{system_prompt}\nUser: {user_input}\n"
-            response = ""
-
-            for i in range(self.max_iterations):
-                try:
-                    response = self._call_llm(current_prompt)
-                except Exception as llm_e:
-                    response = f"Error: Could not connect to Ollama. Is it running? ({str(llm_e)[:100]})"
-                    break
-
-                # Parse Action
-                action_match = re.search(r"Action:\s*(\w+)\((.*)\)", response)
-                if not action_match:
-                    final_match = re.search(r"Final Answer:\s*(.*)", response, re.DOTALL)
-                    response = final_match.group(1).strip() if final_match else response.strip()
-                    break
-
+            try:
+                response = self._call_llm(current_prompt)
+            except Exception as llm_e:
+                response = f"Error: Could not connect to Ollama. Is it running? ({str(llm_e)[:100]})"
+                
+            # Parse Action
+            action_match = re.search(r"Action:\s*(\w+)\((.*)\)", response)
+            if action_match:
                 tool_name = action_match.group(1)
                 tool_args_str = action_match.group(2).strip()
-
                 if tool_name not in self.VALID_TOOLS:
                     observation = f"Error: Tool '{tool_name}' is not recognized."
                 else:
                     try:
                         tool_args = json.loads(tool_args_str)
-
-                        # Tool Execution with Broker
+                        # All tool steps MUST go through PTV Airlock via Broker
                         observation = self._execute_tool(tool_name, tool_args, override_token)
-
-                        # Reset override_token after first use in the loop to prevent reuse
-                        override_token = None
-
+                        
                         # Check for Gated Response
                         if isinstance(observation, dict) and observation.get("requires_confirmation"):
-                            # If gated, finalize trace and return dict
                             if self.current_trace:
                                 self.current_trace.save_to_jsonl(
                                     str(self.vault.decision_traces),
                                     key_manager=self.vault.key_manager
                                 )
                             return observation
-
                     except Exception as e:
                         observation = f"Error executing tool: {str(e)}"
-
-                current_prompt += f"{response}\nObservation: {observation}\n"
+                response = f"{response}\nObservation: {observation}"
             else:
-                if not response:
-                    response = "Error: Maximum iterations reached"
+                final_match = re.search(r"Final Answer:\s*(.*)", response, re.DOTALL)
+                response = final_match.group(1).strip() if final_match else response.strip()
+
 
         except Exception as e:
             response = f"Error during execution: {str(e)}"
@@ -201,10 +186,8 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
             "session_id": getattr(self, "current_session_id", "default"),
         })
 
-        # 5. TRIGGER ASYNC PROMOTION (Milestone 4: Governed Memory)
-        # In a real system, this would be a separate background task.
-        # For simplicity in v0.2, we trigger it synchronously but logically as a final step.
-        self.memory_service.promotion_pipeline.run_cycle(res_episode_id, str(response))
+        # 5. ASYNC PROMOTION (Removed synchronous technical debt, enforce pure React loop)
+        # self.memory_service.promotion_pipeline.run_cycle(res_episode_id, str(response))
 
         return response
 

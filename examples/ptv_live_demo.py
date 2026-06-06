@@ -10,7 +10,7 @@ from rich.syntax import Syntax
 # Sovereign AI Stack Core Modules (Brutal Minimalism)
 from sovereign_ai.common.hardware_trust import get_secure_anchor
 from sovereign_ai.verify.evaluator import SovereignEvaluator
-from sovereign_ai.common.audit import AuditChain
+from sovereign_ai.common.ledger_db import DatabaseAuditChain
 from sovereign_ai.common.merkle import verify_proof_async
 
 console = Console(record=True)
@@ -31,7 +31,10 @@ async def run_ptv_live_demo():
     # Initialize with strict Airlock
     anchor = get_secure_anchor("ptv-demo-tenant")
     evaluator = SovereignEvaluator()
-    audit_chain = AuditChain("ptv_demo_ledger.jsonl")
+    
+    # Use O(1) PostgreSQL/SQLite async ledger
+    audit_chain = DatabaseAuditChain("ptv-demo-tenant", "sqlite+aiosqlite:///ptv_demo_ledger.sqlite", anchor)
+    await audit_chain.initialize()
     
     # Pre-warm Evaluator model weights (to avoid blocking UI output)
     await asyncio.to_thread(evaluator._ensure_model)

@@ -28,7 +28,14 @@ services:
       # Tell tpm2-pytss to connect to the swtpm simulator via network socket
       - TPM2TOOLS_TCTI=swtpm:host=tpm-simulator,port=2321
       - TCTI=swtpm:host=tpm-simulator,port=2321
+      - DATABASE_URI=sqlite+aiosqlite:////data/ledger.sqlite
+    ports:
+      - "7860:7860"
+      - "8000:8000"
     volumes:
+      - sovereign_data:/data
       - .:/app
-    entrypoint: [""]
-    command: tail -f /dev/null
+    # Default entrypoint runs the web UI from Dockerfile, so we don't need to override unless dev
+
+volumes:
+  sovereign_data:

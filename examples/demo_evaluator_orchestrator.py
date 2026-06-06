@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sovereign AI Stack - Immune System Brain + PTV 
+Sovereign AI Stack - Evaluator Orchestrator + PTV 
 Reference Implementation - Technical Verification Demo
 """
 
@@ -51,9 +51,9 @@ class SuppressStdout:
 # Suppress imports as well to ensure zero deprecation warning outputs on console load
 with SuppressStdout():
     from sovereign_ai.gates.nli_gate import NLIAdaptiveGate
-    from sovereign_ai.immune.ptv_bridge import PTVBridge
-    from sovereign_ai.immune.brain import VerifiedBrain
-    from sovereign_ai.immune.events import KnowledgeEvent
+    from sovereign_ai.policy.ptv_bridge import PTVBridge
+    from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
+    from sovereign_ai.policy.events import KnowledgeEvent
 
 # Design Elements (ASCII safe for Windows console compatibility)
 COLOR_GREEN = "\033[92m"
@@ -81,7 +81,7 @@ def run_technical_demo():
     with SuppressStdout():
         nli_gate = NLIAdaptiveGate(entailment_threshold=0.85, contradiction_threshold=0.60)
         nli_gate._load_model()
-        brain = VerifiedBrain(nli_gate=nli_gate)
+        brain = EvaluatorOrchestrator(nli_gate=nli_gate)
         ptv_bridge = PTVBridge(brain=brain)
         
     init_duration = (time.perf_counter() - init_start) * 1000
@@ -170,7 +170,7 @@ def run_technical_demo():
     print(f"| Logical Consistency              | Memory Poisoning                 | NLI Adaptive Gate          |  {COLOR_GREEN}PASS{COLOR_RESET}  |")
     print(f"| Fail-Closed Boundary             | Zero-Day Injection               | PTV Bridge                 |  {COLOR_GREEN}PASS{COLOR_RESET}  |")
     print(f"| Tamper-Proof Audit               | Forensic Tampering               | Merkle Chain               |  {COLOR_GREEN}PASS{COLOR_RESET}  |")
-    print(f"| Adaptive Defense                 | Knowledge Flooding               | Autoimmune Safeguard       |  {COLOR_GREEN}PASS{COLOR_RESET}  |")
+    print(f"| Adaptive Defense                 | Knowledge Flooding               | Dynamic Thresholding       |  {COLOR_GREEN}PASS{COLOR_RESET}  |")
     print("+----------------------------------+----------------------------------+----------------------------+--------+\n")
 
     print("SUCCESS: Demo completed successfully.\n")

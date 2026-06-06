@@ -1,17 +1,17 @@
 import logging
 from typing import Dict, Any, Optional
-from sovereign_ai.immune.events import KnowledgeEvent
-from sovereign_ai.immune.brain import VerifiedBrain
+from sovereign_ai.policy.events import KnowledgeEvent
+from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
 
 logger = logging.getLogger(__name__)
 
 class PTVBridge:
     """
     Bridge connecting the Prove-Transform-Verify (PTV) protocol and TPM 2.0 attestation
-    with the Immune System Brain. Ensures that only mathematically verifiable and 
+    with the Evaluator Orchestrator. Ensures that only mathematically verifiable and 
     hardware-attested agents can propose knowledge updates.
     """
-    def __init__(self, brain: VerifiedBrain):
+    def __init__(self, brain: EvaluatorOrchestrator):
         self.brain = brain
 
     def verify_ptv_and_propose(
@@ -25,7 +25,7 @@ class PTVBridge:
         """
         1. Verifies the PTV Groth16 proof and TPM attestation.
         2. Binds the agent's Ed25519 signature to the event.
-        3. Forwards the event to the VerifiedBrain if valid.
+        3. Forwards the event to the EvaluatorOrchestrator if valid.
         """
         logger.info("Initiating PTV Bridge validation for event: %s", event.event_id)
 
@@ -39,7 +39,7 @@ class PTVBridge:
             logger.error("TPM 2.0 hardware attestation failed.")
             return {"status": "REJECT", "reason": "Invalid TPM Attestation", "event_id": event.event_id}
 
-        # The VerifiedBrain is updated to enforce that `ptv_validated = True`
+        # The EvaluatorOrchestrator is updated to enforce that `ptv_validated = True`
         event.metadata["ptv_validated"] = True
         event.metadata["tpm_attested"] = True
 

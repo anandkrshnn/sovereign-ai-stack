@@ -1,53 +1,50 @@
-# Sovereign AI Stack v2.0: Launch Copy
+# Sovereign AI Stack v0.2.0-alpha: Launch Copy
 
 ## 1. LinkedIn Announcement
 
 **Target Audience**: Compliance CTOs, Security Researchers, Principal Engineers.
-**Tone**: Confident, precise, anti-hype.
+**Tone**: Honest, research-focused, humble.
 
 **Draft**:
-The enterprise AI landscape is currently operating on security theater. Prompt-based "self-correction" is not security. Black-box API wrappers are not enterprise-ready. If you are building AI in a highly regulated sector (Finance, Healthcare, Defense), you need mathematical proof, not statistical guesses.
+The enterprise AI landscape is moving fast, but securing local LLMs in highly regulated environments (Finance, Healthcare, Defense) remains an unsolved challenge. 
 
-Today, we are releasing **Sovereign AI Stack v2.0**—a reference architecture that forces generative AI into a deterministic, cryptographically verifiable compliance boundary.
+Today, we are releasing **Sovereign AI Stack (v0.2.0-alpha)**—a research preview exploring how to force generative AI into a deterministic, verifiable boundary. 
 
-We don't build wrappers. We build an Airlock:
-🔒 **Hardware-Anchored Trust**: Every session is bound to TPM 2.0 (ESYS) attestation.
-🧠 **Deterministic NLI Gate**: Generations must pass a DeBERTa-v3 cross-encoder with a strict 0.85 Platt-calibrated entailment threshold.
-🔗 **O(1) Forensic Audit Chains**: Every action is sealed into an Ed25519 asymmetric Merkle ledger.
+Instead of relying solely on prompt-based guardrails, we are experimenting with:
+- **Hardware-Anchored Trust**: Binding sessions to local TPM 2.0 (ESYS) attestation.
+- **Deterministic NLI Gate**: Routing generations through a DeBERTa-v3 cross-encoder to mathematically score entailment before releasing the output.
+- **Forensic Audit Chains**: Sealing every action into an Ed25519 asymmetric Merkle ledger.
 
-Fail-Closed is our only acceptable state. If the output isn't grounded, the system halts.
+This is an **alpha prototype**. We have known adversarial failure rates (currently 2/7 evasion rate in our test suite) and significant latency overheads. We are actively recruiting security researchers and distributed systems engineers who want to collaborate on solving these gaps and building verifiable AI.
 
-We are actively recruiting security researchers and distributed systems engineers who want to build AI with mathematical proof. Check out our open Adversarial Bounties and the GAIP-2030 mapping on GitHub.
-
+Read our transparent limitations and grab the code here:
 [Link to GitHub Repo: https://github.com/anandkrshnn/sovereign-ai-stack]
-[Link to GAIP-2030 Mapping: https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/docs/GAIP_2030_MAPPING.md]
-[Link to PTV Demo / Bounty: https://github.com/anandkrshnn/sovereign-ai-stack/issues]
+[Link to Known Gaps: https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/docs/KNOWN_GAPS.md]
 
-#ZeroTrust #SovereignAI #DevSecOps #RAG #MachineLearning #Cybersecurity #IETF #NIST #GAIP
+#SovereignAI #DevSecOps #MachineLearning #Cybersecurity #LocalLLM
 
 ---
 
 ## 2. Hacker News Launch (Show HN)
 
-**Title**: Show HN: Sovereign AI Stack – TPM + NLI + Merkle Verified Airlock (GAIP-2030 ready)
+**Title**: Show HN: Sovereign AI Stack (v0.2.0-alpha) – Exploring TPM + NLI Verified RAG
 
 **First Comment**:
 Hey HN,
 
-We built the Sovereign AI Stack because we were tired of seeing enterprise "RAG" applications deployed with zero verifiable security. Asking an LLM to "double check its work" is security theater. 
+We built the Sovereign AI Stack as a research prototype because we wanted to explore how to apply traditional cryptographic guarantees (like TPM measurements and Merkle chains) to local AI agents and RAG pipelines. 
 
-Sovereign v2.0 is a local-first reference architecture that bridges generative AI with deterministic cryptography. 
-- It requires a valid TPM 2.0 attestation quote to boot the inference pipeline.
-- It routes all answers through a dedicated Natural Language Inference (NLI) cross-encoder that evaluates logical entailment against the context. If the score falls below a Platt-calibrated 0.85 threshold, the generation is dropped.
-- It logs every event to an append-only JSONL ledger backed by Ed25519 signatures and O(1) Merkle inclusion proofs (aligning with IETF PTV drafts).
+Sovereign v0.2.0-alpha is our open-source attempt at bridging generative AI with deterministic verification:
+- It requires a valid TPM 2.0 attestation to boot the pipeline (Linux only currently).
+- It routes all answers through a dedicated Natural Language Inference (NLI) cross-encoder that evaluates logical entailment against the context (threshold = 0.85). 
+- It logs every event to an append-only JSONL ledger backed by Ed25519 signatures.
 
-We designed this for regulated industries preparing for GAIP-2030 and the EU AI Act. We value brutal minimalism and fail-closed architecture. 
+**To be brutally honest: this is not production-ready.** The NLI gate adds 15-50ms of latency and currently has a 2/7 failure rate against our adversarial evasion suite (e.g., deep multi-hop negations can still trick the cross-encoder). 
 
-If you're a security researcher, we have a standing bounty: spin up our Docker sandbox and try to bypass the NLI gate using syntactic mimicry or multi-hop negations. 
+We are sharing this early because we want to build a community of security researchers and pragmatic engineers who are interested in solving these exact problems. 
 
 Links:
 - GitHub: https://github.com/anandkrshnn/sovereign-ai-stack
-- GAIP-2030 Mapping: https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/docs/GAIP_2030_MAPPING.md
-- Adversarial Bounty: https://github.com/anandkrshnn/sovereign-ai-stack/issues
+- Known Gaps & Limitations: https://github.com/anandkrshnn/sovereign-ai-stack/blob/main/docs/KNOWN_GAPS.md
 
-Would love your thoughts on the threat model (published in our README). Code is MIT.
+Would love your thoughts on the architecture and our threat model. Code is MIT.

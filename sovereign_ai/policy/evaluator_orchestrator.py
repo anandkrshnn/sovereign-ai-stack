@@ -2,16 +2,16 @@ import logging
 import hashlib
 from typing import List, Dict, Any, Optional
 
-from sovereign_ai.immune.events import KnowledgeEvent
+from sovereign_ai.policy.events import KnowledgeEvent
 from sovereign_ai.gates.nli_gate import NLIAdaptiveGate
 
 logger = logging.getLogger(__name__)
 
-class VerifiedBrain:
+class EvaluatorOrchestrator:
     """
-    The Verified Adaptive Company Brain (Immune System Brain).
+    The Verified Adaptive Company Brain (Evaluator Orchestrator).
     Coordinates the 3 memory layers, runs the self-evolving loop, and dynamically
-    manages thresholds via the Autoimmune Safeguard.
+    manages thresholds via the Dynamic Thresholding.
     """
     def __init__(
         self,
@@ -46,7 +46,7 @@ class VerifiedBrain:
 
     def propose_update(self, event: KnowledgeEvent, public_key_hex: Optional[str] = None, ptv_validated: bool = False) -> Dict[str, Any]:
         """
-        Receives an Antigen (proposed change), verifies signatures, runs innate immunity checks, 
+        Receives an Proposal (proposed change), verifies signatures, runs innate immunity checks, 
         and updates the memory layers accordingly.
         Requires PTV (Prove-Transform-Verify) validation to be True.
         """
@@ -77,14 +77,14 @@ class VerifiedBrain:
 
         logger.info("Innate immunity verdict: %s (Reason: %s)", decision, reason)
 
-        # Update metrics for Autoimmune Safeguard
+        # Update metrics for Dynamic Thresholding
         is_suspicious = decision in ["REJECT", "QUARANTINE"]
         self.recent_rejection_history.append(is_suspicious)
         if len(self.recent_rejection_history) > self.evaluation_window_size:
             self.recent_rejection_history.pop(0)
 
-        # Apply Autoimmune Safeguard to dynamically scale security thresholds
-        self.apply_autoimmune_safeguard()
+        # Apply Dynamic Thresholding to dynamically scale security thresholds
+        self.apply_dynamic_thresholding()
 
         if decision == "ACCEPT":
             # Add to Layer 1 (Verified Layer)
@@ -150,7 +150,7 @@ class VerifiedBrain:
 
         return False
 
-    def apply_autoimmune_safeguard(self) -> None:
+    def apply_dynamic_thresholding(self) -> None:
         """
         Dynamic Threshold Scaling. If the suspicion/rejection rate over the current
         window exceeds 40%, the system assumes a coordinate knowledge pollution attack
@@ -168,7 +168,7 @@ class VerifiedBrain:
             new_contradiction = max(0.40, self.base_contradiction - boost_factor)
             
             logger.warning(
-                "🚨 Autoimmune Safeguard Triggered! Rejection rate: %.2f%%. Raising thresholds.", 
+                "🚨 Dynamic Thresholding Triggered! Rejection rate: %.2f%%. Raising thresholds.", 
                 rejection_rate * 100
             )
             self.nli_gate.set_thresholds(entailment=new_entailment, contradiction=new_contradiction)

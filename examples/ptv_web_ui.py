@@ -4,13 +4,13 @@ import gradio as gr
 # Sovereign AI Stack Core Modules (Brutal Minimalism)
 from sovereign_ai.common.hardware_trust import get_secure_anchor
 from sovereign_ai.verify.evaluator import SovereignEvaluator
-from sovereign_ai.common.audit import AuditChain
+from sovereign_ai.common.ledger_db import DatabaseAuditChain
 from sovereign_ai.common.merkle import verify_proof_async
 
 # Global initialization
 anchor = get_secure_anchor("ptv-web-demo-tenant")
 evaluator = SovereignEvaluator()
-audit_chain = AuditChain("ptv_web_demo_ledger.jsonl")
+audit_chain = DatabaseAuditChain("ptv-web-demo-tenant", "sqlite+aiosqlite:///ptv_web_demo_ledger.sqlite", anchor)
 
 # Pre-warm Evaluator model weights
 import threading
@@ -19,6 +19,9 @@ threading.Thread(target=evaluator._ensure_model, daemon=True).start()
 async def run_ptv_demo(query: str, context: str, tamper: bool = False):
     """Core PTV Airlock execution for Gradio interface"""
     try:
+        # Initialize the DB Ledger lazily for the demo (must be in event loop)
+        await audit_chain.initialize()
+        
         model_output = "PTV provides cryptographic hardware attestation and zero-knowledge proofs for GAIP compliance."
 
         # 1. PROVE: Hardware Attestation

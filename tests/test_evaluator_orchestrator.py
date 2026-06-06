@@ -1,7 +1,7 @@
 import pytest
-from sovereign_ai.immune.events import KnowledgeEvent
-from sovereign_ai.immune.brain import VerifiedBrain
-from sovereign_ai.immune.challenger import ChallengerAgent
+from sovereign_ai.policy.events import KnowledgeEvent
+from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
+from sovereign_ai.policy.challenger import ChallengerAgent
 from sovereign_ai.gates.nli_gate import NLIAdaptiveGate
 
 class MockNLIAdaptiveGate(NLIAdaptiveGate):
@@ -34,7 +34,7 @@ def test_immune_brain_basic_accepted_flow():
         "Core policy update": {"contradiction": 0.01, "entailment": 0.96, "neutral": 0.03}
     }
     mock_gate = MockNLIAdaptiveGate(mock_probs)
-    brain = VerifiedBrain(nli_gate=mock_gate)
+    brain = EvaluatorOrchestrator(nli_gate=mock_gate)
 
     event = KnowledgeEvent(
         payload="Core policy update: The agent must execute in fail-closed mode.",
@@ -59,7 +59,7 @@ def test_immune_brain_quarantine_flow():
         "Borderline factual claim": {"contradiction": 0.05, "entailment": 0.30, "neutral": 0.65}
     }
     mock_gate = MockNLIAdaptiveGate(mock_probs)
-    brain = VerifiedBrain(nli_gate=mock_gate)
+    brain = EvaluatorOrchestrator(nli_gate=mock_gate)
 
     # Ingest baseline knowledge first to ensure current_knowledge is not empty
     brain.layer_1_verified_layer.append("System initialization complete. Anchored locally.")
@@ -88,7 +88,7 @@ def test_immune_brain_innate_rejection_flow():
         "Conflicting statement": {"contradiction": 0.85, "entailment": 0.05, "neutral": 0.10}
     }
     mock_gate = MockNLIAdaptiveGate(mock_probs)
-    brain = VerifiedBrain(nli_gate=mock_gate)
+    brain = EvaluatorOrchestrator(nli_gate=mock_gate)
 
     # Ingest baseline knowledge
     brain.layer_1_verified_layer.append("All network links must go through local airlock proxies.")
@@ -114,7 +114,7 @@ def test_adaptive_challenger_t_cell():
         "T-cell contradiction": {"contradiction": 0.75, "entailment": 0.10, "neutral": 0.15}
     }
     mock_gate = MockNLIAdaptiveGate(mock_probs)
-    brain = VerifiedBrain(nli_gate=mock_gate)
+    brain = EvaluatorOrchestrator(nli_gate=mock_gate)
     challenger = ChallengerAgent(nli_gate=mock_gate)
 
     # Ingest baseline
@@ -134,15 +134,15 @@ def test_adaptive_challenger_t_cell():
     assert metadata["reason"] == "Pairwise contradiction detected"
 
 
-def test_autoimmune_safeguard_threshold_boosting():
+def test_dynamic_safeguard_threshold_boosting():
     # Arrange: Setup brain
-    brain = VerifiedBrain()
+    brain = EvaluatorOrchestrator()
     brain.nli_gate.set_thresholds(entailment=0.85, contradiction=0.60)
 
     # Act: Trigger multiple suspicious rejections/challenges
     # Simulate a high challenge rate (e.g. 5 threats out of 8 events in the window = 62.5% rejection rate)
     brain.recent_rejection_history = [True, True, True, False, False, True, True, False]
-    brain.apply_autoimmune_safeguard()
+    brain.apply_dynamic_thresholding()
 
     # Assert: Thresholds should have automatically boosted
     assert brain.nli_gate.entailment_threshold > 0.85
@@ -150,7 +150,7 @@ def test_autoimmune_safeguard_threshold_boosting():
 
     # Cool down: Clear rejections (rejection rate = 0%)
     brain.recent_rejection_history = [False, False, False, False]
-    brain.apply_autoimmune_safeguard()
+    brain.apply_dynamic_thresholding()
 
     # Assert: Restored to baseline
     assert brain.nli_gate.entailment_threshold == 0.85

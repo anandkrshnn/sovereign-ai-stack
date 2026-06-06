@@ -100,6 +100,11 @@ class SovereignPipeline:
         """
         Explicit async initialization. Must be called if remote attestation is required.
         """
+        import os
+        from .common.schemas import SecurityHalt
+        if os.getenv("SOVEREIGN_ENV") == "production" and not getattr(self.anchor, "is_hardware", False):
+            raise SecurityHalt("TPM Simulator forbidden in production. Require real hardware.")
+
         if self.config.require_remote_attestation:
             await self._perform_remote_attestation()
 

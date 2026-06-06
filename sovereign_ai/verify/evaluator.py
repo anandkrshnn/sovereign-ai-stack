@@ -155,6 +155,8 @@ class SovereignEvaluator:
                 f.write(log_msg + "\n")
             logger.warning(log_msg)
             
+        return result
+            
     async def evaluate_async(self, query: str, context: str, answer: str) -> Dict:
         """
         Asynchronously score grounding and faithfulness, releasing the GIL
