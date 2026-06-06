@@ -1,46 +1,35 @@
 # Sovereign AI Stack (v0.2.0-alpha)
 
-**Status: Research prototype. Not production-ready.**
+**Alpha research prototype** exploring local-first AI verification building blocks.
 
-This repository contains an experimental local-first AI pipeline with:
-- NLI-based grounding gate (DeBERTa-v3 cross-encoder)
-- Append-only audit log with Ed25519 signatures
-- Local LLM inference via Ollama
+> [!WARNING]
+> This is an **early research preview**. Significant limitations exist. 
+> It is **not production-ready**. See [LIMITATIONS.md](LIMITATIONS.md).
 
-See [LIMITATIONS.md](LIMITATIONS.md) for known failure modes before using.
+## Core Components
+- **NLI Grounding Gate** — Local DeBERTa-v3 cross-encoder for checking entailment between context and generated responses.
+- **Tamper-Evident Audit Chain** — Append-only JSONL with Ed25519 signatures and Merkle roots.
+- **TPM 2.0 Anchoring** — Hardware (or simulator) attestation binding on Linux.
+- **LangChainGuard** — Basic wrapper for adding verification to LangChain/LCEL pipelines.
 
-## Quickstart (Local Evaluation)
-
-The entire stack runs locally. You will need [Ollama](https://ollama.com) installed and running.
-
-1. **Install Ollama and pull the default model:**
-   ```bash
-   ollama serve &
-   ollama pull mistral
-   ```
-
-2. **Install the package and dependencies:**
-   ```bash
-   pip install -e .[verify]
-   ```
-
-3. **Ingest a document:**
-   ```bash
-   echo "The launch code is 12345." > secret.txt
-   sovereign ingest secret.txt --tenant demo-tenant
-   ```
-
-4. **Query the vault with verification:**
-   ```bash
-   sovereign ask "What is the launch code?" --tenant demo-tenant --verify
-   ```
-
-## Tests
+## Quickstart
 
 ```bash
-pytest tests/
+git clone https://github.com/anandkrshnn/sovereign-ai-stack.git
+cd sovereign-ai-stack
+
+# Install minimal core without bloat
+pip install -e .[verify]
+
+# Use the sovereign CLI
+sovereign --help
 ```
 
-## License
+*Note: Demo applications and UI wrappers have been removed to focus on core verification primitives. Integrate `SovereignPipeline` directly via Python or use the CLI.*
 
-MIT
+## Repository Status
+- Focused on verification primitives only.
+- The sprawling agent orchestration module has been entirely deleted.
+- CI is configured for linting, basic tests, and container scanning.
+
+Contributions welcome, especially around hardening, testing, and documentation of failure modes.
