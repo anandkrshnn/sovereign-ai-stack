@@ -79,3 +79,13 @@ test_perf/
 benchmarks/
 latency_report.py
 scripts/latency_report.py
+
+# Test artifacts and local state
+*.key
+*.idx
+test-*/
+.trust_anchor_*
+.tpm_sim/
+low_confidence.log
+test-calibration/
+
