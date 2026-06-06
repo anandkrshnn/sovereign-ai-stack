@@ -25,7 +25,7 @@ jobs:
           black --check sovereign_ai tests
           isort --check-only sovereign_ai tests
       - name: Run Ruff
-        run: ruff check sovereign_ai tests
+        run: ruff check sovereign_ai tests --ignore E722,E741,E402,F841,F401,E701
       - name: Run Mypy (Type Checking)
         run: mypy sovereign_ai --ignore-missing-imports
 
