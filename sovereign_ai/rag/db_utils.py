@@ -1,12 +1,12 @@
 import os
 import sqlite3
-from pathlib import Path
 from typing import Optional, Dict, Any
 
 try:
     from sqlcipher3 import dbapi2 as sqlcipher
 except ImportError:
     sqlcipher = None
+
 
 def get_db_status(db_path: str, password: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -15,15 +15,9 @@ def get_db_status(db_path: str, password: Optional[str] = None) -> Dict[str, Any
     path = os.path.abspath(db_path)
     if not os.path.exists(path):
         return {"exists": False}
-        
-    status = {
-        "exists": True,
-        "path": path,
-        "encrypted": False,
-        "accessible": False,
-        "error": None
-    }
-    
+
+    status = {"exists": True, "path": path, "encrypted": False, "accessible": False, "error": None}
+
     # 1. Check if it's a standard plaintext DB
     try:
         conn = sqlite3.connect(path)
@@ -41,7 +35,7 @@ def get_db_status(db_path: str, password: Optional[str] = None) -> Dict[str, Any
         if sqlcipher is None:
             status["error"] = "sqlcipher3-wheels not installed"
             return status
-            
+
         try:
             conn = sqlcipher.connect(path)
             # Use space-padded = for readability, match debug script
@@ -54,8 +48,9 @@ def get_db_status(db_path: str, password: Optional[str] = None) -> Dict[str, Any
         except Exception as e:
             status["accessible"] = False
             status["error"] = f"Unlock failed: {str(e)}"
-            
+
     return status
+
 
 def encrypt_database(src: str, dst: str, password: str):
     """
@@ -63,10 +58,10 @@ def encrypt_database(src: str, dst: str, password: str):
     """
     if sqlcipher is None:
         raise ImportError("sqlcipher3-wheels required for encryption.")
-        
+
     src_abs = os.path.abspath(src)
     dst_abs = os.path.abspath(dst)
-    
+
     if not os.path.exists(src_abs):
         raise FileNotFoundError(f"Source database not found: {src_abs}")
     if os.path.exists(dst_abs):
@@ -74,9 +69,9 @@ def encrypt_database(src: str, dst: str, password: str):
 
     # Use SQLCipher driver to open source (it can handle plaintext)
     conn = sqlcipher.connect(src_abs)
-    
+
     try:
-        # ATTACH + KEY is the atomic encryption path. 
+        # ATTACH + KEY is the atomic encryption path.
         # Debugged syntax: single quotes around absolute path and password.
         sql = f"ATTACH DATABASE '{dst_abs}' AS encrypted_db KEY '{password}'"
         conn.execute(sql)
@@ -86,16 +81,17 @@ def encrypt_database(src: str, dst: str, password: str):
     finally:
         conn.close()
 
+
 def decrypt_database(src: str, dst: str, password: str):
     """
     Migrate an encrypted SQLCipher database back to plaintext SQLite.
     """
     if sqlcipher is None:
         raise ImportError("sqlcipher3-wheels required for decryption.")
-        
+
     src_abs = os.path.abspath(src)
     dst_abs = os.path.abspath(dst)
-    
+
     if os.path.exists(dst_abs):
         raise FileExistsError(f"Target path already exists: {dst_abs}")
 
@@ -103,7 +99,7 @@ def decrypt_database(src: str, dst: str, password: str):
     try:
         escaped_pass = password.replace("'", "''")
         conn.execute(f"PRAGMA key = '{escaped_pass}'")
-        
+
         # Attach with empty key for plaintext
         sql = f"ATTACH DATABASE '{dst_abs}' AS plaintext_db KEY ''"
         conn.execute(sql)
@@ -113,16 +109,17 @@ def decrypt_database(src: str, dst: str, password: str):
     finally:
         conn.close()
 
+
 def rekey_database(db_path: str, old_password: str, new_password: str):
     """
     Rotate the encryption key for a SQLCipher database.
     """
     if sqlcipher is None:
         raise ImportError("sqlcipher3-wheels required for rekeying.")
-    
+
     path_abs = os.path.abspath(db_path)
     conn = sqlcipher.connect(path_abs)
-    
+
     try:
         escaped_old = old_password.replace("'", "''")
         escaped_new = new_password.replace("'", "''")

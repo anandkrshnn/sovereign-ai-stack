@@ -1,12 +1,14 @@
 import hashlib
-from typing import List, Optional
+from typing import List
+
 
 class MerkleTree:
     """
     Implements a Merkle Tree for efficient proof-of-inclusion and history auditing.
-    Addresses the 'Basic Pattern' criticism by moving from linear chains to 
+    Addresses the 'Basic Pattern' criticism by moving from linear chains to
     aggregated cryptographic trees (standard for high-integrity systems).
     """
+
     def __init__(self, leaves: List[str]):
         self.leaves = [self._hash(l) for l in leaves]
         self.tree = self._build_tree(self.leaves)
@@ -22,7 +24,7 @@ class MerkleTree:
             next_layer = []
             for i in range(0, len(current_layer), 2):
                 left = current_layer[i]
-                right = current_layer[i+1] if i+1 < len(current_layer) else left
+                right = current_layer[i + 1] if i + 1 < len(current_layer) else left
                 next_layer.append(self._hash(left + right))
             layers.append(next_layer)
         return layers
@@ -41,18 +43,14 @@ class MerkleTree:
             layer = self.tree[i]
             is_right = index % 2
             sibling_index = index - 1 if is_right else index + 1
-            
+
             if sibling_index < len(layer):
-                proof.append({
-                    "position": "left" if is_right else "right",
-                    "hash": layer[sibling_index]
-                })
+                proof.append(
+                    {"position": "left" if is_right else "right", "hash": layer[sibling_index]}
+                )
             else:
                 # Sibling is self (odd leaf count)
-                proof.append({
-                    "position": "right",
-                    "hash": layer[index]
-                })
+                proof.append({"position": "right", "hash": layer[index]})
             index //= 2
         return proof
 
@@ -74,4 +72,5 @@ class MerkleTree:
         Critical for parallel proof validation under heavy load.
         """
         import asyncio
+
         return await asyncio.to_thread(MerkleTree.verify_proof, leaf, proof, root)

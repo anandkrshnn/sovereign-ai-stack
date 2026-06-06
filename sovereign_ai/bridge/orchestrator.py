@@ -26,7 +26,6 @@ import itertools
 import os
 
 import httpx
-import tiktoken
 from opentelemetry import trace
 
 from .cache import SovereignSemanticCache
@@ -38,7 +37,6 @@ from .schemas import (
     ChatCompletionResponse,
     ChatCompletionResponseChoice,
     ChatMessage,
-    Usage,
 )
 
 tracer = trace.get_tracer(__name__)
@@ -79,7 +77,7 @@ class SovereignOrchestrator:
         # Phase 3: Matured Evaluator (Calibrated) + Policy Verifier (Z3)
         self.verifier_url = os.getenv("SOVEREIGN_VERIFIER_URL")
         self.verifier_key = os.getenv("SOVEREIGN_VERIFIER_KEY", "sovereign_trust_preview_2026")
-        
+
         self.evaluator = None
         self.policy_verifier = None
         if not self.verifier_url:
@@ -389,7 +387,7 @@ class SovereignOrchestrator:
 
                 policies = self._load_tenant_policies(tenant_id, principal)
 
-                with tracer.start_as_current_span("sov_pre_auth_z3") as aspan:
+                with tracer.start_as_current_span("sov_pre_auth_z3"):
                     authorized = False
                     if self.verifier_url:
                         payload = {
@@ -397,7 +395,7 @@ class SovereignOrchestrator:
                             "resource": resource,
                             "action": action,
                             "policies": policies,
-                            "check_type": "authorize"
+                            "check_type": "authorize",
                         }
                         headers = {"X-API-Key": self.verifier_key}
                         try:
@@ -406,12 +404,14 @@ class SovereignOrchestrator:
                                 f"{self.verifier_url}/verify/policy",
                                 json=payload,
                                 headers=headers,
-                                timeout=10.0
+                                timeout=10.0,
                             )
                             if resp.status_code == 200:
                                 authorized = resp.json().get("is_authorized", False)
                             else:
-                                logger.error(f"Isolated Policy Verifier returned {resp.status_code}")
+                                logger.error(
+                                    f"Isolated Policy Verifier returned {resp.status_code}"
+                                )
                         except Exception as e:
                             logger.critical(f"Isolated Policy Verifier unreachable: {e}")
                     else:
@@ -514,7 +514,7 @@ class SovereignOrchestrator:
             # 3. EXECUTION OR GENERATION
             async with self._semaphore:
                 if SovereignAIAgent and is_agent_query:
-                    with tracer.start_as_current_span("sov_agent_execution") as aspan:
+                    with tracer.start_as_current_span("sov_agent_execution"):
                         try:
                             loop = asyncio.get_event_loop()
                             resp, trace_id = await loop.run_in_executor(
@@ -566,7 +566,7 @@ class SovereignOrchestrator:
                             tenant_id,
                         )
                     else:
-                        with tracer.start_as_current_span("sov_llm_generation_atomic") as lspan:
+                        with tracer.start_as_current_span("sov_llm_generation_atomic"):
                             response_text = await self._call_llm_atomic(
                                 last_message, context_text, tenant_id
                             )
@@ -580,7 +580,7 @@ class SovereignOrchestrator:
                                         payload = {
                                             "query": last_message,
                                             "context": context_text,
-                                            "answer": response_text
+                                            "answer": response_text,
                                         }
                                         headers = {"X-API-Key": self.verifier_key}
                                         try:
@@ -589,15 +589,19 @@ class SovereignOrchestrator:
                                                 f"{self.verifier_url}/verify/nli",
                                                 json=payload,
                                                 headers=headers,
-                                                timeout=10.0
+                                                timeout=10.0,
                                             )
                                             if resp.status_code == 200:
                                                 eval_res = resp.json()
                                             else:
-                                                logger.error(f"Isolated NLI Verifier returned {resp.status_code}")
+                                                logger.error(
+                                                    f"Isolated NLI Verifier returned {resp.status_code}"
+                                                )
                                                 eval_res = {"grounding_score": 0.0, "passed": False}
                                         except Exception as e:
-                                            logger.critical(f"Isolated NLI Verifier unreachable: {e}")
+                                            logger.critical(
+                                                f"Isolated NLI Verifier unreachable: {e}"
+                                            )
                                             eval_res = {"grounding_score": 0.0, "passed": False}
                                     else:
                                         eval_res = self.evaluator.evaluate(
@@ -671,7 +675,7 @@ class SovereignOrchestrator:
         self, request, context, request_id, principal, rag_reason, start_time, tenant_id
     ):
         labels = metrics.get_labels(tenant_id, principal)
-        with tracer.start_as_current_span("sov_llm_generation_streaming") as span:
+        with tracer.start_as_current_span("sov_llm_generation_streaming"):
             last_message = request.messages[-1].content
             prompt = (
                 f"[SystemContext]: {context}\n\nUser: {last_message}" if context else last_message

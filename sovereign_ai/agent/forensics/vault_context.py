@@ -2,9 +2,11 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
+
 @dataclass
 class VaultContext:
     """Manages isolated storage for one Sovereign Vault (user/session)."""
+
     vault_root: str = "~/local_agent"
 
     def __post_init__(self):
@@ -29,6 +31,7 @@ class VaultContext:
     def unlock(self, password: Optional[str] = None):
         """Unlock the vault with a password."""
         from .vault_key_manager import VaultKeyManager
+
         self.key_manager = VaultKeyManager(self.vault_root, password)
 
     @classmethod

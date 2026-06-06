@@ -1,5 +1,4 @@
 import sqlite3
-import json
 import logging
 from pathlib import Path
 from typing import Optional, Any
@@ -14,42 +13,50 @@ import aiosqlite
 
 logger = logging.getLogger(__name__)
 
+
 class Store:
     """
     Sovereign Storage Layer using SQLite/SQLCipher.
-    
+
     v0.4.0: Supports full-database encryption via SQLCipher if a password is provided.
     """
-    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None, anchor: Optional[Any] = None):
+
+    def __init__(
+        self,
+        db_path: str = "sovereign_ai.db",
+        password: Optional[str] = None,
+        anchor: Optional[Any] = None,
+    ):
         self.db_path = Path(db_path)
         self.anchor = anchor
         self.password = password
-        
+
         # Dynamic unsealing if key is sealed
         if self.anchor and self.password:
             import base64
+
             if isinstance(self.password, bytes) and self.password.startswith(b"SEALED:"):
                 try:
-                    sealed_data = self.password[len(b"SEALED:"):]
-                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                    sealed_data = self.password[len(b"SEALED:") :]
+                    self.password = self.anchor.unseal_key(sealed_data).decode("utf-8")
                 except Exception as e:
                     logger.error(f"Failed to unseal storage key bytes: {e}")
                     raise PermissionError("Failed to unseal storage key via secure anchor.") from e
             elif isinstance(self.password, str) and self.password.startswith("SEALED:"):
                 try:
-                    sealed_data = base64.b64decode(self.password[len("SEALED:"):])
-                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                    sealed_data = base64.b64decode(self.password[len("SEALED:") :])
+                    self.password = self.anchor.unseal_key(sealed_data).decode("utf-8")
                 except Exception as e:
                     logger.error(f"Failed to unseal storage key string: {e}")
                     raise PermissionError("Failed to unseal storage key via secure anchor.") from e
-                    
+
         self.conn = None
         self._init_db()
 
     def _init_db(self):
         """Initialize the database, verify FTS5 support, and handle encryption."""
         is_new = not self.db_path.exists()
-        
+
         # 1. Driver Selection & Connection
         if self.password:
             if sqlcipher is None:
@@ -78,12 +85,16 @@ class Store:
             self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1")
         except Exception as e:
             err_msg = str(e).lower()
-            if "file is not a database" in err_msg or "encrypted" in err_msg or "authentication" in err_msg:
+            if (
+                "file is not a database" in err_msg
+                or "encrypted" in err_msg
+                or "authentication" in err_msg
+            ):
                 raise PermissionError(
                     "[Sovereign Access Denied] Database is encrypted or password invalid."
                 ) from e
             raise e
-        
+
         # 3. Verify FTS5 support
         try:
             self.conn.execute("CREATE VIRTUAL TABLE IF NOT EXISTS _fts_check USING fts5(c);")
@@ -93,7 +104,7 @@ class Store:
                 "FTS5 is not enabled in your local SQLite/SQLCipher build. "
                 "sovereign-ai rag requires FTS5 for lexical indexing."
             ) from e
-            
+
         self._create_tables()
 
     def _create_tables(self):
@@ -104,7 +115,7 @@ class Store:
                 version INTEGER PRIMARY KEY
             )
         """)
-        
+
         # Documents storage
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS documents (
@@ -116,7 +127,7 @@ class Store:
                 metadata_json TEXT -- Generic JSON blob
             )
         """)
-        
+
         # Chunks storage (Relational)
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS chunks (
@@ -128,9 +139,10 @@ class Store:
                 FOREIGN KEY (doc_id) REFERENCES documents(doc_id) ON DELETE CASCADE
             )
         """)
-        
+
         # FTS5 Virtual Table (Standalone content for search)
         from .config import DEFAULT_FTS_TOKENIZER
+
         self.conn.execute(f"""
             CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
                 text,
@@ -138,46 +150,54 @@ class Store:
                 tokenize='{DEFAULT_FTS_TOKENIZER}'
             )
         """)
-        
+
         # Bootstrap schema version if new
         cur = self.conn.execute("SELECT COUNT(*) FROM schema_version")
         if cur.fetchone()[0] == 0:
             self.conn.execute("INSERT INTO schema_version (version) VALUES (1)")
-            
+
         self.conn.commit()
 
     def close(self):
         if self.conn:
             self.conn.close()
 
+
 class AsyncStore:
     """
     Asynchronous Sovereign Storage Layer using aiosqlite.
     Provides non-blocking database operations for high-concurrency loops.
     """
-    def __init__(self, db_path: str = "sovereign_ai.db", password: Optional[str] = None, anchor: Optional[Any] = None):
+
+    def __init__(
+        self,
+        db_path: str = "sovereign_ai.db",
+        password: Optional[str] = None,
+        anchor: Optional[Any] = None,
+    ):
         self.db_path = Path(db_path)
         self.anchor = anchor
         self.password = password
-        
+
         # Dynamic unsealing if key is sealed
         if self.anchor and self.password:
             import base64
+
             if isinstance(self.password, bytes) and self.password.startswith(b"SEALED:"):
                 try:
-                    sealed_data = self.password[len(b"SEALED:"):]
-                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                    sealed_data = self.password[len(b"SEALED:") :]
+                    self.password = self.anchor.unseal_key(sealed_data).decode("utf-8")
                 except Exception as e:
                     logger.error(f"Failed to unseal storage key bytes: {e}")
                     raise PermissionError("Failed to unseal storage key via secure anchor.") from e
             elif isinstance(self.password, str) and self.password.startswith("SEALED:"):
                 try:
-                    sealed_data = base64.b64decode(self.password[len("SEALED:"):])
-                    self.password = self.anchor.unseal_key(sealed_data).decode('utf-8')
+                    sealed_data = base64.b64decode(self.password[len("SEALED:") :])
+                    self.password = self.anchor.unseal_key(sealed_data).decode("utf-8")
                 except Exception as e:
                     logger.error(f"Failed to unseal storage key string: {e}")
                     raise PermissionError("Failed to unseal storage key via secure anchor.") from e
-                    
+
         self.conn: Optional[aiosqlite.Connection] = None
 
     async def connect(self):
@@ -194,19 +214,19 @@ class AsyncStore:
             await self.conn.execute(f"PRAGMA key = '{escaped_pass}'")
         else:
             self.conn = await aiosqlite.connect(self.db_path)
-        
+
         # Optimization for RAG workloads (executed AFTER decryption key is set)
         await self.conn.execute("PRAGMA journal_mode=WAL")
         await self.conn.execute("PRAGMA foreign_keys=ON")
         await self.conn.execute("PRAGMA synchronous=NORMAL")
-            
+
         await self._create_tables()
         await self.conn.commit()
 
     async def _create_tables(self):
         """Initialize required relational and virtual tables if they do not exist."""
         from .config import DEFAULT_FTS_TOKENIZER
-        
+
         # 1. Documents table
         await self.conn.execute("""
             CREATE TABLE IF NOT EXISTS documents (
@@ -218,7 +238,7 @@ class AsyncStore:
                 metadata_json TEXT
             )
         """)
-        
+
         # 2. Chunks table
         await self.conn.execute("""
             CREATE TABLE IF NOT EXISTS chunks (
@@ -230,7 +250,7 @@ class AsyncStore:
                 FOREIGN KEY (doc_id) REFERENCES documents(doc_id) ON DELETE CASCADE
             )
         """)
-        
+
         # 3. FTS5 table
         await self.conn.execute(f"""
             CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
@@ -239,20 +259,24 @@ class AsyncStore:
                 tokenize='{DEFAULT_FTS_TOKENIZER}'
             )
         """)
-        
+
         # 4. Schema version
-        await self.conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)")
+        await self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY)"
+        )
         async with self.conn.execute("SELECT COUNT(*) FROM schema_version") as cursor:
             row = await cursor.fetchone()
             if row[0] == 0:
                 await self.conn.execute("INSERT INTO schema_version (version) VALUES (1)")
 
     async def execute(self, sql: str, parameters: Optional[tuple] = None):
-        if not self.conn: await self.connect()
+        if not self.conn:
+            await self.connect()
         return await self.conn.execute(sql, parameters or ())
 
     async def fetchall(self, sql: str, parameters: Optional[tuple] = None):
-        if not self.conn: await self.connect()
+        if not self.conn:
+            await self.connect()
         async with self.conn.execute(sql, parameters or ()) as cursor:
             return await cursor.fetchall()
 

@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, List
 import uuid
+
 
 class DecisionTrace:
     """Per-request decision trace for explainability in v0.2."""
@@ -41,7 +42,7 @@ class DecisionTrace:
             "risk_hints": self.risk_hints,
             "adapter_state": self.adapter_state,
             "tool_decisions": self.tool_decisions,
-            "final_outcome": self.final_outcome
+            "final_outcome": self.final_outcome,
         }
 
     def save_to_jsonl(self, filepath: str = "decision_traces.jsonl", key_manager=None):
@@ -53,7 +54,7 @@ class DecisionTrace:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         data = json.dumps(self.to_dict())
-        
+
         if key_manager and key_manager.is_encrypted():
             data = key_manager.encrypt(data)
 

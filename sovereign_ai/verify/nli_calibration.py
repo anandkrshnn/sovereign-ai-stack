@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 from scipy.optimize import minimize
@@ -73,4 +73,3 @@ def get_calibrator(model_name: str) -> PlattCalibrator:
         return PlattCalibrator(A=-1.1, B=0.1)
 
     return PlattCalibrator()
-

@@ -1,12 +1,13 @@
-from typing import Dict, Any, Optional
+from typing import Dict
 from datetime import datetime
 import uuid
+
 
 class AdapterRegistry:
     """Lightweight registry for optional LoRA adapters in v0.2."""
 
     def __init__(self):
-        self.adapters: Dict[str, Dict] = {}   # adapter_id -> metadata
+        self.adapters: Dict[str, Dict] = {}  # adapter_id -> metadata
 
     def register_adapter(self, name: str, description: str, risk_level: str = "low") -> str:
         """Register a new adapter."""
@@ -18,9 +19,11 @@ class AdapterRegistry:
             "risk_level": risk_level,
             "status": "registered",
             "created_at": datetime.utcnow().isoformat(),
-            "last_used": None
+            "last_used": None,
         }
-        print(f"[AdapterRegistry] Registered adapter '{name}' (ID: {adapter_id}, risk: {risk_level})")
+        print(
+            f"[AdapterRegistry] Registered adapter '{name}' (ID: {adapter_id}, risk: {risk_level})"
+        )
         return adapter_id
 
     def activate_adapter(self, adapter_id: str, lpb_approval: bool = False) -> bool:

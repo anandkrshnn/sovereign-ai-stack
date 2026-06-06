@@ -3,11 +3,11 @@ import hmac
 import hashlib
 import time
 import json
-from typing import Optional, List, Dict
-from jose import jwt, jwk
-from fastapi import Request, HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
+from jose import jwt
+from fastapi import Request, HTTPException
 from sovereign_ai.bridge.schemas import TenantContext
+
 
 class SovereignIdentityHub:
     """
@@ -39,15 +39,17 @@ class SovereignIdentityHub:
         """Dependency to extract authenticated tenant context."""
         auth_header = request.headers.get("Authorization")
         if not auth_header:
-            raise HTTPException(status_code=401, detail="Authentication required (No Default Tenant)")
+            raise HTTPException(
+                status_code=401, detail="Authentication required (No Default Tenant)"
+            )
 
         # 1. Check for Bearer Token (JWT)
         if auth_header.startswith("Bearer "):
             token = auth_header.replace("Bearer ", "")
-            if "sk-sov-" in token: # Handle key as bearer
+            if "sk-sov-" in token:  # Handle key as bearer
                 return self.verify_api_key(token)
             return await self.validate_jwt(token)
-            
+
         raise HTTPException(status_code=401, detail="Invalid Authentication Format")
 
     async def validate_jwt(self, token: str) -> TenantContext:
@@ -55,27 +57,31 @@ class SovereignIdentityHub:
         try:
             # unverified_claims for pilot; in production, use jwk.construct + jwt.decode
             payload = jwt.get_unverified_claims(token)
-            
+
             # --- STRICT CLAIMS CONTRACT ---
             tenant_id = payload.get("tenant_id")
             principal = payload.get("sub")
             issuer = payload.get("iss")
             expiry = payload.get("exp")
-            
+
             if not all([tenant_id, principal, issuer, expiry]):
-                raise HTTPException(status_code=403, detail="Missing mandatory claims: iss, sub, tenant_id, exp")
-            
+                raise HTTPException(
+                    status_code=403, detail="Missing mandatory claims: iss, sub, tenant_id, exp"
+                )
+
             if expiry < time.time():
                 raise HTTPException(status_code=401, detail="Token expired")
-                
+
             if self._is_revoked(tenant_id, principal):
                 raise HTTPException(status_code=403, detail="Principal identity has been revoked")
-                
+
             return TenantContext(
                 tenant_id=tenant_id,
                 principal=principal,
-                scopes=payload.get("scope", "").split(" ") if isinstance(payload.get("scope"), str) else payload.get("scopes", []),
-                is_authenticated=True
+                scopes=payload.get("scope", "").split(" ")
+                if isinstance(payload.get("scope"), str)
+                else payload.get("scopes", []),
+                is_authenticated=True,
             )
         except HTTPException:
             raise
@@ -91,40 +97,32 @@ class SovereignIdentityHub:
             trimmed = key.replace("sk-sov-", "")
             if "." not in trimmed:
                 raise ValueError("Malformed API Key (Missing Signature)")
-                
+
             body, signature = trimmed.rsplit(".", 1)
             if ":" not in body:
                 raise ValueError("Malformed API Key (Missing Tenant:Principal separator)")
-                
+
             tenant_id, principal = body.split(":", 1)
-            
+
             # Verify Signature
             expected_sig = hmac.new(
-                self.master_secret, 
-                f"{tenant_id}:{principal}".encode("utf-8"), 
-                hashlib.sha256
+                self.master_secret, f"{tenant_id}:{principal}".encode("utf-8"), hashlib.sha256
             ).hexdigest()[:16]
-            
+
             if not hmac.compare_digest(signature, expected_sig):
                 raise ValueError("Invalid API Key Signature")
-            
+
             # Check Revocation
             if self._is_revoked(tenant_id, f"sk-sov-{body}", full_key=key):
                 raise ValueError("API Key has been revoked")
-                
-            return TenantContext(
-                tenant_id=tenant_id,
-                principal=principal,
-                is_authenticated=True
-            )
+
+            return TenantContext(tenant_id=tenant_id, principal=principal, is_authenticated=True)
         except Exception as e:
             raise HTTPException(status_code=401, detail=f"API Key Verification Failed: {str(e)}")
 
     def generate_api_key(self, tenant_id: str, principal: str) -> str:
         """Helper for manual provisioning."""
         sig = hmac.new(
-            self.master_secret, 
-            f"{tenant_id}:{principal}".encode("utf-8"), 
-            hashlib.sha256
+            self.master_secret, f"{tenant_id}:{principal}".encode("utf-8"), hashlib.sha256
         ).hexdigest()[:16]
         return f"sk-sov-{tenant_id}:{principal}.{sig}"

@@ -1,15 +1,16 @@
 from datetime import datetime, timezone
-import json
 import hashlib
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 from .schemas import EvidenceType, AttestationQuote
+
 
 class EvidenceBundle(BaseModel):
     """
     The formal IETF RATS Evidence bundle for a Merkle Checkpoint.
     Binds forensic audit state to a hardware-attested execution environment.
     """
+
     version: str = "1.0"
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     nonce: str = Field(..., min_length=32, description="Anti-replay nonce (freshness)")
@@ -17,12 +18,13 @@ class EvidenceBundle(BaseModel):
     quote: Optional[AttestationQuote] = None
     bundle_signature: str = Field(..., description="Signature over the full bundle (Attester Key)")
 
+
 class AttestationVerifier:
     """
     Verifies EvidenceBundles against trusted Reference Values (Endorsements).
     Supports multiple evidence types: MOCK_SIM, TPM2_QUOTE.
     """
-    
+
     def __init__(self, reference_values: Dict[str, str]):
         self.reference_values = reference_values
 
@@ -37,9 +39,9 @@ class AttestationVerifier:
                 "nonce_fresh": False,
                 "measurements_valid": False,
                 "signature_valid": False,
-                "structure_valid": False
+                "structure_valid": False,
             },
-            "errors": []
+            "errors": [],
         }
 
         if not bundle.quote:
@@ -71,7 +73,7 @@ class AttestationVerifier:
         import base64
 
         quote = bundle.quote
-        
+
         # 1. Structural Validation
         if quote.quote_data and quote.signature:
             results["checks"]["structure_valid"] = True
@@ -82,7 +84,7 @@ class AttestationVerifier:
         # 2. Measurement Validation (PCR Check)
         try:
             quote_bytes = base64.b64decode(quote.quote_data)
-            
+
             # Parse the binary TPMS_ATTEST structure (standardized TPM 2.0 format)
             # Format: magic (4B) | type (2B) | qualifiedSigner (2B+len) | extraData/nonce (2B+len) | ...
             # TPM_GENERATED_VALUE = 0xff544347 (Magic constant: "\xffTCG")
@@ -103,18 +105,22 @@ class AttestationVerifier:
                 return
 
             nonce_offset = 8 + signer_len
-            nonce_len = int.from_bytes(quote_bytes[nonce_offset:nonce_offset+2], byteorder="big")
+            nonce_len = int.from_bytes(
+                quote_bytes[nonce_offset : nonce_offset + 2], byteorder="big"
+            )
             if len(quote_bytes) < nonce_offset + 2 + nonce_len:
                 results["errors"].append("TPM quote format too short for nonce challenge.")
                 return
 
-            attested_nonce = quote_bytes[nonce_offset+2 : nonce_offset+2+nonce_len]
+            attested_nonce = quote_bytes[nonce_offset + 2 : nonce_offset + 2 + nonce_len]
 
             # Enforce strict challenge binding:
             # The TPM-attested extraData MUST be cryptographically bound to our challenge nonce
             expected_challenge_bytes = bundle.nonce.encode("utf-8")
             if attested_nonce != expected_challenge_bytes:
-                results["errors"].append("Replay attempt detected: TPM-attested nonce challenge mismatch.")
+                results["errors"].append(
+                    "Replay attempt detected: TPM-attested nonce challenge mismatch."
+                )
                 return
 
             # Verify reported runtime measurement matches reference integrity manifest
@@ -138,7 +144,7 @@ class AttestationVerifier:
                 return
 
             public_key = serialization.load_pem_public_key(aik_pem.encode())
-            
+
             # Prepare the data that was signed (the quote_data/TPM2B_ATTEST)
             # Note: In a real TPM quote, the quote_data includes the nonce and Merkle Root.
             quote_bytes = base64.b64decode(quote.quote_data)
@@ -149,15 +155,14 @@ class AttestationVerifier:
                     signature_bytes,
                     quote_bytes,
                     padding.PSS(
-                        mgf=padding.MGF1(hashes.SHA256()),
-                        salt_length=padding.PSS.MAX_LENGTH
+                        mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
                     ),
-                    hashes.SHA256()
+                    hashes.SHA256(),
                 )
                 results["checks"]["signature_valid"] = True
             else:
                 results["errors"].append("AIK key type mismatch: Expected RSA.")
-                
+
         except Exception as e:
             results["errors"].append(f"TPM Signature Verification Failed: {str(e)}")
 
@@ -166,26 +171,26 @@ class AttestationVerifier:
         Validation logic for simulator-based evidence.
         Uses a simpler but still cryptographic check.
         """
-        import hashlib
         quote = bundle.quote
         results["checks"]["structure_valid"] = True
-        
+
         # In the simulator, quote_data is sha256(nonce)
         expected_quote_data = hashlib.sha256(bundle.nonce.encode()).hexdigest()
         if quote.quote_data == expected_quote_data:
             results["checks"]["signature_valid"] = True
         else:
             results["errors"].append("Simulator quote data mismatch (nonce binding failed).")
-            
+
         if quote.runtime_measurement == self.reference_values.get("app_hash"):
             results["checks"]["measurements_valid"] = True
         else:
-            results["errors"].append(f"Simulator measurement mismatch.")
+            results["errors"].append("Simulator measurement mismatch.")
+
 
 if __name__ == "__main__":
     ref_values = {"app_hash": "sha256_gold_v1"}
     verifier = AttestationVerifier(ref_values)
-    
+
     # 1. Test Mock Quote
     print("--- Testing Mock Quote ---")
     mock_quote = AttestationQuote(
@@ -194,13 +199,13 @@ if __name__ == "__main__":
         pcr_values={0: "bios", 11: "sha256_gold_v1"},
         firmware_version="Sim_v1",
         runtime_measurement="sha256_gold_v1",
-        signature="sim_sig"
+        signature="sim_sig",
     )
     mock_bundle = EvidenceBundle(
         nonce="nonce_challenge_must_be_32_chars_long_1",
         merkle_root="0x123",
         quote=mock_quote,
-        bundle_signature="sig1"
+        bundle_signature="sig1",
     )
     print(verifier.verify_bundle(mock_bundle, mock_bundle.nonce))
 
@@ -212,12 +217,12 @@ if __name__ == "__main__":
         pcr_values={0: "bios", 11: "sha256_gold_v1"},
         firmware_version="TPM_v2.0",
         runtime_measurement="sha256_gold_v1",
-        signature="aik_sig"
+        signature="aik_sig",
     )
     tpm_bundle = EvidenceBundle(
         nonce="nonce_challenge_must_be_32_chars_long_2",
         merkle_root="0x456",
         quote=tpm_quote,
-        bundle_signature="sig2"
+        bundle_signature="sig2",
     )
     print(verifier.verify_bundle(tpm_bundle, tpm_bundle.nonce))

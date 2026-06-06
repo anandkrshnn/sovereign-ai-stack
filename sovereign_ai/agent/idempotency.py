@@ -1,14 +1,15 @@
 import sqlite3
-import json
 from pathlib import Path
 from typing import Optional
 from datetime import datetime, timezone, timedelta
+
 
 class PersistentIdempotencyStore:
     """
     SQLite-backed idempotency store to ensure safety across restarts.
     Used for HIGH and HALT risk actions in the Sovereign AI Stack.
     """
+
     def __init__(self, db_path: str, ttl_seconds: int = 3600):
         self.db_path = Path(db_path)
         self.ttl_seconds = ttl_seconds
@@ -31,8 +32,8 @@ class PersistentIdempotencyStore:
         self._cleanup()
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
-                "SELECT status FROM idempotency WHERE idem_key = ? AND expires_at > ?", 
-                (idem_key, datetime.now(timezone.utc).isoformat())
+                "SELECT status FROM idempotency WHERE idem_key = ? AND expires_at > ?",
+                (idem_key, datetime.now(timezone.utc).isoformat()),
             )
             row = cursor.fetchone()
             return row[0] if row else None
@@ -41,12 +42,18 @@ class PersistentIdempotencyStore:
         now = datetime.now(timezone.utc)
         expires = now + timedelta(seconds=self.ttl_seconds)
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO idempotency (idem_key, status, created_at, expires_at)
                 VALUES (?, ?, ?, ?)
-            """, (idem_key, status, now.isoformat(), expires.isoformat()))
+            """,
+                (idem_key, status, now.isoformat(), expires.isoformat()),
+            )
 
     def _cleanup(self):
         """Remove expired entries."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("DELETE FROM idempotency WHERE expires_at < ?", (datetime.now(timezone.utc).isoformat(),))
+            conn.execute(
+                "DELETE FROM idempotency WHERE expires_at < ?",
+                (datetime.now(timezone.utc).isoformat(),),
+            )

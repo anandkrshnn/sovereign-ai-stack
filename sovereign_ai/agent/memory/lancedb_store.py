@@ -6,6 +6,7 @@ import uuid
 import json
 from typing import Dict, Any, List
 
+
 class LanceDBStore:
     """Immutable episodic log using LanceDB as canonical storage, featuring Vault Encryption."""
 
@@ -13,7 +14,7 @@ class LanceDBStore:
         self.db_path = Path(db_path).resolve()
         self.db_path.mkdir(parents=True, exist_ok=True)
         self.key_manager = key_manager
-        
+
         self.db = None
         self.episodes = None
 
@@ -21,46 +22,48 @@ class LanceDBStore:
         if self.db is not None:
             return
 
-        import lancedb
-        import pyarrow as pa
         self.db = lancedb.connect(str(self.db_path))
 
         # 1. Episodes Table (Canonical Event Log)
         if "episodes" not in self.db.table_names():
-            schema = pa.schema([
-                ("episode_id", pa.string()),
-                ("session_id", pa.string()),
-                ("user_id", pa.string()),
-                ("event_ts", pa.timestamp('us')),
-                ("event_type", pa.string()),
-                ("actor", pa.string()),
-                ("content_text", pa.string()),
-                ("content_json", pa.string()),      # JSON serialized as string
-                ("tool_name", pa.string()),
-                ("resource_ref", pa.string()),
-                ("sensitivity_label", pa.string()),
-                ("provenance", pa.string()),        # JSON string for provenance
-                ("created_at", pa.timestamp('us')),
-            ])
+            schema = pa.schema(
+                [
+                    ("episode_id", pa.string()),
+                    ("session_id", pa.string()),
+                    ("user_id", pa.string()),
+                    ("event_ts", pa.timestamp("us")),
+                    ("event_type", pa.string()),
+                    ("actor", pa.string()),
+                    ("content_text", pa.string()),
+                    ("content_json", pa.string()),  # JSON serialized as string
+                    ("tool_name", pa.string()),
+                    ("resource_ref", pa.string()),
+                    ("sensitivity_label", pa.string()),
+                    ("provenance", pa.string()),  # JSON string for provenance
+                    ("created_at", pa.timestamp("us")),
+                ]
+            )
             self.db.create_table("episodes", schema=schema)
         self.episodes = self.db.open_table("episodes")
 
         # 2. Memory Items Table (Governed Fact Store)
         if "memory_items" not in self.db.table_names():
-            schema = pa.schema([
-                ("memory_id", pa.string()),
-                ("body", pa.string()),
-                ("memory_type", pa.string()),      # preference, fact, task, secret
-                ("sensitivity", pa.string()),      # High, Medium, Low
-                ("confidence", pa.float32()),
-                ("status", pa.string()),           # candidate, approved, rejected
-                ("source_episode_id", pa.string()),
-                ("source_trace_id", pa.string()),
-                ("trust_score", pa.float32()),
-                ("vector", pa.list_(pa.float32(), 384)),
-                ("metadata_json", pa.string()),
-                ("created_at", pa.timestamp('us')),
-            ])
+            schema = pa.schema(
+                [
+                    ("memory_id", pa.string()),
+                    ("body", pa.string()),
+                    ("memory_type", pa.string()),  # preference, fact, task, secret
+                    ("sensitivity", pa.string()),  # High, Medium, Low
+                    ("confidence", pa.float32()),
+                    ("status", pa.string()),  # candidate, approved, rejected
+                    ("source_episode_id", pa.string()),
+                    ("source_trace_id", pa.string()),
+                    ("trust_score", pa.float32()),
+                    ("vector", pa.list_(pa.float32(), 384)),
+                    ("metadata_json", pa.string()),
+                    ("created_at", pa.timestamp("us")),
+                ]
+            )
             self.db.create_table("memory_items", schema=schema)
         self.memory_items = self.db.open_table("memory_items")
 
@@ -104,7 +107,7 @@ class LanceDBStore:
     def promote_memory(self, item: Dict[str, Any], vector: List[float]):
         """Store a distilled memory item in LanceDB with vector embedding."""
         self._lazy_init()
-        
+
         record = {
             "memory_id": item.get("memory_id", str(uuid.uuid4())),
             "body": self._encrypt(item.get("body", "")),
@@ -119,7 +122,7 @@ class LanceDBStore:
             "metadata_json": self._encrypt(json.dumps(item.get("metadata", {}))),
             "created_at": datetime.utcnow(),
         }
-        
+
         self.memory_items.add([record])
 
     def get_memory_items(self, status: str = None) -> List[Dict]:
@@ -130,7 +133,7 @@ class LanceDBStore:
             results = query.where(f"status = '{status}'").to_list()
         else:
             results = query.to_list()
-            
+
         for r in results:
             r["body"] = self._decrypt(r.get("body", ""))
             r["metadata"] = json.loads(self._decrypt(r.get("metadata_json", "{}")))
@@ -139,10 +142,7 @@ class LanceDBStore:
     def update_memory_status(self, memory_id: str, new_status: str):
         """Update the status of a memory item (e.g. approve or reject)."""
         self._lazy_init()
-        self.memory_items.update(
-            where=f"memory_id = '{memory_id}'",
-            values={"status": new_status}
-        )
+        self.memory_items.update(where=f"memory_id = '{memory_id}'", values={"status": new_status})
 
     def delete_memory_item(self, memory_id: str):
         """Permanently forget a memory item."""

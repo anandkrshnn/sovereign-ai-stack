@@ -5,12 +5,14 @@ from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 
+
 class WindowsTPMAnchor(SecureAnchor):
     """
     Windows-specific TPM 2.0 anchor.
     Structural implementation for Windows TPM Services.
     Uses a transient RSA key for mock signing in research-preview mode.
     """
+
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
         # Generate a transient key for mock signing
@@ -19,11 +21,8 @@ class WindowsTPMAnchor(SecureAnchor):
     def sign_payload(self, payload: bytes) -> bytes:
         return self._key.sign(
             payload,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
-            ),
-            hashes.SHA256()
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            hashes.SHA256(),
         )
 
     def get_public_key(self) -> Any:
@@ -32,7 +31,7 @@ class WindowsTPMAnchor(SecureAnchor):
     def get_public_key_pem(self) -> bytes:
         return self._key.public_key().public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
     def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
@@ -40,10 +39,10 @@ class WindowsTPMAnchor(SecureAnchor):
         return AttestationQuote(
             type=EvidenceType.TPM2_QUOTE,
             quote_data="win_tpm_quote_placeholder",
-            pcr_values={p: "00"*32 for p in pcrs},
+            pcr_values={p: "00" * 32 for p in pcrs},
             firmware_version="Windows_TPM_v2.0",
             runtime_measurement=hashlib.sha256(b"windows").hexdigest(),
-            signature="win_aik_sig"
+            signature="win_aik_sig",
         )
 
     def get_signing_algorithm(self) -> SigningAlgorithm:
@@ -54,10 +53,8 @@ class WindowsTPMAnchor(SecureAnchor):
         return self._key.public_key().encrypt(
             plaintext_key,
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
+                mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None
+            ),
         )
 
     def unseal_key(self, sealed_key: bytes) -> bytes:
@@ -65,21 +62,20 @@ class WindowsTPMAnchor(SecureAnchor):
         return self._key.decrypt(
             sealed_key,
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
+                mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None
+            ),
         )
 
     def get_status(self) -> dict:
         return {
             "type": self.__class__.__name__,
             "available": True,
-            "details": "Simulated/Mock (Transient RSA Key)"
+            "details": "Simulated/Mock (Transient RSA Key)",
         }
 
     @property
     def is_hardware(self) -> bool:
         return False
+
 
 __all__ = ["WindowsTPMAnchor"]

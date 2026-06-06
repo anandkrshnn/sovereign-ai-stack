@@ -4,6 +4,7 @@ import re
 import requests
 from typing import Tuple, Optional, Dict, List
 
+
 class OllamaClient:
     """Ollama client with proper system prompt support"""
 
@@ -15,17 +16,19 @@ class OllamaClient:
         """Simple text generation"""
         return self._call(prompt, temperature=temperature, system=None)
 
-    def generate_structured(self, prompt: str, system: Optional[str] = None, temperature: float = 0.1) -> Tuple[str, Optional[Dict]]:
+    def generate_structured(
+        self, prompt: str, system: Optional[str] = None, temperature: float = 0.1
+    ) -> Tuple[str, Optional[Dict]]:
         """Generate with optional system prompt and attempt to parse JSON"""
         response = self._call(prompt, temperature=temperature, system=system)
-        
+
         # Try to extract JSON
         try:
             parsed = json.loads(response)
             return response, parsed
         except json.JSONDecodeError:
             # Fallback regex extraction
-            match = re.search(r'\{[\s\S]*\}', response)
+            match = re.search(r"\{[\s\S]*\}", response)
             if match:
                 try:
                     parsed = json.loads(match.group())
@@ -52,7 +55,7 @@ class OllamaClient:
             "model": self.model,
             "messages": messages,
             "stream": False,
-            "options": {"temperature": temperature}
+            "options": {"temperature": temperature},
         }
 
         try:

@@ -1,18 +1,18 @@
 import hmac
 import hashlib
 import time
-import json
-from typing import Dict, Any, Optional
+from typing import Dict
 from sovereign_ai.agent.config import Config
+
 
 class BridgeSecurityManager:
     """
     Handles HMAC-SHA256 signature verification and replay protection for the Bridge ingress.
     """
-    
+
     def __init__(self, secret: str = None):
         self.secret = secret or Config.default().bridge_secret
-        self.processed_signatures = set() # Volatile cache for replay protection (per session)
+        self.processed_signatures = set()  # Volatile cache for replay protection (per session)
         self.max_age_seconds = 30
 
     def verify_request(self, payload: str, signature: str, timestamp: str) -> bool:
@@ -28,7 +28,7 @@ class BridgeSecurityManager:
         try:
             ts_float = float(timestamp)
             current_ts = time.time()
-            
+
             # 1. Age check
             if abs(current_ts - ts_float) > self.max_age_seconds:
                 print(f"[Bridge] REJECTED: Request too old (Age: {current_ts - ts_float:.1f}s)")
@@ -40,11 +40,9 @@ class BridgeSecurityManager:
                 return False
 
             # 3. Signature check
-            message = f"{timestamp}{payload}".encode('utf-8')
+            message = f"{timestamp}{payload}".encode("utf-8")
             expected_signature = hmac.new(
-                self.secret.encode('utf-8'),
-                message,
-                hashlib.sha256
+                self.secret.encode("utf-8"), message, hashlib.sha256
             ).hexdigest()
 
             if hmac.compare_digest(expected_signature, signature):
@@ -53,23 +51,20 @@ class BridgeSecurityManager:
                 if len(self.processed_signatures) > 1000:
                     self.processed_signatures.clear()
                 return True
-            
-            print(f"[Bridge] REJECTED: Invalid signature")
+
+            print("[Bridge] REJECTED: Invalid signature")
             return False
-            
+
         except (ValueError, TypeError) as e:
             print(f"[Bridge] REJECTED: Invalid timestamp format ({e})")
             return False
+
 
 def sign_payload(payload: str, secret: str, timestamp: float = None) -> Dict[str, str]:
     """Helper for testing and client implementation."""
     if timestamp is None:
         timestamp = time.time()
     ts_str = str(timestamp)
-    message = f"{ts_str}{payload}".encode('utf-8')
-    signature = hmac.new(
-        secret.encode('utf-8'),
-        message,
-        hashlib.sha256
-    ).hexdigest()
+    message = f"{ts_str}{payload}".encode("utf-8")
+    signature = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
     return {"signature": signature, "timestamp": ts_str}

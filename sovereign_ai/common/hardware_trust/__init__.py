@@ -9,6 +9,7 @@ from .legacy import LegacyRawAnchor
 
 logger = logging.getLogger("hardware_trust")
 
+
 def get_secure_anchor(tenant_id: str, backend: str = "auto") -> SecureAnchor:
     """
     Hardware Abstraction Factory.
@@ -16,7 +17,7 @@ def get_secure_anchor(tenant_id: str, backend: str = "auto") -> SecureAnchor:
     """
     if backend == "mock":
         return SoftwareSimulatorAnchor(tenant_id)
-    
+
     if backend == "tpm2_linux" or (backend == "auto" and sys.platform == "linux"):
         if HAS_PYTSS:
             try:
@@ -39,11 +40,12 @@ def get_secure_anchor(tenant_id: str, backend: str = "auto") -> SecureAnchor:
     logger.debug(f"Using Software Simulator anchor for tenant {tenant_id}")
     return SoftwareSimulatorAnchor(tenant_id)
 
+
 __all__ = [
     "SecureAnchor",
     "SoftwareSimulatorAnchor",
     "WindowsTPMAnchor",
     "TPM2LinuxAnchor",
     "LegacyRawAnchor",
-    "get_secure_anchor"
+    "get_secure_anchor",
 ]

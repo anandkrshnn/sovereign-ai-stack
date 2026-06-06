@@ -5,22 +5,24 @@ from sovereign_ai.policy.evaluator_orchestrator import EvaluatorOrchestrator
 
 logger = logging.getLogger(__name__)
 
+
 class PTVBridge:
     """
     Bridge connecting the Prove-Transform-Verify (PTV) protocol and TPM 2.0 attestation
-    with the Evaluator Orchestrator. Ensures that only mathematically verifiable and 
+    with the Evaluator Orchestrator. Ensures that only mathematically verifiable and
     hardware-attested agents can propose knowledge updates.
     """
+
     def __init__(self, brain: EvaluatorOrchestrator):
         self.brain = brain
 
     def verify_ptv_and_propose(
-        self, 
-        event: KnowledgeEvent, 
-        groth16_proof: str, 
+        self,
+        event: KnowledgeEvent,
+        groth16_proof: str,
         tpm_attestation: str,
         public_key_hex: str,
-        private_key_hex: Optional[str] = None
+        private_key_hex: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         1. Verifies the PTV Groth16 proof and TPM attestation.
@@ -29,15 +31,23 @@ class PTVBridge:
         """
         logger.info("Initiating PTV Bridge validation for event: %s", event.event_id)
 
-        # In a full hardware-rooted implementation, this would call out to 
+        # In a full hardware-rooted implementation, this would call out to
         # the zk-agent-attestation bindings or a local TPM 2.0 interface.
         if not self._verify_groth16_proof(groth16_proof):
             logger.error("PTV Groth16 proof verification failed.")
-            return {"status": "REJECT", "reason": "Invalid PTV Groth16 Proof", "event_id": event.event_id}
+            return {
+                "status": "REJECT",
+                "reason": "Invalid PTV Groth16 Proof",
+                "event_id": event.event_id,
+            }
 
         if not self._verify_tpm_attestation(tpm_attestation):
             logger.error("TPM 2.0 hardware attestation failed.")
-            return {"status": "REJECT", "reason": "Invalid TPM Attestation", "event_id": event.event_id}
+            return {
+                "status": "REJECT",
+                "reason": "Invalid TPM Attestation",
+                "event_id": event.event_id,
+            }
 
         # The EvaluatorOrchestrator is updated to enforce that `ptv_validated = True`
         event.metadata["ptv_validated"] = True
@@ -47,9 +57,11 @@ class PTVBridge:
         if private_key_hex:
             event.sign_event(private_key_hex)
         elif not event.signature:
-            logger.error("Event lacks an Ed25519 signature and no private key was provided to sign it.")
+            logger.error(
+                "Event lacks an Ed25519 signature and no private key was provided to sign it."
+            )
             return {"status": "REJECT", "reason": "Missing Signature", "event_id": event.event_id}
-        
+
         return self.brain.propose_update(event, public_key_hex, ptv_validated=True)
 
     def _verify_groth16_proof(self, proof: str) -> bool:

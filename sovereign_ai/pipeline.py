@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Union, Dict, Any, AsyncGenerator
-from .rag.main import AsyncLocalRAG, LocalRAG
+from typing import List, Optional, Union, AsyncGenerator
+from .rag.main import AsyncLocalRAG
 from .rag.schemas import RAGResponse, Document
+
 
 @dataclass
 class Config:
     """Normalized configuration for the Sovereign AI Stack v1.1.0a2."""
+
     db_path: str = "sovereign.db"
     policy_path: Optional[str] = None
     principal: str = "anonymous"
@@ -20,19 +22,19 @@ class Config:
     use_cache: bool = True
     cache_dir: str = ".cache"
     fail_closed: bool = True  # GA principle: default to safety
-    
+
     # [local-verify integration]
     enable_verification: bool = False
     grounding_threshold: float = 0.85
     faithfulness_threshold: float = 0.90
-    
+
     # [Policy Integrity]
     trusted_policy_key: Optional[str] = None
     strict_policy: bool = False
-    
+
     # [Hardware Attestation]
     enable_attestation: bool = False
-    
+
     # [Remote Attestation Enforcement]
     remote_verifier_url: Optional[str] = None
     require_remote_attestation: bool = False
@@ -41,24 +43,28 @@ class Config:
     isolated_verifier_url: Optional[str] = None
     isolated_verifier_key: Optional[str] = "sovereign_trust_preview_2026"
 
+
 class SovereignPipeline:
     """
     Sovereign AI Stack Pipeline Facade (v1.1.0a2).
-    
+
     A stable public interface that orchestrates:
     1. Retrieval (sovereign-ai rag)
     2. Governance (sovereign-ai rag.policy)
     3. Verification (local-verify)
     """
+
     def __init__(self, config: Config):
         self.config = config
         # [Phase 3] Instantiate anchor via factory for cross-platform hardware trust
         from .common.hardware_trust import get_secure_anchor
+
         self.anchor = get_secure_anchor(config.tenant_id)
 
         # Mandatory Remote Attestation Gate (v0.1.0a5)
         if config.require_remote_attestation:
             import logging
+
             logging.getLogger(__name__).warning(
                 "require_remote_attestation is True. You MUST call `await pipeline.initialize()` before use."
             )
@@ -71,6 +77,7 @@ class SovereignPipeline:
             else:
                 try:
                     from .verify.evaluator import SovereignEvaluator
+
                     self._evaluator = SovereignEvaluator()
                 except ImportError:
                     print("Warning: local-verify components not found. Verification disabled.")
@@ -93,7 +100,7 @@ class SovereignPipeline:
             strict_policy=config.strict_policy,
             anchor=self.anchor,
             attest=config.enable_attestation,
-            enable_verification=config.enable_verification and not self._use_remote_evaluator
+            enable_verification=config.enable_verification and not self._use_remote_evaluator,
         )
 
     async def initialize(self):
@@ -102,7 +109,10 @@ class SovereignPipeline:
         """
         import os
         from .common.schemas import SecurityHalt
-        if os.getenv("SOVEREIGN_ENV") == "production" and not getattr(self.anchor, "is_hardware", False):
+
+        if os.getenv("SOVEREIGN_ENV") == "production" and not getattr(
+            self.anchor, "is_hardware", False
+        ):
             raise SecurityHalt("TPM Simulator forbidden in production. Require real hardware.")
 
         if self.config.require_remote_attestation:
@@ -115,64 +125,73 @@ class SovereignPipeline:
         """
         if not self.config.remote_verifier_url:
             from .common.schemas import SecurityHalt
-            raise SecurityHalt("remote_verifier_url required when require_remote_attestation is True")
+
+            raise SecurityHalt(
+                "remote_verifier_url required when require_remote_attestation is True"
+            )
 
         import httpx
         import uuid
         from .common.schemas import SecurityHalt
-        
+
         nonce = str(uuid.uuid4())
         quote = self.anchor.generate_quote(nonce=nonce, pcrs=[0, 11])
-        
+
         payload = {
             "tenant_id": self.config.tenant_id,
             "nonce": nonce,
-            "evidence": quote.model_dump()
+            "evidence": quote.model_dump(),
         }
-        
+
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.post(
                     f"{self.config.remote_verifier_url}/verify/v1/attest",
                     json=payload,
-                    timeout=10.0
+                    timeout=10.0,
                 )
-                
+
                 if resp.status_code != 200:
                     raise SecurityHalt(f"Remote Attestation Rejected: {resp.text}")
-                
+
                 result = resp.json()
                 if not result.get("success"):
                     raise SecurityHalt(f"Remote Attestation Failed: {result.get('message')}")
-                
+
                 print(f"DEBUG: Remote Attestation Verified by {self.config.remote_verifier_url}")
-                
+
         except httpx.RequestError as e:
             if self.config.fail_closed:
                 raise SecurityHalt(f"Verifier Unreachable: {e}")
             else:
-                print(f"Warning: Verifier unreachable, but fail_closed=False. Proceeding with caution.")
+                print(
+                    "Warning: Verifier unreachable, but fail_closed=False. Proceeding with caution."
+                )
 
-    async def ask(self, query: str, intent: str = "general", top_k: int = 5, stream: bool = False) -> Union[RAGResponse, AsyncGenerator[str, None]]:
+    async def ask(
+        self, query: str, intent: str = "general", top_k: int = 5, stream: bool = False
+    ) -> Union[RAGResponse, AsyncGenerator[str, None]]:
         """
         Execute a governed RAG query via the underlying engine.
         """
         res = await self._engine.ask(query, intent=intent, top_k=top_k, stream=stream)
-        
+
         # Post-generation Verification
         if (self._evaluator or self._use_remote_evaluator) and not stream:
             # Construct context string for grounding check
             if not res.sources:
-                eval_res = {"grounding_score": 0.0, "faithfulness_score": 0.0, "overall_score": 0.0, "passed": False}
+                eval_res = {
+                    "grounding_score": 0.0,
+                    "faithfulness_score": 0.0,
+                    "overall_score": 0.0,
+                    "passed": False,
+                }
             else:
                 context = "\n\n".join([s.text for s in res.sources])
                 if self._use_remote_evaluator:
                     import httpx
-                    payload = {
-                        "query": query,
-                        "context": context,
-                        "answer": res.answer
-                    }
+
+                    payload = {"query": query, "context": context, "answer": res.answer}
                     headers = {"X-API-Key": self.config.isolated_verifier_key or ""}
                     try:
                         async with httpx.AsyncClient() as client:
@@ -180,29 +199,43 @@ class SovereignPipeline:
                                 f"{self.config.isolated_verifier_url}/verify/nli",
                                 json=payload,
                                 headers=headers,
-                                timeout=10.0
+                                timeout=10.0,
                             )
                             if resp.status_code == 200:
                                 eval_res = resp.json()
                             else:
-                                eval_res = {"grounding_score": 0.0, "faithfulness_score": 0.0, "overall_score": 0.0, "passed": False, "error": f"HTTP {resp.status_code}"}
+                                eval_res = {
+                                    "grounding_score": 0.0,
+                                    "faithfulness_score": 0.0,
+                                    "overall_score": 0.0,
+                                    "passed": False,
+                                    "error": f"HTTP {resp.status_code}",
+                                }
                     except Exception as e:
-                        eval_res = {"grounding_score": 0.0, "faithfulness_score": 0.0, "overall_score": 0.0, "passed": False, "error": str(e)}
+                        eval_res = {
+                            "grounding_score": 0.0,
+                            "faithfulness_score": 0.0,
+                            "overall_score": 0.0,
+                            "passed": False,
+                            "error": str(e),
+                        }
                 else:
                     # Using SovereignEvaluator evaluate_with_threshold logic natively
                     try:
                         # Assuming threshold logic exists now
-                        eval_res = await self._evaluator.evaluate_with_threshold_async(query, context, res.answer, threshold=self.config.grounding_threshold)
+                        eval_res = await self._evaluator.evaluate_with_threshold_async(
+                            query, context, res.answer, threshold=self.config.grounding_threshold
+                        )
                     except AttributeError:
                         eval_res = await self._evaluator.evaluate_async(query, context, res.answer)
-            
+
             # Staple evaluation to result metadata
             res.metadata["verification"] = eval_res
-            
+
             if not eval_res["passed"] and self.config.fail_closed:
                 res.answer = "[Sovereign Access Denied] Answer failed grounding verification (hallucination risk)."
-                res.sources = [] # Remove sources to prevent leaked misinformation
-        
+                res.sources = []  # Remove sources to prevent leaked misinformation
+
         return res
 
     async def ingest(self, docs: List[Document], chunk_size: int = 1000, chunk_overlap: int = 200):
@@ -221,4 +254,6 @@ class SovereignPipeline:
         await self._engine.close()
 
     def __repr__(self):
-        return f"<SovereignPipeline tenant={self.config.tenant_id} principal={self.config.principal}>"
+        return (
+            f"<SovereignPipeline tenant={self.config.tenant_id} principal={self.config.principal}>"
+        )

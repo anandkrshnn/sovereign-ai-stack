@@ -1,18 +1,15 @@
-import os
-import logging
-import hashlib
 from abc import ABC, abstractmethod
-from typing import Optional, Any, List, Union
-from cryptography.hazmat.primitives.asymmetric import ed25519, ec
-from cryptography.hazmat.primitives import serialization, hashes
+from typing import Any, List
 
-from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
+from ..schemas import SigningAlgorithm, AttestationQuote
+
 
 class SecureAnchor(ABC):
     """
     Abstract Base Class for hardware-anchored trust.
     Phase 3: Hardware-Native Abstraction.
     """
+
     @abstractmethod
     def sign_payload(self, payload: bytes) -> bytes:
         """Signs a payload using the anchor's private key."""
@@ -72,10 +69,7 @@ class SecureAnchor(ABC):
 
     def get_status(self) -> dict:
         """Returns a diagnostic status of the anchor."""
-        return {
-            "type": self.__class__.__name__,
-            "available": True,
-            "details": "Active"
-        }
+        return {"type": self.__class__.__name__, "available": True, "details": "Active"}
+
 
 __all__ = ["SecureAnchor"]

@@ -7,6 +7,7 @@ from datetime import datetime
 import fnmatch
 import copy
 
+
 @dataclass
 class PolicyRule:
     rule_id: str
@@ -23,6 +24,7 @@ class PolicyRule:
     source: str = "manual"
     approval_count: int = 0
     history: List[Dict] = field(default_factory=list)  # version history
+
 
 class PolicyEngine:
     """Advanced policy engine with persistent trust patterns and deterministic matching."""
@@ -44,8 +46,9 @@ class PolicyEngine:
             if self.key_manager and self.key_manager.is_encrypted():
                 raw = self.key_manager.decrypt(raw)
             data = json.loads(raw)
-            
+
             from dataclasses import fields
+
             valid_fields = {f.name for f in fields(PolicyRule)}
 
             # Load active rules
@@ -63,24 +66,26 @@ class PolicyEngine:
 
             # Load allowlist
             self.allowlist = data.get("allowlist", [])
-                    
+
         except Exception as e:
             print(f"[PolicyEngine] Error loading policies: {e}")
 
     def _save_policies(self):
-        print(f"[PolicyEngine] Saving {len(self.active_rules)} active and {len(self.candidate_rules)} candidate rules to {self.policies_path}")
+        print(
+            f"[PolicyEngine] Saving {len(self.active_rules)} active and {len(self.candidate_rules)} candidate rules to {self.policies_path}"
+        )
         print(f"[PolicyEngine] File exists before save: {self.policies_path.exists()}")
-        
+
         data = {
             "active": {rid: asdict(r) for rid, r in self.active_rules.items()},
             "candidates": {rid: asdict(r) for rid, r in self.candidate_rules.items()},
-            "allowlist": self.allowlist
+            "allowlist": self.allowlist,
         }
-        
+
         raw = json.dumps(data, indent=2)
         if self.key_manager and self.key_manager.is_encrypted():
             raw = self.key_manager.encrypt(raw)
-            
+
         self.policies_path.write_text(raw, encoding="utf-8")
         print(f"[PolicyEngine] File exists after save: {self.policies_path.exists()}")
         if self.policies_path.exists():
@@ -89,7 +94,7 @@ class PolicyEngine:
     def match(self, intent: str, resource: str) -> Optional[Dict]:
         """
         Return the highest precedence matching rule.
-        Logic: 
+        Logic:
         1. Specificity (longest pattern first)
         2. Deny beats Allow on same specificity.
         """
@@ -103,14 +108,18 @@ class PolicyEngine:
             return None
 
         # Sort by specificity (longer pattern = more specific)
-        matching.sort(key=lambda r: (
-            -len(r.resource_pattern), 
-            0 if r.effect == "deny" else 1
-        ))
+        matching.sort(key=lambda r: (-len(r.resource_pattern), 0 if r.effect == "deny" else 1))
 
         return asdict(matching[0])
 
-    def create_active_rule(self, intent: str, resource_pattern: str, description: str, effect: str = "allow", source: str = "manual") -> str:
+    def create_active_rule(
+        self,
+        intent: str,
+        resource_pattern: str,
+        description: str,
+        effect: str = "allow",
+        source: str = "manual",
+    ) -> str:
         rule_id = str(uuid.uuid4())
         rule = PolicyRule(
             rule_id=rule_id,
@@ -120,12 +129,14 @@ class PolicyEngine:
             requires_confirmation=False,
             status="active",
             description=description,
-            source=source
+            source=source,
         )
         self.active_rules[rule_id] = rule
         self._record_history(rule_id, asdict(rule))
         self._save_policies()
-        print(f"[PolicyEngine] PERSISTED ACTIVE rule {rule_id} ({effect.upper()}) for '{intent}' on '{resource_pattern}'")
+        print(
+            f"[PolicyEngine] PERSISTED ACTIVE rule {rule_id} ({effect.upper()}) for '{intent}' on '{resource_pattern}'"
+        )
         return rule_id
 
     def create_candidate_rule(self, intent: str, resource_pattern: str, reason: str = "") -> str:
@@ -137,7 +148,7 @@ class PolicyEngine:
             requires_confirmation=True,
             status="candidate",
             description=reason,
-            source="auto"
+            source="auto",
         )
         self.candidate_rules[rule_id] = rule
         self._save_policies()
@@ -167,16 +178,16 @@ class PolicyEngine:
         if rule_id not in self.active_rules:
             return False
         rule = self.active_rules[rule_id]
-        
+
         # history is a list of dicts. version is internal to the dict.
         target_v = next((v for v in rule.history if v.get("version") == version), None)
         if not target_v:
             return False
-            
+
         # Restore state (excluding history itself to avoid duplicates if not handled)
         # Actually simplified: deepcopy the historical version and update its own version counter for the new head state.
         new_v_counter = max([v.get("version", 0) for v in rule.history]) + 1
-        
+
         # Re-set fields from target_v
         rule.effect = target_v.get("effect", "allow")
         rule.intent = target_v.get("intent")
@@ -186,13 +197,15 @@ class PolicyEngine:
         rule.status = "active"
         rule.version = new_v_counter
         rule.updated_at = datetime.utcnow().isoformat()
-        
+
         self._record_history(rule_id, asdict(rule))
         self._save_policies()
         print(f"[PolicyEngine] Rule {rule_id} ROLLED BACK to version {version}")
         return True
 
-    def simulate_policy_impact(self, intent: str, pattern: str, effect: str = "allow") -> Dict[str, Any]:
+    def simulate_policy_impact(
+        self, intent: str, pattern: str, effect: str = "allow"
+    ) -> Dict[str, Any]:
         """Backtest against LanceDB episodes."""
         impact_count = 0
         try:
@@ -207,10 +220,10 @@ class PolicyEngine:
             return {"success": False, "error": str(e)}
 
         return {
-            "success": True, 
+            "success": True,
             "matches_found": impact_count,
             "risk_level": "High" if effect == "deny" else "Low",
-            "message": f"This rule would have impacted {impact_count} of the last 100 interactions."
+            "message": f"This rule would have impacted {impact_count} of the last 100 interactions.",
         }
 
     def _record_history(self, rule_id: str, rule_dict: Dict):
@@ -219,8 +232,8 @@ class PolicyEngine:
             # Prevent history field itself from being nested in history
             # Actually asdict(rule) includes history. We should strip it for the storage.
             history_copy = copy.deepcopy(rule_dict)
-            if 'history' in history_copy:
-                del history_copy['history']
+            if "history" in history_copy:
+                del history_copy["history"]
             rule.history.append(history_copy)
 
     def get_candidate_rules(self) -> Dict[str, Dict]:
@@ -235,8 +248,8 @@ class PolicyEngine:
 
     def revoke_rule(self, rule_id: str) -> bool:
         if rule_id in self.active_rules:
-            rule = self.active_rules.pop(rule_id)
-            # Logic: mark as archived/deleted? 
+            self.active_rules.pop(rule_id)
+            # Logic: mark as archived/deleted?
             # In simple local agent, just delete but we could save history somewhere.
             self._save_policies()
             return True

@@ -1,6 +1,5 @@
 import os
 import hashlib
-import logging
 from typing import List
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -8,11 +7,13 @@ from cryptography.hazmat.primitives import serialization
 from .base import SecureAnchor
 from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 
+
 class SoftwareSimulatorAnchor(SecureAnchor):
     """
     High-fidelity software simulator for hardware trust.
     Uses Ed25519 keys stored in a local .trust_anchor file.
     """
+
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
         self.key_path = f".trust_anchor_{tenant_id}.key"
@@ -22,14 +23,16 @@ class SoftwareSimulatorAnchor(SecureAnchor):
         if os.path.exists(self.key_path):
             with open(self.key_path, "rb") as f:
                 return ed25519.Ed25519PrivateKey.from_private_bytes(f.read())
-        
+
         key = ed25519.Ed25519PrivateKey.generate()
         with open(self.key_path, "wb") as f:
-            f.write(key.private_bytes(
-                encoding=serialization.Encoding.Raw,
-                format=serialization.PrivateFormat.Raw,
-                encryption_algorithm=serialization.NoEncryption()
-            ))
+            f.write(
+                key.private_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PrivateFormat.Raw,
+                    encryption_algorithm=serialization.NoEncryption(),
+                )
+            )
         return key
 
     def sign_payload(self, payload: bytes) -> bytes:
@@ -41,7 +44,7 @@ class SoftwareSimulatorAnchor(SecureAnchor):
     def get_public_key_pem(self) -> bytes:
         return self.get_public_key().public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
     def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
@@ -52,7 +55,7 @@ class SoftwareSimulatorAnchor(SecureAnchor):
             pcr_values={p: hashlib.sha256(f"pcr_{p}_val".encode()).hexdigest() for p in pcrs},
             firmware_version="SoftwareSimulator_v1.0",
             runtime_measurement=hashlib.sha256(b"simulated_runtime_state").hexdigest(),
-            signature=hashlib.sha256(b"sim_sig").hexdigest()
+            signature=hashlib.sha256(b"sim_sig").hexdigest(),
         )
 
     def get_signing_algorithm(self) -> SigningAlgorithm:
@@ -63,8 +66,11 @@ class SoftwareSimulatorAnchor(SecureAnchor):
         derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+
         iv = b"\x00" * 16
-        encryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).encryptor()
+        encryptor = Cipher(
+            algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()
+        ).encryptor()
         return encryptor.update(plaintext_key) + encryptor.finalize()
 
     def unseal_key(self, sealed_key: bytes) -> bytes:
@@ -72,12 +78,16 @@ class SoftwareSimulatorAnchor(SecureAnchor):
         derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+
         iv = b"\x00" * 16
-        decryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).decryptor()
+        decryptor = Cipher(
+            algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()
+        ).decryptor()
         return decryptor.update(sealed_key) + decryptor.finalize()
 
     @property
     def is_hardware(self) -> bool:
         return False
+
 
 __all__ = ["SoftwareSimulatorAnchor"]

@@ -1,7 +1,7 @@
 import os
 
 import uvicorn
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -11,7 +11,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 # Use standard string for service name to avoid dependency version clashes
 from .orchestrator import SovereignOrchestrator
-from .schemas import ChatCompletionRequest, ChatCompletionResponse, TenantContext
+from .schemas import ChatCompletionRequest, TenantContext
 from .security import SovereignIdentityHub
 
 # OpenTelemetry Setup (Sovereign Observability)
@@ -62,7 +62,6 @@ orchestrator = SovereignOrchestrator(
     vector_dsn=PGVECTOR_URL,
 )
 
-from typing import List, Optional, Union
 
 from fastapi.responses import Response, StreamingResponse
 
@@ -71,7 +70,6 @@ from .metrics import CONTENT_TYPE_LATEST, generate_latest, metrics
 identity_hub = SovereignIdentityHub(master_secret=MASTER_SECRET, base_dir=BASE_DIR)
 
 import hashlib
-import time
 from datetime import datetime, timezone
 
 
@@ -213,7 +211,7 @@ def main():
     port = int(os.getenv("PORT", 8000))
     print(f"🚀 Launching sovereign-ai bridge (GAIP-2030 Enterprise) on port {port}...")
     print(f"🛡️  Data Root: {BASE_DIR}")
-    print(f"🔐 Identity: Signed API Keys + Keycloak OIDC")
+    print("🔐 Identity: Signed API Keys + Keycloak OIDC")
 
     uvicorn.run(app, host="0.0.0.0", port=port)
 

@@ -2,7 +2,7 @@ import hashlib
 import json
 import logging
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from z3 import And, Bool, BoolVal, Const, Context, EnumSort, Not, Or, Solver, sat, unsat
@@ -276,6 +276,7 @@ class PolicyVerifier:
             return False
         # Create solver in default context to match formulas created outside custom contexts
         from z3 import Solver, sat
+
         solver = Solver()
         solver.push()
         for f in formulas:
@@ -283,4 +284,3 @@ class PolicyVerifier:
         result = solver.check() == sat
         solver.pop()
         return result
-

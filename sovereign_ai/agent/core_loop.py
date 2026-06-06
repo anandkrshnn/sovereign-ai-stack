@@ -1,10 +1,9 @@
 import os
 import json
-import time
 import re
 import requests
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 
 from .broker.engine import LocalPermissionBroker
 from .sandbox.chroot import SandboxPath
@@ -13,15 +12,28 @@ from .forensics.trace.decision_trace import DecisionTrace
 from .forensics.audit_chain import AuditChainManager
 from .config import Config
 from .forensics.vault_context import VaultContext
-from ..common.audit import SovereignAuditLogger, Principal
+from ..common.audit import Principal
 
 
 class AgentCore:
     """The central orchestrator for secure, local tool-use and semantic memory recall."""
 
-    VALID_TOOLS = ["read_file", "write_file", "append_to_file", "list_directory", "query_memory", "search_memory"]
+    VALID_TOOLS = [
+        "read_file",
+        "write_file",
+        "append_to_file",
+        "list_directory",
+        "query_memory",
+        "search_memory",
+    ]
 
-    def __init__(self, model: str = None, config: Config = None, vault_root: Optional[str] = None, password: Optional[str] = None):
+    def __init__(
+        self,
+        model: str = None,
+        config: Config = None,
+        vault_root: Optional[str] = None,
+        password: Optional[str] = None,
+    ):
         """Initialize agent with optional isolated and encrypted vault."""
         self.config = config or Config.default()
         self.model = model or self.config.default_model
@@ -40,8 +52,7 @@ class AgentCore:
 
         # Broker with vault-specific path and key manager
         self.broker = LocalPermissionBroker(
-            audit_log_path=str(self.vault.audit_log),
-            key_manager=self.vault.key_manager
+            audit_log_path=str(self.vault.audit_log), key_manager=self.vault.key_manager
         )
 
         # Memory service with vault paths
@@ -49,7 +60,7 @@ class AgentCore:
             broker=self.broker,
             lancedb_path=str(self.vault.memory_lance),
             duckdb_path=str(self.vault.duckdb_path),
-            key_manager=self.vault.key_manager
+            key_manager=self.vault.key_manager,
         )
 
         # ReAct loop settings
@@ -57,11 +68,14 @@ class AgentCore:
         self.current_trace = None
 
         from .adapters.adapter_registry import AdapterRegistry
+
         self.adapter_registry = AdapterRegistry()
 
-    def chat(self, user_input: str, principal: Optional[Principal] = None, override_token: str = None) -> Any:
+    def chat(
+        self, user_input: str, principal: Optional[Principal] = None, override_token: str = None
+    ) -> Any:
         """Main entry point: Handle user prompt using ReAct loop and semantic context."""
-        p = principal or Principal(id="anonymous")
+        principal or Principal(id="anonymous")
 
         # Phase 3: Immediate Top-Level Secret Scan (Defense in Depth)
         try:
@@ -75,12 +89,14 @@ class AgentCore:
                 return {"granted": False, "reason": f"Security Scanner Failure: {e}"}
 
         # Record immutable episode
-        self.memory_service.lancedb_store.append_episode({
-            "event_type": "user_message",
-            "content_text": user_input,
-            "actor": "user",
-            "session_id": getattr(self, "current_session_id", "default"),
-        })
+        self.memory_service.lancedb_store.append_episode(
+            {
+                "event_type": "user_message",
+                "content_text": user_input,
+                "actor": "user",
+                "session_id": getattr(self, "current_session_id", "default"),
+            }
+        )
 
         # 1. Governed Semantic Recall
         self.current_trace = DecisionTrace(user_input)
@@ -89,14 +105,18 @@ class AgentCore:
         self.memory_service.legacy_memory.remember("user_message", {"content": user_input})
 
         try:
-            gov_context = self.memory_service.get_governed_context(user_input, {"session_id": "current"})
+            gov_context = self.memory_service.get_governed_context(
+                user_input, {"session_id": "current"}
+            )
 
             context = ""
             if gov_context.get("reason") == "authorized":
                 memories = gov_context.get("memories", [])
                 for m in memories:
                     self.current_trace.add_retrieved_memory(m)
-                context = "\nRELEVANT MEMORIES (Authorized):\n" + "\n".join([f"- {m['body']}" for m in memories])
+                context = "\nRELEVANT MEMORIES (Authorized):\n" + "\n".join(
+                    [f"- {m['body']}" for m in memories]
+                )
             else:
                 context = "\n\u26a0\ufe0f MEMORY ACCESS RESTRICTED by LPB.\n"
 
@@ -105,7 +125,7 @@ class AgentCore:
             # Previously 'localagent' in local-agent-v0.2 satellite (now deprecated).
             system_prompt = f"""You are 'sovereign_ai_agent', a secure AI assistant.
 You have access to a local sandbox and a semantic memory.
-Available Tools: {', '.join(self.VALID_TOOLS)}
+Available Tools: {", ".join(self.VALID_TOOLS)}
 
 Use the following format:
 Thought: your reasoning
@@ -124,8 +144,10 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
             try:
                 response = self._call_llm(current_prompt)
             except Exception as llm_e:
-                response = f"Error: Could not connect to Ollama. Is it running? ({str(llm_e)[:100]})"
-                
+                response = (
+                    f"Error: Could not connect to Ollama. Is it running? ({str(llm_e)[:100]})"
+                )
+
             # Parse Action
             action_match = re.search(r"Action:\s*(\w+)\((.*)\)", response)
             if action_match:
@@ -138,13 +160,15 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
                         tool_args = json.loads(tool_args_str)
                         # All tool steps MUST go through PTV Airlock via Broker
                         observation = self._execute_tool(tool_name, tool_args, override_token)
-                        
+
                         # Check for Gated Response
-                        if isinstance(observation, dict) and observation.get("requires_confirmation"):
+                        if isinstance(observation, dict) and observation.get(
+                            "requires_confirmation"
+                        ):
                             if self.current_trace:
                                 self.current_trace.save_to_jsonl(
                                     str(self.vault.decision_traces),
-                                    key_manager=self.vault.key_manager
+                                    key_manager=self.vault.key_manager,
                                 )
                             return observation
                     except Exception as e:
@@ -154,16 +178,14 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
                 final_match = re.search(r"Final Answer:\s*(.*)", response, re.DOTALL)
                 response = final_match.group(1).strip() if final_match else response.strip()
 
-
         except Exception as e:
             response = f"Error during execution: {str(e)}"
 
         # Finalize and save trace to vault-specific file
         if self.current_trace:
             self.current_trace.set_final_outcome(str(response))
-            trace_path = self.current_trace.save_to_jsonl(
-                str(self.vault.decision_traces),
-                key_manager=self.vault.key_manager
+            self.current_trace.save_to_jsonl(
+                str(self.vault.decision_traces), key_manager=self.vault.key_manager
             )
             # --- Ed25519 Audit Chain: anchor the chain after every trace write ---
             # This makes the decision_traces.jsonl tamper-evident and non-repudiable.
@@ -171,20 +193,21 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
             try:
                 trace_log_path = Path(self.vault.decision_traces)
                 AuditChainManager.save_anchor(
-                    log_path=trace_log_path,
-                    key_manager=self.vault.key_manager
+                    log_path=trace_log_path, key_manager=self.vault.key_manager
                 )
             except Exception as anchor_err:
                 # Non-fatal: log the failure but do not block the response
                 print(f"[CoreLoop] WARNING: Audit chain anchor save failed: {anchor_err}")
 
         # 4. Record the final response episode
-        res_episode_id = self.memory_service.lancedb_store.append_episode({
-            "event_type": "agent_response",
-            "content_text": str(response),
-            "actor": "agent",
-            "session_id": getattr(self, "current_session_id", "default"),
-        })
+        self.memory_service.lancedb_store.append_episode(
+            {
+                "event_type": "agent_response",
+                "content_text": str(response),
+                "actor": "agent",
+                "session_id": getattr(self, "current_session_id", "default"),
+            }
+        )
 
         # 5. ASYNC PROMOTION (Removed synchronous technical debt, enforce pure React loop)
         # self.memory_service.promotion_pipeline.run_cycle(res_episode_id, str(response))
@@ -198,7 +221,18 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
 
         # Robust resource extraction
         resource = None
-        for key in ["path", "filename", "file", "target", "resource", "directory", "folder", "query", "key", "text"]:
+        for key in [
+            "path",
+            "filename",
+            "file",
+            "target",
+            "resource",
+            "directory",
+            "folder",
+            "query",
+            "key",
+            "text",
+        ]:
             if key in norm_args and norm_args[key]:
                 resource = str(norm_args[key])
                 break
@@ -215,13 +249,15 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
 
             # M3: Record which policy rule fired in the decision trace
             if self.current_trace and perm.get("rule_id"):
-                self.current_trace.add_applied_policy({
-                    "intent": intent,
-                    "resource": resource,
-                    "rule_id": perm.get("rule_id"),
-                    "effect": "auto-approved" if perm.get("granted") else "blocked",
-                    "source": perm.get("reason", "")
-                })
+                self.current_trace.add_applied_policy(
+                    {
+                        "intent": intent,
+                        "resource": resource,
+                        "rule_id": perm.get("rule_id"),
+                        "effect": "auto-approved" if perm.get("granted") else "blocked",
+                        "source": perm.get("reason", ""),
+                    }
+                )
 
             if not perm["granted"]:
                 # Inject tool metadata for resumption bridge
@@ -274,13 +310,15 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
                 result = f"Error: Implementation for tool '{name}' is missing."
 
             # --- MILESTONE 4: APPEND TO EPISODE LOG ---
-            self.memory_service.lancedb_store.append_episode({
-                "event_type": "tool_execution",
-                "actor": "agent",
-                "tool_name": name,
-                "content_text": str(result),
-                "content_json": json.dumps({"args": args, "result": str(result)})
-            })
+            self.memory_service.lancedb_store.append_episode(
+                {
+                    "event_type": "tool_execution",
+                    "actor": "agent",
+                    "tool_name": name,
+                    "content_text": str(result),
+                    "content_json": json.dumps({"args": args, "result": str(result)}),
+                }
+            )
 
             return result
 
@@ -292,7 +330,7 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
             "active_tokens": len(self.broker.active_tokens),
             "pending_confirmations": len(self.broker.pending_confirmations),
             "memory_items": self.memory_service.get_stats(),
-            "active_model": self.model
+            "active_model": self.model,
         }
 
     def _call_llm(self, prompt: str) -> str:
@@ -303,27 +341,29 @@ IMPORTANT: If the user mentions a file path, asks to save information, or querie
                     "model": self.model,
                     "prompt": prompt,
                     "stream": False,
-                    "options": {"num_predict": 512, "temperature": 0.1}
+                    "options": {"num_predict": 512, "temperature": 0.1},
                 },
                 timeout=240,
-                proxies={"http": None, "https": None}  # Bypass system proxies for local traffic
+                proxies={"http": None, "https": None},  # Bypass system proxies for local traffic
             )
             res.raise_for_status()
             return res.json().get("response", "").strip()
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Ollama Connection Error: {str(e)} (Target: {self.config.ollama_endpoint})")
+            raise Exception(
+                f"Ollama Connection Error: {str(e)} (Target: {self.config.ollama_endpoint})"
+            )
         except Exception as e:
             raise Exception(f"LLM Error: {str(e)}")
 
     def close(self):
         """Release resources when switching vaults."""
         try:
-            if hasattr(self, 'memory_service') and self.memory_service is not None:
+            if hasattr(self, "memory_service") and self.memory_service is not None:
                 self.memory_service.close()
         except Exception:
             pass
         try:
-            if hasattr(self, 'broker') and self.broker is not None:
+            if hasattr(self, "broker") and self.broker is not None:
                 pass
         except Exception:
             pass

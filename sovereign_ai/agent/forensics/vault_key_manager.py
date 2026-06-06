@@ -6,13 +6,14 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import os
 from typing import Optional
 
+
 class VaultKeyManager:
     """Manages encryption key for a Sovereign Vault."""
-    
+
     def __init__(self, vault_root: Path, password: Optional[str] = None):
         self.vault_root = Path(vault_root)
         self.salt_path = self.vault_root / ".vault_salt"
-        
+
         if password:
             self.key = self._derive_key(password)
             self.fernet = Fernet(self.key)
@@ -28,7 +29,7 @@ class VaultKeyManager:
         else:
             salt = os.urandom(16)
             self.salt_path.write_bytes(salt)
-        
+
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
@@ -52,7 +53,7 @@ class VaultKeyManager:
             return self.fernet.decrypt(data.encode()).decode()
         except Exception:
             # If decryption fails but encryption was expected, it might be plaintext (migration)
-            # or a wrong password. 
+            # or a wrong password.
             raise ValueError("Invalid vault password or corrupted data")
 
     def is_encrypted(self) -> bool:

@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 
+
 class SandboxPath:
     def __init__(self, root: Path = None):
         if root is None:
@@ -14,7 +15,7 @@ class SandboxPath:
         # Ensure path is a string and remove leading separators
         clean = str(user_path).strip().lstrip("/\\")
         # Precaution against relative path traversal
-        clean = re.sub(r'(\.\.[/\\])+', '', clean)
+        clean = re.sub(r"(\.\.[/\\])+", "", clean)
         full_path = (self.root / clean).resolve()
         # Verify path containment
         if not str(full_path).startswith(str(self.root)):

@@ -5,12 +5,14 @@ import json
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 
+
 @dataclass
 class KnowledgeEvent:
     """
-    Represents an atomic, cryptographically signed proposed change (Proposal) 
+    Represents an atomic, cryptographically signed proposed change (Proposal)
     to the Sovereign AI Stack's Company Brain.
     """
+
     payload: str  # The core content/statement being proposed
     source_author: str  # Entity proposing the change (e.g., "Agent-X", "User-Admin")
     event_type: str = "INSERT"  # INSERT, UPDATE, DELETE
@@ -26,7 +28,7 @@ class KnowledgeEvent:
 
     def to_canonical_dict(self) -> Dict[str, Any]:
         """
-        Returns a deterministic, sorted dictionary representation of the event 
+        Returns a deterministic, sorted dictionary representation of the event
         excluding ephemeral fields (like the calculated merkle_hash itself).
         """
         return {
@@ -36,7 +38,7 @@ class KnowledgeEvent:
             "source_author": self.source_author,
             "timestamp": self.timestamp,
             "parent_hash": self.parent_hash,
-            "metadata": sorted(self.metadata.items())  # Ensure stable sorting of metadata dict
+            "metadata": sorted(self.metadata.items()),  # Ensure stable sorting of metadata dict
         }
 
     def compute_hash(self) -> str:
@@ -44,7 +46,7 @@ class KnowledgeEvent:
         Computes a SHA-256 canonical hash of the event for Merkle verification.
         """
         canonical_str = json.dumps(self.to_canonical_dict(), sort_keys=True)
-        return hashlib.sha256(canonical_str.encode('utf-8')).hexdigest()
+        return hashlib.sha256(canonical_str.encode("utf-8")).hexdigest()
 
     def sign_event(self, private_key_hex: str) -> None:
         """
@@ -54,11 +56,13 @@ class KnowledgeEvent:
             from cryptography.hazmat.primitives.asymmetric import ed25519
         except ImportError:
             # Fallback for lightweight testing if cryptography library is missing
-            self.signature = hashlib.sha256((self.payload + private_key_hex).encode('utf-8')).hexdigest()
+            self.signature = hashlib.sha256(
+                (self.payload + private_key_hex).encode("utf-8")
+            ).hexdigest()
             return
 
         private_key = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_key_hex))
-        canonical_bytes = json.dumps(self.to_canonical_dict(), sort_keys=True).encode('utf-8')
+        canonical_bytes = json.dumps(self.to_canonical_dict(), sort_keys=True).encode("utf-8")
         signature_bytes = private_key.sign(canonical_bytes)
         self.signature = signature_bytes.hex()
 
@@ -72,12 +76,12 @@ class KnowledgeEvent:
             from cryptography.hazmat.primitives.asymmetric import ed25519
         except ImportError:
             # Fallback verification matching the fallback sign method
-            expected = hashlib.sha256((self.payload + public_key_hex).encode('utf-8')).hexdigest()
+            expected = hashlib.sha256((self.payload + public_key_hex).encode("utf-8")).hexdigest()
             return self.signature == expected
 
         try:
             public_key = ed25519.Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key_hex))
-            canonical_bytes = json.dumps(self.to_canonical_dict(), sort_keys=True).encode('utf-8')
+            canonical_bytes = json.dumps(self.to_canonical_dict(), sort_keys=True).encode("utf-8")
             public_key.verify(bytes.fromhex(self.signature), canonical_bytes)
             return True
         except Exception:

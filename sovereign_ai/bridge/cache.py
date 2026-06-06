@@ -1,7 +1,7 @@
 import hashlib
 import os
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import duckdb
 import lancedb
@@ -108,7 +108,6 @@ class SovereignSemanticCache:
 
     def store(self, prompt: str, response: str, model: str, principal: str):
         """Store a new prompt-response pair in the cache with timestamp."""
-        import hashlib
 
         prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         query_vec = self.model.encode(prompt, normalize_embeddings=True)

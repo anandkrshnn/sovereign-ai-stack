@@ -1,16 +1,20 @@
 import json
 import uuid
-from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import List, Optional, Any
 
 from .config import DEFAULT_DB_PATH, DEFAULT_SNIPPET_TOKENS
-from .schemas import Chunk, Document, SearchResult
+from .schemas import Document, SearchResult
 from .store import AsyncStore, Store
 from .utils import chunk_text
 
 
 class FTS5Retriever:
-    def __init__(self, db_path: str = DEFAULT_DB_PATH, password: Optional[str] = None, anchor: Optional[Any] = None):
+    def __init__(
+        self,
+        db_path: str = DEFAULT_DB_PATH,
+        password: Optional[str] = None,
+        anchor: Optional[Any] = None,
+    ):
         self.store = Store(db_path, password=password, anchor=anchor)
 
     def ingest(self, docs: List[Document], chunk_size: int = 1000, chunk_overlap: int = 200):
@@ -125,7 +129,12 @@ class AsyncFTS5Retriever:
     Evolves the lexical engine to support non-blocking search and high-throughput batch ingestion.
     """
 
-    def __init__(self, db_path: str = DEFAULT_DB_PATH, password: Optional[str] = None, anchor: Optional[Any] = None):
+    def __init__(
+        self,
+        db_path: str = DEFAULT_DB_PATH,
+        password: Optional[str] = None,
+        anchor: Optional[Any] = None,
+    ):
         self.store = AsyncStore(db_path, password=password, anchor=anchor)
 
     async def ingest_batch(

@@ -1,4 +1,3 @@
-import sys
 import os
 import requests
 import psutil
@@ -9,13 +8,16 @@ from sovereign_ai.agent import __version__
 
 console = Console()
 
+
 def run_diagnose():
     """
     Standard SovereignAIAgent v1.1.0a2 Diagnosis suite.
     Checks environment, daemon health, and isolation boundaries.
     """
-    console.print(f"[bold cyan]--- SovereignAIAgent v{__version__} Multi-Point Diagnosis ---[/bold cyan]\n")
-    
+    console.print(
+        f"[bold cyan]--- SovereignAIAgent v{__version__} Multi-Point Diagnosis ---[/bold cyan]\n"
+    )
+
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")
     table.add_column("Status")
@@ -26,7 +28,7 @@ def run_diagnose():
     try:
         res = requests.get(f"{config.ollama_endpoint}/api/tags", timeout=2)
         if res.status_code == 200:
-            models = [m['name'] for m in res.json().get('models', [])]
+            models = [m["name"] for m in res.json().get("models", [])]
             status = "[bold green][ONLINE][/bold green]"
             detail = f"Found {len(models)} models ({config.default_model} ready)"
         else:
@@ -40,15 +42,17 @@ def run_diagnose():
     # 2. Daemon Check
     # Actually use our daemon helper
     from sovereign_ai.agent.cli.daemon import get_pid_file
+
     pid_file = get_pid_file()
-    
+
     daemon_status = "[bold red][FAIL][/bold red]"
     if pid_file.exists():
         try:
             pid = int(pid_file.read_text())
             if psutil.pid_exists(pid):
                 daemon_status = f"[bold green][OK][/bold green] (PID {pid})"
-        except: pass
+        except:
+            pass
     table.add_row("Agent Daemon", daemon_status, "Background state")
 
     # 3. Isolation (Sandbox)
@@ -58,18 +62,22 @@ def run_diagnose():
             sandbox.mkdir(parents=True)
             table.add_row("Sandbox Path", "[bold green][CREATED][/bold green]", f"At {sandbox}")
         except:
-            table.add_row("Sandbox Path", "[bold red][ERROR][/bold red]", "Failed to create sandbox")
+            table.add_row(
+                "Sandbox Path", "[bold red][ERROR][/bold red]", "Failed to create sandbox"
+            )
     else:
         table.add_row("Sandbox Path", "[bold green][READY][/bold green]", str(sandbox))
 
     # 4. IPC (Pipe/Socket)
     from sovereign_ai.agent.cli.ipc import PIPE_NAME
     import time
-    time.sleep(0.5) # Allow cold-start daemon to bind pipe
-    
-    if os.name == 'nt':
+
+    time.sleep(0.5)  # Allow cold-start daemon to bind pipe
+
+    if os.name == "nt":
         # On Windows we check if pipe exists via a quick client test
         from sovereign_ai.agent.cli.ipc import send_ipc_command
+
         res = send_ipc_command("ping")
         if res.get("status") == "ok":
             table.add_row("IPC Bridge", "[bold green][CONNECTED][/bold green]", PIPE_NAME)
@@ -83,5 +91,6 @@ def run_diagnose():
 
     console.print(table)
     console.print("\n[dim]Run 'localagent start' to resolve most issues.[/dim]")
+
 
 from pathlib import Path

@@ -5,11 +5,13 @@ from ..schemas import SigningAlgorithm, EvidenceType, AttestationQuote
 
 from cryptography.hazmat.primitives import serialization
 
+
 class LegacyRawAnchor(SecureAnchor):
     """
     Legacy anchor for backward compatibility with non-attested keys.
     Supports both raw bytes (HMAC-style) and cryptography key objects.
     """
+
     def __init__(self, raw_key: Any):
         self.raw_key = raw_key
 
@@ -21,14 +23,14 @@ class LegacyRawAnchor(SecureAnchor):
     def get_public_key(self) -> Any:
         if hasattr(self.raw_key, "public_key"):
             return self.raw_key.public_key()
-        return None 
+        return None
 
     def get_public_key_pem(self) -> bytes:
         pub = self.get_public_key()
         if pub:
             return pub.public_bytes(
                 encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
         return b"LEGACY_PUB_KEY"
 
@@ -37,10 +39,10 @@ class LegacyRawAnchor(SecureAnchor):
         return AttestationQuote(
             type=EvidenceType.MOCK_SIM,
             quote_data="legacy_mock_quote",
-            pcr_values={p: "00"*32 for p in pcrs},
+            pcr_values={p: "00" * 32 for p in pcrs},
             firmware_version="Legacy_Key",
             runtime_measurement=hashlib.sha256(b"legacy").hexdigest(),
-            signature="legacy_sig"
+            signature="legacy_sig",
         )
 
     def get_signing_algorithm(self) -> SigningAlgorithm:
@@ -53,7 +55,7 @@ class LegacyRawAnchor(SecureAnchor):
                 raw_bytes = self.raw_key.private_bytes(
                     encoding=serialization.Encoding.Raw,
                     format=serialization.PrivateFormat.Raw,
-                    encryption_algorithm=serialization.NoEncryption()
+                    encryption_algorithm=serialization.NoEncryption(),
                 )
             except Exception:
                 try:
@@ -61,7 +63,7 @@ class LegacyRawAnchor(SecureAnchor):
                     raw_bytes = self.raw_key.private_bytes(
                         encoding=serialization.Encoding.DER,
                         format=serialization.PrivateFormat.PKCS8,
-                        encryption_algorithm=serialization.NoEncryption()
+                        encryption_algorithm=serialization.NoEncryption(),
                     )
                 except Exception:
                     raw_bytes = b"fallback_legacy_raw_bytes"
@@ -76,8 +78,11 @@ class LegacyRawAnchor(SecureAnchor):
         derived_key = self._get_encryption_key()
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+
         iv = b"\x00" * 16
-        encryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).encryptor()
+        encryptor = Cipher(
+            algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()
+        ).encryptor()
         return encryptor.update(plaintext_key) + encryptor.finalize()
 
     def unseal_key(self, sealed_key: bytes) -> bytes:
@@ -85,12 +90,16 @@ class LegacyRawAnchor(SecureAnchor):
         derived_key = self._get_encryption_key()
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+
         iv = b"\x00" * 16
-        decryptor = Cipher(algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()).decryptor()
+        decryptor = Cipher(
+            algorithms.AES(derived_key), modes.CFB(iv), backend=default_backend()
+        ).decryptor()
         return decryptor.update(sealed_key) + decryptor.finalize()
 
     @property
     def is_hardware(self) -> bool:
         return False
+
 
 __all__ = ["LegacyRawAnchor"]

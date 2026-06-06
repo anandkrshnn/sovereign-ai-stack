@@ -1,4 +1,5 @@
 import logging
+
 """
 Forensic Audit Chain with Ed25519 Signatures
 
@@ -22,11 +23,10 @@ from .hardware_trust import (
     LegacyRawAnchor,
     SecureAnchor,
     SoftwareSimulatorAnchor,
-    WindowsTPMAnchor,
     get_secure_anchor,
 )
 from .merkle import MerkleTree
-from .schemas import RecordStatus, SigningAlgorithm
+from .schemas import SigningAlgorithm
 
 
 @dataclass
@@ -66,15 +66,21 @@ class SecurityHalt(Exception):
 
     pass
 
+
 logger = logging.getLogger(__name__)
+
 
 def _calculate_next_hash_static(prev_hash: str, entry: Dict[str, Any]) -> str:
     """Deterministic SHA-256 link calculation for legacy compatibility."""
     import hashlib
     import json
-    entry_copy = {k: v for k, v in entry.items() if k not in ("curr_hash", "chain_hash", "signature")}
+
+    entry_copy = {
+        k: v for k, v in entry.items() if k not in ("curr_hash", "chain_hash", "signature")
+    }
     canonical = json.dumps(entry_copy, sort_keys=True)
     return hashlib.sha256(f"{prev_hash}{canonical}".encode()).hexdigest()
+
 
 class SignedAuditChain:
     """
@@ -319,24 +325,25 @@ class SignedAuditChain:
 
         # 2. Generate Hardware Attestation Quote for the Merkle Root
         # Binding the Merkle Root as the nonce ensures the quote proves THIS specific audit state
-        quote = self.anchor.generate_quote(nonce=root, pcrs=[0, 11])
+        self.anchor.generate_quote(nonce=root, pcrs=[0, 11])
 
         # 3. [Phase 2] Generate Formal Policy Safety Certificate
         # We verify the current logical state of policies at the time of checkpoint
-        policy_cert = self._generate_policy_certificate()
+        self._generate_policy_certificate()
 
         # 4. Log a CHECKPOINT event containing the Merkle Root + Hardware Quote + Policy Cert
+
     def get_audit_proof(self, audit_id: int) -> Dict[str, Any]:
         """
         Retrieves the Merkle inclusion proof for a given sequence_number (audit_id).
         Uses a checkpoint index for O(1) block seeking, avoiding naive linear scans.
         """
         if not self.audit_file.exists():
-            raise ValueError(f"Audit log empty or missing.")
+            raise ValueError("Audit log empty or missing.")
 
         index_file = self.audit_file.with_suffix(".idx")
         block_start_offset = 0
-        
+
         # 1. Fast Index Lookup
         found_block = False
         if index_file.exists():
@@ -350,7 +357,7 @@ class SignedAuditChain:
                             block_start_offset = offset
                             found_block = True
                             break
-                            
+
         if not found_block and index_file.exists():
             # ID is not in any sealed block according to the index
             raise ValueError(f"Audit ID {audit_id} not found in sealed checkpoints (Exclusion).")
@@ -359,7 +366,7 @@ class SignedAuditChain:
         target_event = None
         checkpoint = None
         block_events = []
-        
+
         with open(self.audit_file, "r", encoding="utf-8") as f:
             f.seek(block_start_offset)
             for line in f:
@@ -369,7 +376,7 @@ class SignedAuditChain:
                     record = json.loads(line)
                     action = record.get("action")
                     seq = record.get("sequence_number")
-                    
+
                     if action != "MERKLE_CHECKPOINT":
                         block_events.append(record)
                         if seq == audit_id:
@@ -386,27 +393,28 @@ class SignedAuditChain:
 
         if not target_event:
             raise ValueError(f"Audit ID {audit_id} not found in logs (Exclusion).")
-            
+
         if not checkpoint:
             raise ValueError(f"Audit ID {audit_id} exists but is pending Merkle checkpoint.")
 
         hashes = [e["curr_hash"] for e in block_events]
         tree = MerkleTree(hashes)
         index = next(i for i, e in enumerate(block_events) if e["sequence_number"] == audit_id)
-        
+
         return {
             "leaf": target_event["curr_hash"],
             "root": checkpoint["event_data"]["merkle_root"],
             "proof": tree.get_proof(index),
             "checkpoint_seq": checkpoint["sequence_number"],
-            "attestation_quote": checkpoint["event_data"].get("attestation_quote")
+            "attestation_quote": checkpoint["event_data"].get("attestation_quote"),
         }
 
     def _generate_policy_certificate(self) -> Dict[str, Any]:
         """Generates a certificate of formal policy correctness using Z3."""
         try:
             from ..verify.policy_z3 import PolicyVerifier
-            verifier = PolicyVerifier()
+
+            PolicyVerifier()
             conflicts = []
             return {
                 "verified": len(conflicts) == 0,
@@ -428,14 +436,14 @@ class SignedAuditChain:
     def _append_to_file(self, event: Dict[str, Any]):
         """Append event to JSONL audit file."""
         self.audit_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Track offset for index if this is the start of a block
-        is_block_start = (len(self.event_buffer) == 0 and event.get("action") != "MERKLE_CHECKPOINT")
+        is_block_start = len(self.event_buffer) == 0 and event.get("action") != "MERKLE_CHECKPOINT"
 
         with open(self.audit_file, "a") as f:
             offset = f.tell()
             f.write(json.dumps(event) + "\n")
-            
+
         if is_block_start:
             self._current_block_offset = offset
 
@@ -450,11 +458,11 @@ class SignedAuditChain:
 
         quote = self.anchor.generate_quote(nonce=root, pcrs=[0, 11])
         policy_cert = self._generate_policy_certificate()
-        
+
         start_seq = self.event_buffer[0]["sequence_number"]
         end_seq = self.event_buffer[-1]["sequence_number"]
 
-        checkpoint_event = self.log_event(
+        self.log_event(
             component="system",
             action="MERKLE_CHECKPOINT",
             principal="system",
@@ -512,7 +520,7 @@ class SignedAuditChain:
                         try:
                             events.append(json.loads(line))
                         except json.JSONDecodeError:
-                            print(f"Malformed JSON in audit log")
+                            print("Malformed JSON in audit log")
                             return False
 
         if not events:
@@ -593,14 +601,15 @@ class SignedAuditChain:
                 print("Missing trusted public key in audit chain.")
                 return False
 
-            public_key_bytes = base64.b64decode(event.get("public_key")) if event.get("public_key") else None
+            public_key_bytes = (
+                base64.b64decode(event.get("public_key")) if event.get("public_key") else None
+            )
             canonical_data = self._canonical_json(event)
 
             if algorithm == "ed25519":
                 # Ensure the public key stored on the log matches the declared trust anchor
                 anchor_pub_bytes = trusted_pub_key.public_bytes(
-                    encoding=serialization.Encoding.Raw,
-                    format=serialization.PublicFormat.Raw
+                    encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
                 )
                 if public_key_bytes != anchor_pub_bytes:
                     print("Event signed with non-trusted public key.")
