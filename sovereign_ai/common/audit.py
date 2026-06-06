@@ -19,8 +19,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519
 
-from .hardware_trust import (LegacyRawAnchor, SecureAnchor,
-                             SoftwareSimulatorAnchor, get_secure_anchor)
+from .hardware_trust import (
+    LegacyRawAnchor,
+    SecureAnchor,
+    SoftwareSimulatorAnchor,
+    get_secure_anchor,
+)
 from .merkle import MerkleTree
 from .schemas import SigningAlgorithm
 

@@ -6,8 +6,7 @@ import pytest
 
 from sovereign_ai.agent.orchestrator import SovereignAgent
 from sovereign_ai.agent.reasoning import SovereignReasoningLoop
-from sovereign_ai.agent.schemas import (AgentState, SecurityHalt,
-                                        VerifyFailSignal)
+from sovereign_ai.agent.schemas import AgentState, SecurityHalt, VerifyFailSignal
 
 
 @pytest.fixture

@@ -78,8 +78,7 @@ class LegacyRawAnchor(SecureAnchor):
         """Seals a plaintext key using a derived key (AES CFB)."""
         derived_key = self._get_encryption_key()
         from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
-                                                            modes)
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
         iv = b"\x00" * 16
         encryptor = Cipher(
@@ -91,8 +90,7 @@ class LegacyRawAnchor(SecureAnchor):
         """Unseals a key using a derived key (AES CFB)."""
         derived_key = self._get_encryption_key()
         from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
-                                                            modes)
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
         iv = b"\x00" * 16
         decryptor = Cipher(

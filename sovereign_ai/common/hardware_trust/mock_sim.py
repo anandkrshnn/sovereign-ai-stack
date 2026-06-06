@@ -66,8 +66,7 @@ class SoftwareSimulatorAnchor(SecureAnchor):
         """Seals a plaintext key using a derived key (AES CFB)."""
         derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
         from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
-                                                            modes)
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
         iv = b"\x00" * 16
         encryptor = Cipher(
@@ -79,8 +78,7 @@ class SoftwareSimulatorAnchor(SecureAnchor):
         """Unseals a key using a derived key (AES CFB)."""
         derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
         from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms,
-                                                            modes)
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
         iv = b"\x00" * 16
         decryptor = Cipher(

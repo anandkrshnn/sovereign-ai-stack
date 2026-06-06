@@ -4,8 +4,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from .schema import (CertificationMetric, SovereignCertificationReport,
-                     TestResult)
+from .schema import CertificationMetric, SovereignCertificationReport, TestResult
 
 
 def generate_report(

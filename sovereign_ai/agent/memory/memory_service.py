@@ -2,8 +2,7 @@ from typing import Any, Dict
 
 from sovereign_ai.agent.broker.engine import LocalPermissionBroker
 from sovereign_ai.agent.memory.lancedb_store import LanceDBStore
-from sovereign_ai.agent.memory.promotion_pipeline import \
-    MemoryPromotionPipeline
+from sovereign_ai.agent.memory.promotion_pipeline import MemoryPromotionPipeline
 
 
 class MemoryService:
@@ -14,8 +13,7 @@ class MemoryService:
         self.promotion_pipeline = MemoryPromotionPipeline(self.lancedb_store)
         self.broker = broker
         self.key_manager = key_manager
-        from sovereign_ai.agent.memory import \
-            get_embedder  # Keep lazy initializer
+        from sovereign_ai.agent.memory import get_embedder  # Keep lazy initializer
         from sovereign_ai.agent.memory.duckdb_index import HotMemoryIndex
 
         self.hot_memory = HotMemoryIndex(

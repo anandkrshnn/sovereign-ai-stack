@@ -4,8 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from sovereign_ai.rag.db_utils import (decrypt_database, encrypt_database,
-                                       get_db_status, rekey_database)
+from sovereign_ai.rag.db_utils import (
+    decrypt_database,
+    encrypt_database,
+    get_db_status,
+    rekey_database,
+)
 from sovereign_ai.rag.schemas import Document
 from sovereign_ai.rag.store import Store
 

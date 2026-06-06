@@ -1,8 +1,7 @@
 import base64
 from pathlib import Path
 
-from .hardware_trust import (SecureAnchor, SoftwareSimulatorAnchor,
-                             WindowsTPMAnchor)
+from .hardware_trust import SecureAnchor, SoftwareSimulatorAnchor, WindowsTPMAnchor
 
 
 class PolicySigner:

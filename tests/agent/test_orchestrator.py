@@ -8,8 +8,7 @@ import pytest
 from sovereign_ai.agent.broker.engine import LocalPermissionBroker
 from sovereign_ai.agent.idempotency import PersistentIdempotencyStore
 from sovereign_ai.agent.orchestrator import SovereignAgent
-from sovereign_ai.agent.schemas import (AgentState, RecordStatus, SecurityHalt,
-                                        VerifyFailSignal)
+from sovereign_ai.agent.schemas import AgentState, RecordStatus, SecurityHalt, VerifyFailSignal
 from sovereign_ai.common.audit import SignedAuditChain
 from sovereign_ai.verify.evaluator import SovereignEvaluator
 

@@ -46,8 +46,7 @@ class LocalPermissionBroker:
                 if master_passphrase:
                     SecureKeyManager.wrap_key_to_vault(vault_root, master_passphrase)
 
-                from sovereign_ai.agent.forensics.vault_key_manager import \
-                    VaultKeyManager
+                from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
 
                 self.key_manager = VaultKeyManager(
                     vault_root,
@@ -60,8 +59,7 @@ class LocalPermissionBroker:
                         recovered_key = SecureKeyManager.unwrap_key_from_vault(
                             vault_root, master_passphrase
                         )
-                        from sovereign_ai.agent.forensics.vault_key_manager import \
-                            VaultKeyManager
+                        from sovereign_ai.agent.forensics.vault_key_manager import VaultKeyManager
 
                         self.key_manager = VaultKeyManager(vault_root, recovered_key)
                         print(

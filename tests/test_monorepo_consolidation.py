@@ -82,7 +82,10 @@ class TestImportSurface:
     def test_agent_forensics_exports(self):
         """agent.forensics must export AuditChainManager, SecureKeyManager, VaultContext."""
         from sovereign_ai.agent.forensics import (  # noqa: F401
-            AuditChainManager, SecureKeyManager, VaultContext)
+            AuditChainManager,
+            SecureKeyManager,
+            VaultContext,
+        )
 
         assert AuditChainManager is not None
         assert SecureKeyManager is not None
@@ -203,6 +206,7 @@ class TestRAGConsolidation:
     def test_local_rag_ask_returns_rag_response(self, temp_db, mock_generator):
         """LocalRAG.ask() with a seeded DB must return a typed RAGResponse."""
         from sovereign_ai.rag.main import LocalRAG
+
         # Seed with one document
         from sovereign_ai.rag.retriever import FTS5Retriever
         from sovereign_ai.rag.schemas import Document, RAGResponse

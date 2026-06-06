@@ -5,8 +5,7 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from z3 import (And, Bool, BoolVal, Const, Context, EnumSort, Not, Or,
-                    Solver, sat, unsat)
+    from z3 import And, Bool, BoolVal, Const, Context, EnumSort, Not, Or, Solver, sat, unsat
 
     HAS_Z3 = True
 except ImportError:

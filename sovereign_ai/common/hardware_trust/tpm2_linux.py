@@ -20,11 +20,23 @@ def secure_zero(data: bytearray | bytes):
 
 
 try:
-    from tpm2_pytss import (ESAPI, ESYS_TR, TPM2_ALG, TPM2_HANDLE, TPM2_RH,
-                            TPM2_ST, TPM2B_DATA, TPM2B_DIGEST, TPM2B_NONCE,
-                            TPML_PCR_SELECTION, TPMS_PCR_SELECTION,
-                            TPMS_SCHEME_HASH, TPMT_SIG_SCHEME,
-                            TPMT_TK_HASHCHECK, TPMU_SIG_SCHEME)
+    from tpm2_pytss import (
+        ESAPI,
+        ESYS_TR,
+        TPM2_ALG,
+        TPM2_HANDLE,
+        TPM2_RH,
+        TPM2_ST,
+        TPM2B_DATA,
+        TPM2B_DIGEST,
+        TPM2B_NONCE,
+        TPML_PCR_SELECTION,
+        TPMS_PCR_SELECTION,
+        TPMS_SCHEME_HASH,
+        TPMT_SIG_SCHEME,
+        TPMT_TK_HASHCHECK,
+        TPMU_SIG_SCHEME,
+    )
 
     HAS_PYTSS = True
 except ImportError:
@@ -73,9 +85,15 @@ class TPM2LinuxAnchor(SecureAnchor):
         """
         Signs a payload using the TPM-resident AIK via Esys_Sign.
         """
-        from tpm2_pytss import (TPM2_ALG, TPM2_RH, TPM2_ST, TPMS_SCHEME_HASH,
-                                TPMT_SIG_SCHEME, TPMT_TK_HASHCHECK,
-                                TPMU_SIG_SCHEME)
+        from tpm2_pytss import (
+            TPM2_ALG,
+            TPM2_RH,
+            TPM2_ST,
+            TPMS_SCHEME_HASH,
+            TPMT_SIG_SCHEME,
+            TPMT_TK_HASHCHECK,
+            TPMU_SIG_SCHEME,
+        )
 
         ctx = self._get_context()
         digest = hashlib.sha256(payload).digest()
@@ -134,9 +152,14 @@ class TPM2LinuxAnchor(SecureAnchor):
         """
         Generates a native TPM2_Quote using Esys_Quote.
         """
-        from tpm2_pytss import (TPM2_ALG, TPML_PCR_SELECTION,
-                                TPMS_PCR_SELECTION, TPMS_SCHEME_HASH,
-                                TPMT_SIG_SCHEME, TPMU_SIG_SCHEME)
+        from tpm2_pytss import (
+            TPM2_ALG,
+            TPML_PCR_SELECTION,
+            TPMS_PCR_SELECTION,
+            TPMS_SCHEME_HASH,
+            TPMT_SIG_SCHEME,
+            TPMU_SIG_SCHEME,
+        )
 
         self._get_context()
         logger.info(f"Generating native TPM2 quote (PCRs: {pcrs})")
@@ -209,8 +232,7 @@ class TPM2LinuxAnchor(SecureAnchor):
     def _read_pcr(self, pcr_index: int) -> str:
         """Reads a specific PCR value from the TPM."""
         try:
-            from tpm2_pytss import (TPM2_ALG, TPML_PCR_SELECTION,
-                                    TPMS_PCR_SELECTION)
+            from tpm2_pytss import TPM2_ALG, TPML_PCR_SELECTION, TPMS_PCR_SELECTION
 
             ctx = self._get_context()
             pcr_sel = TPML_PCR_SELECTION(
@@ -259,9 +281,7 @@ class TPM2LinuxAnchor(SecureAnchor):
 
             derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
             from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives.ciphers import (Cipher,
-                                                                algorithms,
-                                                                modes)
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
             iv = b"\x00" * 16
             encryptor = Cipher(
@@ -296,9 +316,7 @@ class TPM2LinuxAnchor(SecureAnchor):
 
             derived_key = hashlib.sha256(f"sealed_key_{self.tenant_id}".encode()).digest()
             from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives.ciphers import (Cipher,
-                                                                algorithms,
-                                                                modes)
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
             iv = b"\x00" * 16
             decryptor = Cipher(

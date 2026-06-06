@@ -7,8 +7,7 @@ from prompt_toolkit.styles import Style
 from rich.console import Console
 
 from sovereign_ai.agent.cli.ipc import send_ipc_command
-from sovereign_ai.agent.cli.terminal_ui import (print_banner,
-                                                render_airlock_modal)
+from sovereign_ai.agent.cli.terminal_ui import print_banner, render_airlock_modal
 
 console = Console()
 

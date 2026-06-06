@@ -13,8 +13,14 @@ from ..common.audit import SignedAuditChain
 from ..verify.evaluator import SovereignEvaluator
 from .broker.engine import LocalPermissionBroker
 from .idempotency import PersistentIdempotencyStore
-from .schemas import (AgentState, ObservationRecord, RecordStatus,
-                      SecurityHalt, VerificationRecord, VerifyFailSignal)
+from .schemas import (
+    AgentState,
+    ObservationRecord,
+    RecordStatus,
+    SecurityHalt,
+    VerificationRecord,
+    VerifyFailSignal,
+)
 
 logger = logging.getLogger(__name__)
 

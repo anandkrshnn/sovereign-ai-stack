@@ -1,13 +1,13 @@
+import json
+import logging
 import os
 
 import uvicorn
-import json
-import logging
+
 logger = logging.getLogger(__name__)
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
-    OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider

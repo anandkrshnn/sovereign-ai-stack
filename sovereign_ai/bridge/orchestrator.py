@@ -9,6 +9,7 @@ import yaml
 from ..common.audit import Principal, SovereignAuditLogger
 from ..common.identity import IdentityHub
 from ..common.schemas import SecurityHalt
+
 # Import Sovereign Components (Unified Monorepo)
 from ..rag.main import AsyncLocalRAG as LocalRAG
 from ..rag.schemas import RAGResponse
@@ -29,9 +30,14 @@ from opentelemetry import trace
 
 from .cache import SovereignSemanticCache
 from .metrics import metrics
-from .schemas import (BackendConfig, BackendType, ChatCompletionRequest,
-                      ChatCompletionResponse, ChatCompletionResponseChoice,
-                      ChatMessage)
+from .schemas import (
+    BackendConfig,
+    BackendType,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ChatCompletionResponseChoice,
+    ChatMessage,
+)
 
 tracer = trace.get_tracer(__name__)
 logger = logging.getLogger(__name__)

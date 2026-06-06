@@ -4,8 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from sovereign_ai.common.hardware_trust import (SoftwareSimulatorAnchor,
-                                                TPM2LinuxAnchor)
+from sovereign_ai.common.hardware_trust import SoftwareSimulatorAnchor, TPM2LinuxAnchor
 from sovereign_ai.common.schemas import AttestationQuote, EvidenceType
 
 

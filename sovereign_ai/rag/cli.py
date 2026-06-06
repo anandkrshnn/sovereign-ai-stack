@@ -12,8 +12,7 @@ from rich.table import Table
 
 from ..common.audit import SignedAuditChain, SovereignAuditLogger
 from .config import DEFAULT_DB_PATH
-from .db_utils import (decrypt_database, encrypt_database, get_db_status,
-                       rekey_database)
+from .db_utils import decrypt_database, encrypt_database, get_db_status, rekey_database
 from .main import LocalRAG
 from .schemas import Document
 from .sovereign_score import ScoreConfig, compute_sovereign_score
