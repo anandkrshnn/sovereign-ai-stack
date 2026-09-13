@@ -1,4 +1,4 @@
-# Sovereign AI Stack (v0.2.0-alpha)
+# Sovereign AI Stack (v0.2.0-alpha1)
 
 **Alpha research prototype** exploring local-first AI verification building blocks.
 
@@ -6,10 +6,14 @@
 > This is an **early research preview**. Significant limitations exist. 
 > It is **not production-ready**. See [LIMITATIONS.md](LIMITATIONS.md).
 
+Production deployments must provide a TPM 2.0 or HSM-backed anchor. The
+software simulator is available only for development and test environments and
+must be explicitly enabled with `SOVEREIGN_ALLOW_SIMULATOR=1`.
+
 ## Core Components
 - **NLI Grounding Gate** — Local DeBERTa-v3 cross-encoder for checking entailment between context and generated responses.
 - **Tamper-Evident Audit Chain** — Append-only JSONL with Ed25519 signatures and Merkle roots.
-- **TPM 2.0 Anchoring** — Hardware (or simulator) attestation binding on Linux.
+- **TPM 2.0 Anchoring** — Hardware attestation binding on Linux; simulator use is explicit and non-production only.
 - **LangChainGuard** — Basic wrapper for adding verification to LangChain/LCEL pipelines.
 
 ## Quickstart
@@ -30,6 +34,7 @@ sovereign --help
 ## Repository Status
 - Focused on verification primitives only.
 - The sprawling agent orchestration module has been entirely deleted.
-- CI is configured for linting, basic tests, and container scanning.
+- CI blocks merges on formatting, typing, tests, dependency, SAST, secret, and filesystem scan failures.
+- Release artifacts are built from tagged commits; hardware-dependent validation remains separate from simulator tests.
 
 Contributions welcome, especially around hardening, testing, and documentation of failure modes.

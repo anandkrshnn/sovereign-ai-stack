@@ -1,8 +1,11 @@
 import os
 import shutil
 from pathlib import Path
+
 import pytest
+
 from sovereign_ai import Config, SovereignPipeline
+
 
 @pytest.fixture(scope="function")
 def sovereign_test_env(tmp_path):

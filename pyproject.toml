@@ -1,6 +1,6 @@
 [project]
 name = "sovereign-ai-stack"
-version = "0.1.0a5"
+version = "0.2.0a1"
 description = "Local-first RAG with policy gating and audit-friendly logging — reference implementation"
 authors = [{name = "Anandakrishnan Damodaran", email = "ananda.krishnan@hotmail.com"}]
 license = {text = "MIT"}
@@ -99,6 +99,7 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
+    "isort>=5.12.0",
 ]
 
 [project.urls]

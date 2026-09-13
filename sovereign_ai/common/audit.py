@@ -122,8 +122,6 @@ class SignedAuditChain:
             # Default to software-bound anchor (simulated TPM)
             self.anchor = SoftwareSimulatorAnchor(tenant_id)
 
-        print(f"DEBUG: anchor type for {tenant_id} is {type(self.anchor)}")
-
         # Derive public key from anchor
         self.public_key = self.anchor.get_public_key()
 
@@ -292,8 +290,11 @@ class SignedAuditChain:
         self.last_hash = curr_hash
 
         # 5. Persist to file
-        with open(self.audit_file, "a") as f:
-            f.write(json.dumps(event) + "\n")
+        self.audit_file.parent.mkdir(parents=True, exist_ok=True)
+        record = (json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+        # Append one complete record and fsync it before advancing the checkpoint.
+        with open(self.audit_file, "ab") as f:
+            f.write(record)
             f.flush()
             os.fsync(f.fileno())
 

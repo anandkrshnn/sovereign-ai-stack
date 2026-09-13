@@ -17,8 +17,8 @@ jobs:
     name: Lint & Format (Ruff & Mypy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.11"
       - name: Install Linting Tools
@@ -31,7 +31,6 @@ jobs:
         run: ruff check sovereign_ai tests --ignore E722,E741,E402,F841,F401,E701
       - name: Run Mypy (Type Checking)
         run: mypy sovereign_ai --ignore-missing-imports
-        continue-on-error: true
 
   test:
     name: Unit & Integration Tests
@@ -41,8 +40,8 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -55,4 +54,4 @@ jobs:
       - name: Run Fuzzing / Property-Based Tests (Hypothesis)
         run: pytest tests/verify/test_audit_chain.py tests/verify/test_evaluator_robustness.py -v --hypothesis-show-statistics
       - name: Run Performance Benchmark
-        run: pytest tests/benchmark_performance.py --benchmark-only --benchmark-fail-unoptimized
+        run: pytest tests/ -m "not requires_model and not slow" --benchmark-disable

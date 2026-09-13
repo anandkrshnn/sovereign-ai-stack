@@ -2,10 +2,10 @@
 Sovereign AI Stack - Verification Primitive
 """
 
-__version__ = "0.2.0a0"
+__version__ = "0.2.0a1"
 
-from .pipeline import Config, SovereignPipeline
 from .common.audit import SovereignAuditLogger
+from .pipeline import Config, SovereignPipeline
 from .verify.evaluator import SovereignEvaluator
 
 __all__ = [

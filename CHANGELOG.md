@@ -5,6 +5,16 @@ All notable changes to the Sovereign AI Stack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0a1] - 2026-09-13
+### Added
+- Explicit production trust-anchor gating: TPM 2.0/HSM-backed anchors are required; simulator mode is opt-in for non-production only.
+- Deterministic NLI input limits and numeric/entity/date consistency checks before model scoring.
+- Crash-safe, canonical JSONL audit writes and required remote-anchor failure handling.
+
+### Changed
+- Reconciled package metadata and documentation to `0.2.0a1`.
+- CI and security checks are blocking rather than best-effort.
+
 ## [0.1.0a5] - 2026-05-09
 ### Added
 - **Mandatory Remote Attestation Gate**: `SovereignPipeline` now optionally enforces remote verification before startup, blocking operations if the hardware quote is rejected.

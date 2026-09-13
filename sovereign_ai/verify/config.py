@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 
 
@@ -10,7 +11,17 @@ class Config:
 
     grounding_threshold: float = 0.85
     faithfulness_threshold: float = 0.85
+    max_input_chars: int = 100_000
+    max_answer_chars: int = 20_000
+    timeout_seconds: float = 30.0
 
     @classmethod
     def from_env(cls) -> "Config":
-        return cls()
+        return cls(
+            model_name=os.getenv("SOVEREIGN_NLI_MODEL", cls.model_name),
+            grounding_threshold=float(os.getenv("SOVEREIGN_GROUNDING_THRESHOLD", "0.85")),
+            faithfulness_threshold=float(os.getenv("SOVEREIGN_FAITHFULNESS_THRESHOLD", "0.85")),
+            max_input_chars=int(os.getenv("SOVEREIGN_MAX_INPUT_CHARS", "100000")),
+            max_answer_chars=int(os.getenv("SOVEREIGN_MAX_ANSWER_CHARS", "20000")),
+            timeout_seconds=float(os.getenv("SOVEREIGN_NLI_TIMEOUT_SECONDS", "30")),
+        )
