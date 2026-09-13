@@ -1,10 +1,12 @@
-# Sovereign AI Stack (v0.2.0-alpha1)
+# Sovereign AI Stack (v0.3.0a1)
 
-**Alpha research prototype** exploring local-first AI verification building blocks.
+**Alpha research preview** exploring local-first AI verification building blocks.
 
 > [!WARNING]
-> This is an **early research preview**. Significant limitations exist. 
-> It is **not production-ready**. See [LIMITATIONS.md](LIMITATIONS.md).
+> **Research preview only. Not production-ready.** See [LIMITATIONS.md](LIMITATIONS.md).
+
+**Frozen scope:** Block and prove high-impact agent tool calls in one regulated
+Tamil Nadu workflow, with independently replayable evidence.
 
 Production deployments must provide a TPM 2.0 or HSM-backed anchor. The
 software simulator is available only for development and test environments and
@@ -17,29 +19,32 @@ must be explicitly enabled with `SOVEREIGN_ALLOW_SIMULATOR=1`.
 - **LangChainGuard** — Basic wrapper for adding verification to LangChain/LCEL pipelines.
 - **Evidence-Carrying Orchestrator** — Versioned agent/task/run contracts, deterministic tool execution, policy and approval gates, and evidence bundles for external builders. See [the integration contract](docs/INTEGRATION_CONTRACT.md).
 
-## Quickstart
+## Clean-machine verification
 
 ```bash
 git clone https://github.com/anandkrshnn/sovereign-ai-stack.git
 cd sovereign-ai-stack
 
-# Install minimal core without bloat
-pip install -e .[verify]
+# Create an isolated environment and install the project
+python -m venv .venv
+.venv\Scripts\activate  # Windows; use source .venv/bin/activate on POSIX
+python -m pip install -e .
 
-# Use the sovereign CLI
-sovereign --help
+# Run the deterministic workflow and standalone evidence verifier
+python -m pytest -q tests/workflows/test_tamilnadu_seva.py
+python verify.py path/to/evidence.json
 ```
 
 *Note: Demo applications and UI wrappers have been removed to focus on core verification primitives. Integrate `SovereignPipeline` directly via Python or use the CLI.*
 
 ## Repository Status
-- Focused on verification primitives only.
+- Focused on the frozen Tamil Nadu case-file update vertical slice.
 - The orchestration foundation is intentionally local, deterministic, and provider-neutral; n8n, MCP hosts, and UI builders remain external integrations.
 - The sprawling agent orchestration module has been entirely deleted.
 - CI blocks merges on formatting, typing, tests, dependency, SAST, secret, and filesystem scan failures.
 - Release artifacts are built from tagged commits; hardware-dependent validation remains separate from simulator tests.
 
-Contributions welcome, especially around hardening, testing, and documentation of failure modes.
+Keep [LIMITATIONS.md](LIMITATIONS.md) prominent when evaluating this research preview.
 
 ## Product boundary
 

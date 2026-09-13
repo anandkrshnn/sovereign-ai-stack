@@ -5,6 +5,13 @@ All notable changes to the Sovereign AI Stack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0a1] - 2026-09-13
+### Added
+- Frozen Tamil Nadu e-Sevai case-file update slice with policy, operator approval, webhook execution, signed evidence, standalone replay verification, and a 20-case fixture.
+
+### Changed
+- Reconciled repository metadata and documentation to `0.3.0a1` and restored Alpha research-preview positioning.
+
 ## [0.2.0a1] - 2026-09-13
 ### Added
 - Explicit production trust-anchor gating: TPM 2.0/HSM-backed anchors are required; simulator mode is opt-in for non-production only.
