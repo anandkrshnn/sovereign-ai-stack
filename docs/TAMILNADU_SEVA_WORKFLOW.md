@@ -25,7 +25,7 @@ the conformance path. An external Ollama run is not claimed as validated here.
 git clone https://github.com/anandkrshnn/sovereign-ai-stack.git
 cd sovereign-ai-stack
 python -m venv .venv
-.venv\Scripts\activate  # Windows; use source .venv/bin/activate on POSIX
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 python -m pip install -e .
 ```
 
@@ -37,7 +37,7 @@ python -m sovereign_ai.workflows.tamilnadu_cli submit --output pending.json
 python -m sovereign_ai.workflows.tamilnadu_cli approve --input pending.json --output approved.json --principal operator-1
 python verify.py approved.json
 python -m sovereign_ai.workflows.tamilnadu_cli submit --deny --output denied.json
-python verify.py denied.json || echo "denied as expected"
+python verify.py denied.json
 ```
 
 The test writes no trusted state outside its temporary directory. Hardware

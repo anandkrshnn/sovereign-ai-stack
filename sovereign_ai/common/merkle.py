@@ -9,14 +9,14 @@ class MerkleTree:
     aggregated cryptographic trees (standard for high-integrity systems).
     """
 
-    def __init__(self, leaves: List[str]):
+    def __init__(self, leaves: list[str]):
         self.leaves = [self._hash(l) for l in leaves]
         self.tree = self._build_tree(self.leaves)
 
     def _hash(self, data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
 
-    def _build_tree(self, nodes: List[str]) -> List[List[str]]:
+    def _build_tree(self, nodes: list[str]) -> list[list[str]]:
         """Recursively builds the tree layers until the root."""
         layers = [nodes]
         while len(layers[-1]) > 1:
@@ -33,7 +33,7 @@ class MerkleTree:
     def root(self) -> str:
         return self.tree[-1][0] if self.tree else ""
 
-    def get_proof(self, index: int) -> List[dict]:
+    def get_proof(self, index: int) -> list[dict]:
         """
         Generates a Merkle Proof for a leaf at a given index.
         Proof is O(log n), allowing for efficient remote verification.
@@ -55,7 +55,7 @@ class MerkleTree:
         return proof
 
     @staticmethod
-    def verify_proof(leaf: str, proof: List[dict], root: str) -> bool:
+    def verify_proof(leaf: str, proof: list[dict], root: str) -> bool:
         """Verifies a leaf against a root using a Merkle Proof."""
         current_hash = hashlib.sha256(leaf.encode()).hexdigest()
         for p in proof:
@@ -66,7 +66,7 @@ class MerkleTree:
         return current_hash == root
 
     @staticmethod
-    async def verify_proof_async(leaf: str, proof: List[dict], root: str) -> bool:
+    async def verify_proof_async(leaf: str, proof: list[dict], root: str) -> bool:
         """
         Asynchronously verifies a proof, releasing the GIL via a threadpool.
         Critical for parallel proof validation under heavy load.

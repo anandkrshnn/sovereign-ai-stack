@@ -38,7 +38,7 @@ class TamilNaduWorkflow:
         return {"action": "case_file.update", "request": request.model_dump(mode="json")}
 
     def opa_decide(self, request: CaseFileUpdate) -> dict[str, Any]:
-        """Return the OPA-compatible decision shape used by the trust plane."""
+        """Deterministic stub returning an OPA-compatible decision shape used by the trust plane."""
 
         if request.field == "document_reference" and request.value.lower().startswith("delete"):
             return {

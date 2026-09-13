@@ -11,7 +11,6 @@ from ..rag.schemas import Document
 @click.group()
 def main():
     """Sovereign AI Stack CLI - Local, Governed, Auditable AI."""
-    pass
 
 
 @main.command()
@@ -68,7 +67,6 @@ def ingest(path, tenant):
 @main.group()
 def audit():
     """Manage the forensic audit chain."""
-    pass
 
 
 @audit.command()
@@ -89,7 +87,6 @@ def verify(tenant, base_dir):
 @main.group()
 def trust():
     """Hardware-anchored trust and attestation."""
-    pass
 
 
 @trust.command()

@@ -32,10 +32,10 @@ class PlattCalibrator:
     def predict(self, probability: float) -> float:
         return self.calibrate(probability)
 
-    def calibrate_batch(self, probabilities: List[float]) -> List[float]:
+    def calibrate_batch(self, probabilities: list[float]) -> list[float]:
         return [self.calibrate(p) for p in probabilities]
 
-    def fit(self, probabilities: List[float], labels: List[int]):
+    def fit(self, probabilities: list[float], labels: list[int]):
         """
         Learns parameters A and B from data using maximum likelihood.
         labels: 1 for entailment, 0 for contradiction/neutral.

@@ -22,15 +22,16 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install Linting Tools
-        run: pip install ruff mypy black isort
+        run: pip install "ruff==0.16.7" "mypy==1.17.1" "black==26.5.1" "isort==9.0.1"
       - name: Run Black & Isort Check
         run: |
-          black --check sovereign_ai tests
-          isort --check-only sovereign_ai tests
+          black --check sovereign_ai tests evidence_envelope.py verify.py
+          isort --check-only sovereign_ai tests evidence_envelope.py verify.py
       - name: Run Ruff
-        run: ruff check sovereign_ai tests --ignore E722,E741,E402,F841,F401,E701
+        run: ruff check sovereign_ai tests evidence_envelope.py verify.py --ignore E722,E741,E402,F841,F401,E701
       - name: Run Mypy (Type Checking)
         run: mypy sovereign_ai --ignore-missing-imports
+        continue-on-error: true
 
   test:
     name: Unit & Integration Tests

@@ -44,7 +44,7 @@ class DatabaseAuditChain:
     Compatible with PostgreSQL (asyncpg) and SQLite (aiosqlite).
     """
 
-    def __init__(self, tenant_id: str, database_uri: str, anchor: Optional[SecureAnchor] = None):
+    def __init__(self, tenant_id: str, database_uri: str, anchor: SecureAnchor | None = None):
         self.tenant_id = tenant_id
         self.database_uri = database_uri
         self.engine = create_async_engine(self.database_uri, echo=False)
@@ -76,71 +76,70 @@ class DatabaseAuditChain:
             else:
                 self._last_hash = "0" * 64
 
-    def _canonical_json(self, record_dict: Dict[str, Any]) -> bytes:
+    def _canonical_json(self, record_dict: dict[str, Any]) -> bytes:
         return json.dumps(record_dict, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
-    async def append_record(self, action: str, data: Dict[str, Any]) -> int:
+    async def append_record(self, action: str, data: dict[str, Any]) -> int:
         """Appends a new record to the database ledger and returns its sequence number."""
-        async with self.async_session() as session:
-            async with session.begin():
-                record_dict = {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "action": action,
-                    "tenant_id": self.tenant_id,
-                    "event_data": data,
-                    "prev_hash": self._last_hash,
-                }
+        async with self.async_session() as session, session.begin():
+            record_dict = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "action": action,
+                "tenant_id": self.tenant_id,
+                "event_data": data,
+                "prev_hash": self._last_hash,
+            }
 
-                # Sign
-                canonical = self._canonical_json(record_dict)
-                signature_bytes = await asyncio.to_thread(self.anchor.sign, canonical)
-                record_dict["signature"] = base64.b64encode(signature_bytes).decode("utf-8")
+            # Sign
+            canonical = self._canonical_json(record_dict)
+            signature_bytes = await asyncio.to_thread(self.anchor.sign, canonical)
+            record_dict["signature"] = base64.b64encode(signature_bytes).decode("utf-8")
 
-                pub_key = self.anchor.get_public_key()
-                if pub_key:
-                    from cryptography.hazmat.primitives import serialization
+            pub_key = self.anchor.get_public_key()
+            if pub_key:
+                from cryptography.hazmat.primitives import serialization
 
-                    from .schemas import SigningAlgorithm
+                from .schemas import SigningAlgorithm
 
-                    pub_bytes = pub_key.public_bytes(
-                        encoding=(
-                            serialization.Encoding.Raw
-                            if self.anchor.algorithm == SigningAlgorithm.ED25519
-                            else serialization.Encoding.X962
-                        ),
-                        format=(
-                            serialization.PublicFormat.Raw
-                            if self.anchor.algorithm == SigningAlgorithm.ED25519
-                            else serialization.PublicFormat.UncompressedPoint
-                        ),
-                    )
-                    record_dict["public_key"] = base64.b64encode(pub_bytes).decode("utf-8")
-
-                # Hash (Chain Link)
-                hash_canonical = self._canonical_json(record_dict)
-                curr_hash = hashlib.sha256(hash_canonical).hexdigest()
-                self._last_hash = curr_hash
-
-                db_record = AuditLedgerRecord(
-                    tenant_id=self.tenant_id,
-                    timestamp=record_dict["timestamp"],
-                    action=action,
-                    event_data=data,
-                    prev_hash=record_dict["prev_hash"],
-                    curr_hash=curr_hash,
-                    signature=record_dict["signature"],
-                    public_key=record_dict.get("public_key"),
+                pub_bytes = pub_key.public_bytes(
+                    encoding=(
+                        serialization.Encoding.Raw
+                        if self.anchor.algorithm == SigningAlgorithm.ED25519
+                        else serialization.Encoding.X962
+                    ),
+                    format=(
+                        serialization.PublicFormat.Raw
+                        if self.anchor.algorithm == SigningAlgorithm.ED25519
+                        else serialization.PublicFormat.UncompressedPoint
+                    ),
                 )
-                session.add(db_record)
-                await session.flush()
+                record_dict["public_key"] = base64.b64encode(pub_bytes).decode("utf-8")
 
-                seq_num = db_record.sequence_number
+            # Hash (Chain Link)
+            hash_canonical = self._canonical_json(record_dict)
+            curr_hash = hashlib.sha256(hash_canonical).hexdigest()
+            self._last_hash = curr_hash
 
-                # Simple periodic checkpointing logic (for demo/minimalism)
-                if seq_num % self.checkpoint_interval == 0:
-                    await self._create_checkpoint(session, seq_num)
+            db_record = AuditLedgerRecord(
+                tenant_id=self.tenant_id,
+                timestamp=record_dict["timestamp"],
+                action=action,
+                event_data=data,
+                prev_hash=record_dict["prev_hash"],
+                curr_hash=curr_hash,
+                signature=record_dict["signature"],
+                public_key=record_dict.get("public_key"),
+            )
+            session.add(db_record)
+            await session.flush()
 
-                return seq_num
+            seq_num = db_record.sequence_number
+
+            # Simple periodic checkpointing logic (for demo/minimalism)
+            if seq_num % self.checkpoint_interval == 0:
+                await self._create_checkpoint(session, seq_num)
+
+            return seq_num
 
     async def _create_checkpoint(self, session: AsyncSession, current_seq: int):
         """Seals the previous block with a Merkle Root checkpoint."""
@@ -198,7 +197,7 @@ class DatabaseAuditChain:
         for r in records:
             r.checkpoint_seq = chkpt.sequence_number
 
-    async def get_audit_proof(self, audit_id: int) -> Dict[str, Any]:
+    async def get_audit_proof(self, audit_id: int) -> dict[str, Any]:
         """O(1) lookup of Merkle Proof using indexed checkpoint_seq."""
         async with self.async_session() as session:
             # Find the record

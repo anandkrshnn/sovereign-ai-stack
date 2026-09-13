@@ -9,8 +9,8 @@ from .pipeline import Config, SovereignPipeline
 from .verify.evaluator import SovereignEvaluator
 
 __all__ = [
-    "SovereignPipeline",
     "Config",
     "SovereignAuditLogger",
     "SovereignEvaluator",
+    "SovereignPipeline",
 ]

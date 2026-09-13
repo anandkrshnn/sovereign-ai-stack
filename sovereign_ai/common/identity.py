@@ -10,7 +10,7 @@ class IdentityHub:
     """
 
     @staticmethod
-    def resolve_from_headers(headers: Dict[str, str]) -> Principal:
+    def resolve_from_headers(headers: dict[str, str]) -> Principal:
         """
         Resolves a Principal from incoming HTTP headers.
         Expected headers:

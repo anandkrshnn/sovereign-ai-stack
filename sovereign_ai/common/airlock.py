@@ -8,7 +8,7 @@ class AirlockResult:
     is_safe: bool
     score: float
     reason: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class SovereignAirlock(abc.ABC):
@@ -17,7 +17,7 @@ class SovereignAirlock(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def verify(self, claim: str, context: List[str]) -> AirlockResult:
+    async def verify(self, claim: str, context: list[str]) -> AirlockResult:
         pass
 
 
@@ -41,7 +41,7 @@ class NLIEntailmentAirlock(SovereignAirlock):
             self._model = CrossEncoder(self.model_name)
         return self._model
 
-    async def verify(self, claim: str, context: List[str]) -> AirlockResult:
+    async def verify(self, claim: str, context: list[str]) -> AirlockResult:
         if not context:
             return AirlockResult(
                 is_safe=False, score=0.0, reason="No context provided", metadata={}

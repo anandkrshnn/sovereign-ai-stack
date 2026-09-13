@@ -59,17 +59,58 @@ def value_hash(value: Any) -> str:
     ).hexdigest()
 
 
-def verify_envelope(envelope: WorkflowEvidenceEnvelope, expected_nonce: str | None = None) -> bool:
+class VerificationResult(dict):
+    @property
+    def valid(self) -> bool:
+        return bool(self.get("valid", False))
+
+    @property
+    def decision(self) -> str:
+        return str(self.get("decision", "invalid"))
+
+    @property
+    def run_id(self) -> str:
+        return str(self.get("run_id", ""))
+
+    @property
+    def executed(self) -> bool:
+        return bool(self.get("executed", False))
+
+    @property
+    def policy_allowed(self) -> bool:
+        return bool(self.get("policy_allowed", False))
+
+    def __bool__(self) -> bool:
+        return self.valid
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, bool):
+            return self.valid is other
+        return super().__eq__(other)
+
+
+def verify_envelope(
+    envelope: WorkflowEvidenceEnvelope, expected_nonce: str | None = None
+) -> VerificationResult:
+    def _invalid() -> VerificationResult:
+        return VerificationResult(
+            valid=False,
+            decision="invalid",
+            run_id=str(envelope.run_id),
+            executed=envelope.executed,
+            policy_allowed=envelope.policy_allowed,
+        )
+
+    if envelope.action != "case_file.update":
+        return _invalid()
     if expected_nonce is not None and envelope.nonce != expected_nonce:
-        return False
-    if envelope.action != "case_file.update" or not envelope.executed:
-        return False
-    if envelope.approval_required and not envelope.approved_by:
-        return False
+        return _invalid()
+    if envelope.approval_required and envelope.executed and not envelope.approved_by:
+        return _invalid()
     if envelope.input_hash != value_hash(envelope.request.model_dump(mode="json")):
-        return False
+        return _invalid()
     if envelope.output_hash != value_hash(envelope.result):
-        return False
+        return _invalid()
     try:
         public_key = ed25519.Ed25519PublicKey.from_public_bytes(
             base64.b64decode(envelope.public_key)
@@ -78,6 +119,39 @@ def verify_envelope(envelope: WorkflowEvidenceEnvelope, expected_nonce: str | No
             base64.b64decode(envelope.signature),
             canonical_unsigned(envelope.model_dump()),
         )
-        return True
-    except (ValueError, InvalidSignature):
-        return False
+    except (ValueError, InvalidSignature, TypeError):
+        return _invalid()
+
+    if not envelope.policy_allowed and not envelope.executed:
+        return VerificationResult(
+            valid=True,
+            decision="denied",
+            run_id=str(envelope.run_id),
+            executed=envelope.executed,
+            policy_allowed=envelope.policy_allowed,
+        )
+
+    if envelope.policy_allowed and envelope.executed:
+        return VerificationResult(
+            valid=True,
+            decision="allowed",
+            run_id=str(envelope.run_id),
+            executed=envelope.executed,
+            policy_allowed=envelope.policy_allowed,
+        )
+
+    if (
+        envelope.policy_allowed
+        and not envelope.executed
+        and envelope.result.get("status") == "blocked"
+        and (not envelope.approval_required or envelope.approved_by)
+    ):
+        return VerificationResult(
+            valid=True,
+            decision="blocked",
+            run_id=str(envelope.run_id),
+            executed=envelope.executed,
+            policy_allowed=envelope.policy_allowed,
+        )
+
+    return _invalid()

@@ -48,7 +48,7 @@ class SoftwareSimulatorAnchor(SecureAnchor):
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
-    def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
+    def generate_quote(self, nonce: str, pcrs: list[int]) -> AttestationQuote:
         """Simulates a RATS-compliant hardware quote."""
         return AttestationQuote(
             type=EvidenceType.MOCK_SIM,

@@ -139,6 +139,19 @@ target-version = ["py310", "py311", "py312"]
 line-length = 100
 target-version = "py310"
 
+[tool.ruff.lint]
+ignore = [
+    "BLE001",
+    "S110",
+    "DTZ005",
+    "SIM102",
+    "PLW1510",
+    "B019",
+    "UP035",
+    "C414",
+    "C401",
+]
+
 [tool.isort]
 profile = "black"
 line_length = 100

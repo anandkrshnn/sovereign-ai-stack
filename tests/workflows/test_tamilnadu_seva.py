@@ -28,11 +28,15 @@ def test_approved_webhook_run_is_replayable_and_tamper_evident():
     pending = flow.submit(request())
     assert pending.policy_allowed and pending.approval_required and not pending.executed
     approved = flow.approve_and_execute(pending.run_id, "operator-1")
-    assert verify_envelope(approved, approved.nonce)
+    report = verify_envelope(approved, approved.nonce)
+    assert report.valid is True and report.decision == "allowed"
     replay = WorkflowEvidenceEnvelope.model_validate_json(approved.model_dump_json())
-    assert verify_envelope(replay)
+    replay_report = verify_envelope(replay)
+    assert replay_report.valid is True and replay_report.decision == "allowed"
     tampered = approved.model_copy(update={"result": {"updated": "different"}})
-    assert not verify_envelope(tampered)
+    tampered_report = verify_envelope(tampered)
+    assert not tampered_report.valid
+    assert tampered_report.decision == "invalid"
 
 
 def test_destructive_action_is_denied_without_execution():
@@ -41,6 +45,11 @@ def test_destructive_action_is_denied_without_execution():
     assert not pending.policy_allowed
     assert not pending.executed
     assert not flow._pending
+    report = verify_envelope(pending)
+    assert report.valid is True
+    assert report.decision == "denied"
+    assert report.executed is False
+    assert report.policy_allowed is False
 
 
 def test_webhook_timeout_is_retried_and_blocked():
@@ -56,6 +65,10 @@ def test_webhook_timeout_is_retried_and_blocked():
     assert attempts == [30, 30]
     assert result.result["status"] == "blocked"
     assert not result.executed
+    report = verify_envelope(result)
+    assert report.valid is True
+    assert report.decision == "blocked"
+    assert report.executed is False
 
 
 @pytest.mark.parametrize(
@@ -89,6 +102,13 @@ def test_twenty_case_workflow_fixture(case, expected_allowed):
     if not expected_allowed:
         assert not evidence.policy_allowed
         assert not evidence.executed
+        report = verify_envelope(evidence)
+        assert report.valid is True
+        assert report.decision == "denied"
+        assert report.executed is False
     else:
         completed = flow.approve_and_execute(evidence.run_id, "fixture-operator")
-        assert verify_envelope(completed)
+        report = verify_envelope(completed)
+        assert report.valid is True
+        assert report.decision == "allowed"
+        assert report.executed is True

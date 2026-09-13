@@ -17,7 +17,7 @@ class EvidenceBundle(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     nonce: str = Field(..., min_length=32, description="Anti-replay nonce (freshness)")
     merkle_root: str = Field(..., description="The forensic Merkle Root being attested")
-    quote: Optional[AttestationQuote] = None
+    quote: AttestationQuote | None = None
     bundle_signature: str = Field(..., description="Signature over the full bundle (Attester Key)")
 
 
@@ -27,10 +27,10 @@ class AttestationVerifier:
     Supports multiple evidence types: MOCK_SIM, TPM2_QUOTE.
     """
 
-    def __init__(self, reference_values: Dict[str, str]):
+    def __init__(self, reference_values: dict[str, str]):
         self.reference_values = reference_values
 
-    def verify_bundle(self, bundle: EvidenceBundle, expected_nonce: str) -> Dict[str, Any]:
+    def verify_bundle(self, bundle: EvidenceBundle, expected_nonce: str) -> dict[str, Any]:
         """
         Full RATS verification sequence.
         Dispatches to specific sub-verifiers based on evidence type.
@@ -65,7 +65,7 @@ class AttestationVerifier:
         results["is_valid"] = all(results["checks"].values())
         return results
 
-    def _verify_tpm2_quote(self, bundle: EvidenceBundle, results: Dict[str, Any]):
+    def _verify_tpm2_quote(self, bundle: EvidenceBundle, results: dict[str, Any]):
         """
         Deep validation for native TPM 2.0 quotes using RSA-PSS verification.
         """
@@ -166,9 +166,9 @@ class AttestationVerifier:
                 results["errors"].append("AIK key type mismatch: Expected RSA.")
 
         except Exception as e:
-            results["errors"].append(f"TPM Signature Verification Failed: {str(e)}")
+            results["errors"].append(f"TPM Signature Verification Failed: {e!s}")
 
-    def _verify_mock_quote(self, bundle: EvidenceBundle, results: Dict[str, Any]):
+    def _verify_mock_quote(self, bundle: EvidenceBundle, results: dict[str, Any]):
         """
         Validation logic for simulator-based evidence.
         Uses a simpler but still cryptographic check.

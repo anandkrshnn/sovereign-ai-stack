@@ -36,7 +36,7 @@ class WindowsTPMAnchor(SecureAnchor):
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
-    def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
+    def generate_quote(self, nonce: str, pcrs: list[int]) -> AttestationQuote:
         """Structural placeholder for Windows TPM quotes."""
         return AttestationQuote(
             type=EvidenceType.TPM2_QUOTE,

@@ -35,7 +35,7 @@ class LegacyRawAnchor(SecureAnchor):
             )
         return b"LEGACY_PUB_KEY"
 
-    def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
+    def generate_quote(self, nonce: str, pcrs: list[int]) -> AttestationQuote:
         """Legacy keys return a mock quote."""
         return AttestationQuote(
             type=EvidenceType.MOCK_SIM,
