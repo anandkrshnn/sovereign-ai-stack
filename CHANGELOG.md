@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reconciled package metadata and documentation to `0.2.0a1`.
 - CI and security checks are blocking rather than best-effort.
 
+## [0.3.0a1] - 2026-09-13
+### Added
+- Versioned orchestration contracts for agents, tasks, runs, steps, tool calls, approvals, policy decisions, verification results, artifacts, and evidence bundles.
+- Deterministic local orchestrator with bounded retries, timeouts, idempotency, cancellation, approval pauses, event emission, and fail-closed policy/verification handling.
+- Provider-neutral HTTP, CLI, MCP, and n8n webhook adapter contracts, plus an audit evidence recorder.
+- Orchestration ADR, external integration contract, and simulator-based conformance tests.
+
 ## [0.1.0a5] - 2026-05-09
 ### Added
 - **Mandatory Remote Attestation Gate**: `SovereignPipeline` now optionally enforces remote verification before startup, blocking operations if the hardware quote is rejected.
