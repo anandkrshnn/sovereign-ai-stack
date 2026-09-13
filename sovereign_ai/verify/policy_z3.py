@@ -25,14 +25,14 @@ class PolicyVerifier:
         if not HAS_Z3:
             logger.warning("z3-solver not installed. Policy verification will be limited.")
 
-    def _get_context_and_solver(self) -> Tuple[Optional[Context], Optional[Solver]]:
+    def _get_context_and_solver(self) -> tuple[Context | None, Solver | None]:
         if not HAS_Z3:
             return None, None
         ctx = Context()
         solver = Solver(ctx=ctx)
         return ctx, solver
 
-    def _get_sorts_and_vars(self, ctx: Context, policies: List[Dict[str, Any]]):
+    def _get_sorts_and_vars(self, ctx: Context, policies: list[dict[str, Any]]):
         """Extracts unique attributes to create Z3 Enums within a specific context."""
         principals = sorted(list(set(p.get("principal", "any") for p in policies)))
         resources = sorted(list(set(p.get("resource", "any") for p in policies)))
@@ -64,7 +64,7 @@ class PolicyVerifier:
         return (p_const, r_const, a_const), (p_map, r_map, a_map)
 
     def is_authorized(
-        self, principal: str, resource: str, action: str, policies: List[Dict[str, Any]]
+        self, principal: str, resource: str, action: str, policies: list[dict[str, Any]]
     ) -> bool:
         """
         Runtime authorization check using SMT.
@@ -82,14 +82,14 @@ class PolicyVerifier:
 
     @lru_cache(maxsize=1024)
     def _cached_auth_check(
-        self, principal: str, resource: str, action: str, policy_hash: str, policy_tuple: Tuple[str]
+        self, principal: str, resource: str, action: str, policy_hash: str, policy_tuple: tuple[str]
     ) -> bool:
         """Internal cached Z3 check."""
         policies = [json.loads(p) for p in policy_tuple]
         return self._run_auth_check(principal, resource, action, policies)
 
     def _run_auth_check(
-        self, principal: str, resource: str, action: str, policies: List[Dict[str, Any]]
+        self, principal: str, resource: str, action: str, policies: list[dict[str, Any]]
     ) -> bool:
         """Pure Z3 authorization logic."""
         ctx, solver = self._get_context_and_solver()
@@ -150,7 +150,7 @@ class PolicyVerifier:
         solver.pop()
         return result
 
-    def detect_conflicts(self, policies: List[Dict[str, Any]]) -> List[str]:
+    def detect_conflicts(self, policies: list[dict[str, Any]]) -> list[str]:
         """
         Detects logical conflicts using SMT.
         Checks if there exists any (Principal, Resource, Action) tuple
@@ -227,7 +227,7 @@ class PolicyVerifier:
         return conflicts
 
     def check_reachability(
-        self, principal: str, resource: str, policies: List[Dict[str, Any]]
+        self, principal: str, resource: str, policies: list[dict[str, Any]]
     ) -> bool:
         """Checks if a principal can EVER reach a resource under current policies."""
         ctx, solver = self._get_context_and_solver()
@@ -235,7 +235,9 @@ class PolicyVerifier:
             logger.critical("z3-solver is not available. Failing closed for safety.")
             return False
 
-        (p_const, r_const, a_const), (p_map, r_map, a_map) = self._get_sorts_and_vars(ctx, policies)
+        (p_const, r_const, _a_const), (p_map, r_map, _a_map) = self._get_sorts_and_vars(
+            ctx, policies
+        )
 
         # If target principal/resource not in policies, we must handle carefully
         if principal not in p_map:
@@ -285,7 +287,7 @@ class PolicyVerifier:
         solver.pop()
         return result
 
-    def is_policy_satisfiable(self, formulas: List[Any]) -> bool:
+    def is_policy_satisfiable(self, formulas: list[Any]) -> bool:
         """Checks if a set of policy constraints/formulas is logically satisfiable."""
         if not HAS_Z3:
             logger.critical("z3-solver is not available. Failing closed.")

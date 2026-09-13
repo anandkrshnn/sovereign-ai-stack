@@ -18,7 +18,7 @@ def temp_audit_env():
 
 
 def test_merkle_inclusion_and_tamper_detection(temp_audit_env):
-    chain, audit_file = temp_audit_env
+    chain, _audit_file = temp_audit_env
 
     # Generate exactly enough events to trigger a checkpoint (checkpoint_interval=10)
     # The 10th event triggers the MERKLE_CHECKPOINT, making 11 events total
@@ -42,7 +42,7 @@ def test_merkle_inclusion_and_tamper_detection(temp_audit_env):
 
 
 def test_merkle_proof_manipulation(temp_audit_env):
-    chain, audit_file = temp_audit_env
+    chain, _audit_file = temp_audit_env
 
     for i in range(1, 11):
         chain.log_event("system", f"action_{i}", "admin", {"data": i})
@@ -61,14 +61,14 @@ def test_merkle_proof_manipulation(temp_audit_env):
 
 
 def test_get_audit_proof_empty_chain(temp_audit_env):
-    chain, audit_file = temp_audit_env
+    chain, _audit_file = temp_audit_env
 
     with pytest.raises(ValueError, match="Audit log empty or missing"):
         chain.get_audit_proof(1)
 
 
 def test_get_audit_proof_unsealed_event(temp_audit_env):
-    chain, audit_file = temp_audit_env
+    chain, _audit_file = temp_audit_env
 
     # Log 1 event (doesn't trigger a checkpoint yet)
     chain.log_event("system", "action_1", "admin", {"data": 1})
@@ -78,7 +78,7 @@ def test_get_audit_proof_unsealed_event(temp_audit_env):
 
 
 def test_get_audit_proof_exclusion(temp_audit_env):
-    chain, audit_file = temp_audit_env
+    chain, _audit_file = temp_audit_env
 
     # Ensure there is a sealed block
     for i in range(1, 11):

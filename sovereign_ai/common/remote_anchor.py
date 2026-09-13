@@ -2,7 +2,7 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 @dataclass
@@ -19,11 +19,12 @@ class RemoteAnchorService:
     Provides non-repudiation by pinning local chain heads to external backends.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self.backend_type = self.config.get("backend", "none")
+        self.required = bool(self.config.get("required", False))
 
-    def anchor(self, tenant_id: str, chain_head: str) -> Optional[AnchorReceipt]:
+    def anchor(self, tenant_id: str, chain_head: str) -> AnchorReceipt | None:
         """Pins the current chain head to the configured remote backend."""
         if self.backend_type == "git":
             return self._git_anchor(tenant_id, chain_head)
@@ -34,7 +35,7 @@ class RemoteAnchorService:
         else:
             raise ValueError(f"Unknown remote anchor backend: {self.backend_type}")
 
-    def _git_anchor(self, tenant_id: str, chain_head: str) -> AnchorReceipt:
+    def _git_anchor(self, tenant_id: str, chain_head: str) -> AnchorReceipt | None:
         """Anchors via Git commit in an enterprise repository."""
         try:
             import git
@@ -63,7 +64,10 @@ class RemoteAnchorService:
             )
         except Exception as e:
             # For v1.1.0a2, we fail gracefully to ensure local availability isn't blocked
-            print(f"Warning: Remote Git Anchor failed: {e}")
+            if self.required:
+                raise RuntimeError(f"Remote Git Anchor failed: {e}") from e
+            logger = __import__("logging").getLogger(__name__)
+            logger.warning("Remote Git Anchor failed: %s", e)
             return None
 
     def _ipfs_anchor(self, tenant_id: str, chain_head: str) -> AnchorReceipt:

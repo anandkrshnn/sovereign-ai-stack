@@ -60,7 +60,7 @@ class NLIAdaptiveGate(SovereignAirlock):
             contradiction,
         )
 
-    def get_probabilities(self, premise: str, hypothesis: str) -> Dict[str, float]:
+    def get_probabilities(self, premise: str, hypothesis: str) -> dict[str, float]:
         """
         Runs sequence classification over the premise and hypothesis and
         returns the probability distribution across contradiction, entailment, and neutral.
@@ -86,7 +86,7 @@ class NLIAdaptiveGate(SovereignAirlock):
             "neutral": float(probs[2]),
         }
 
-    async def verify(self, claim: str, context: List[str]) -> AirlockResult:
+    async def verify(self, claim: str, context: list[str]) -> AirlockResult:
         """
         Standard Airlock compliance check. Requires strict ENTAILMENT.
         Runs in asyncio.to_thread to release the GIL during PyTorch inference.
@@ -119,8 +119,8 @@ class NLIAdaptiveGate(SovereignAirlock):
         )
 
     def verify_consistency(
-        self, proposed_update: str, current_knowledge: List[str]
-    ) -> Tuple[str, Dict[str, float], str]:
+        self, proposed_update: str, current_knowledge: list[str]
+    ) -> tuple[str, dict[str, float], str]:
         """
         Executes Innate Immunity logic. Checks if the proposed proposal is logically consistent
         with existing knowledge.

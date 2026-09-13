@@ -40,7 +40,7 @@ class AuditEvent:
     principal: str
     tenant_id: str
     # Event-specific data
-    event_data: Dict[str, Any]
+    event_data: dict[str, Any]
 
     # Chain linking
     prev_hash: str
@@ -48,29 +48,27 @@ class AuditEvent:
 
     # Ed25519 signature (NEW)
     signature: str  # Base64-encoded signature
-    public_key: Optional[str] = None  # Base64-encoded raw public key
-    public_key_pem: Optional[str] = None  # PEM-encoded public key
+    public_key: str | None = None  # Base64-encoded raw public key
+    public_key_pem: str | None = None  # PEM-encoded public key
     algorithm: str = "ed25519"
 
     # Transparency Metadata (v0.1.0a2)
     is_hardware_anchored: bool = False
-    attestation_statement: Optional[str] = None
+    attestation_statement: str | None = None
 
     # Merkle Aggregation (v0.1.0a2)
-    merkle_root: Optional[str] = None
-    merkle_proof: Optional[List[Dict[str, str]]] = None
+    merkle_root: str | None = None
+    merkle_proof: list[dict[str, str]] | None = None
 
 
 class SecurityHalt(Exception):
     """Immediate safety halt when forensic integrity is compromised."""
 
-    pass
-
 
 logger = logging.getLogger(__name__)
 
 
-def _calculate_next_hash_static(prev_hash: str, entry: Dict[str, Any]) -> str:
+def _calculate_next_hash_static(prev_hash: str, entry: dict[str, Any]) -> str:
     """Deterministic SHA-256 link calculation for legacy compatibility."""
     import hashlib
     import json
@@ -98,8 +96,8 @@ class SignedAuditChain:
         self,
         tenant_id: str,
         audit_file: str,
-        anchor: Optional[SecureAnchor] = None,
-        signing_key: Optional[ed25519.Ed25519PrivateKey] = None,
+        anchor: SecureAnchor | None = None,
+        signing_key: ed25519.Ed25519PrivateKey | None = None,
     ):
         """
         Initialize audit chain with Ed25519 signing capability.
@@ -122,18 +120,16 @@ class SignedAuditChain:
             # Default to software-bound anchor (simulated TPM)
             self.anchor = SoftwareSimulatorAnchor(tenant_id)
 
-        print(f"DEBUG: anchor type for {tenant_id} is {type(self.anchor)}")
-
         # Derive public key from anchor
         self.public_key = self.anchor.get_public_key()
 
         # Initialize chain
         self.sequence_number = 0
         self.last_hash = "0" * 64  # Genesis hash
-        self.pinned_algorithm: Optional[str] = None
+        self.pinned_algorithm: str | None = None
 
         # Merkle Buffer (v0.1.0a2)
-        self.event_buffer: List[Dict[str, Any]] = []
+        self.event_buffer: list[dict[str, Any]] = []
         self.checkpoint_interval = 10  # Aggregate every 10 events
 
         # 5. Checkpoint for truncation detection
@@ -144,7 +140,7 @@ class SignedAuditChain:
             self._load_chain()
             self._verify_checkpoint()
 
-    def _canonical_json(self, event: Dict[str, Any]) -> bytes:
+    def _canonical_json(self, event: dict[str, Any]) -> bytes:
         """Create canonical JSON representation for signing."""
         signing_data = {
             "sequence_number": event["sequence_number"],
@@ -162,8 +158,8 @@ class SignedAuditChain:
 
     @staticmethod
     def _get_last_record_fast(
-        file_path: Union[str, Path], chunk_size: int = 8192
-    ) -> Optional[Dict[str, Any]]:
+        file_path: str | Path, chunk_size: int = 8192
+    ) -> dict[str, Any] | None:
         """Backward-seek reader (v5.0): only reads the last chunk of the file (O(1))."""
         file_path = Path(file_path)
         if not file_path.exists():
@@ -193,7 +189,7 @@ class SignedAuditChain:
         except Exception:
             return None
 
-    def _sign_event(self, event: Dict[str, Any]) -> str:
+    def _sign_event(self, event: dict[str, Any]) -> str:
         """
         Sign event using the Secure Anchor (TPM/HSM).
         """
@@ -203,7 +199,7 @@ class SignedAuditChain:
         # Base64 encode for JSON storage
         return base64.b64encode(signature_bytes).decode("utf-8")
 
-    def _hash_event(self, event: Dict[str, Any]) -> str:
+    def _hash_event(self, event: dict[str, Any]) -> str:
         """
         Compute SHA-256 hash of event (including signature).
 
@@ -216,7 +212,7 @@ class SignedAuditChain:
         return hashlib.sha256(canonical).hexdigest()
 
     def log_event(
-        self, component: str, action: str, principal: str, event_data: Dict[str, Any]
+        self, component: str, action: str, principal: str, event_data: dict[str, Any]
     ) -> AuditEvent:
         """
         Log event to audit chain with Ed25519 signature.
@@ -292,8 +288,11 @@ class SignedAuditChain:
         self.last_hash = curr_hash
 
         # 5. Persist to file
-        with open(self.audit_file, "a") as f:
-            f.write(json.dumps(event) + "\n")
+        self.audit_file.parent.mkdir(parents=True, exist_ok=True)
+        record = (json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+        # Append one complete record and fsync it before advancing the checkpoint.
+        with open(self.audit_file, "ab") as f:
+            f.write(record)
             f.flush()
             os.fsync(f.fileno())
 
@@ -306,7 +305,7 @@ class SignedAuditChain:
         # 8. Return typed event
         return AuditEvent(**event)
 
-    def _update_merkle_aggregation(self, event: Dict[str, Any]):
+    def _update_merkle_aggregation(self, event: dict[str, Any]):
         """Periodically aggregates events into a Merkle Block."""
         # Prevent infinite recursion by excluding checkpoints from the buffer
         if event.get("action") == "MERKLE_CHECKPOINT":
@@ -337,7 +336,7 @@ class SignedAuditChain:
 
         # 4. Log a CHECKPOINT event containing the Merkle Root + Hardware Quote + Policy Cert
 
-    def get_audit_proof(self, audit_id: int) -> Dict[str, Any]:
+    def get_audit_proof(self, audit_id: int) -> dict[str, Any]:
         """
         Retrieves the Merkle inclusion proof for a given sequence_number (audit_id).
         Uses a checkpoint index for O(1) block seeking, avoiding naive linear scans.
@@ -413,7 +412,7 @@ class SignedAuditChain:
             "attestation_quote": checkpoint["event_data"].get("attestation_quote"),
         }
 
-    def _generate_policy_certificate(self) -> Dict[str, Any]:
+    def _generate_policy_certificate(self) -> dict[str, Any]:
         """Generates a certificate of formal policy correctness using Z3."""
         try:
             from ..verify.policy_z3 import PolicyVerifier
@@ -437,7 +436,7 @@ class SignedAuditChain:
         """Finalize the current block and close."""
         self._finalize_merkle_block()
 
-    def _append_to_file(self, event: Dict[str, Any]):
+    def _append_to_file(self, event: dict[str, Any]):
         """Append event to JSONL audit file."""
         self.audit_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -501,7 +500,7 @@ class SignedAuditChain:
             self.sequence_number = 0
             self.last_hash = "0" * 64
 
-    def verify_chain(self, events: Optional[List[Dict[str, Any]]] = None) -> bool:
+    def verify_chain(self, events: list[dict[str, Any]] | None = None) -> bool:
         """
         Verify integrity of entire audit chain.
 
@@ -578,7 +577,7 @@ class SignedAuditChain:
 
         return True
 
-    def _verify_signature(self, event: Dict[str, Any]) -> bool:
+    def _verify_signature(self, event: dict[str, Any]) -> bool:
         """
         Verify signature for a single event based on stored algorithm.
         """
@@ -650,7 +649,7 @@ class SignedAuditChain:
             print(f"Signature verification error: {e}")
             return False
 
-    def read_logs(self) -> List[Dict[str, Any]]:
+    def read_logs(self) -> list[dict[str, Any]]:
         """Read all events from the audit log."""
         if not self.audit_file.exists():
             return []
@@ -723,9 +722,9 @@ class Principal:
 
     id: str
     tenant_id: str = "default"
-    roles: List[str] = field(default_factory=lambda: ["user"])
-    classifications: List[str] = field(default_factory=lambda: ["public"])
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    roles: list[str] = field(default_factory=lambda: ["user"])
+    classifications: list[str] = field(default_factory=lambda: ["public"])
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self):
         return asdict(self)
@@ -737,10 +736,10 @@ class AuditRecord:
     timestamp: float
     correlation_id: str
     event_type: str
-    principal: Dict[str, Any]
-    data: Dict[str, Any]
+    principal: dict[str, Any]
+    data: dict[str, Any]
     prev_hash: str
-    chain_hash: Optional[str] = None
+    chain_hash: str | None = None
 
 
 class SovereignAuditLogger:
@@ -750,7 +749,7 @@ class SovereignAuditLogger:
         self,
         base_dir: str,
         tenant_id: str,
-        anchor: Optional[SecureAnchor] = None,
+        anchor: SecureAnchor | None = None,
         attest: bool = False,
     ):
         from .secure_key import SecureKeyManager
@@ -783,8 +782,8 @@ class SovereignAuditLogger:
         self,
         event_type: str,
         principal: Any,
-        data: Dict[str, Any],
-        correlation_id: Optional[str] = None,
+        data: dict[str, Any],
+        correlation_id: str | None = None,
     ):
         p_id = principal.id if hasattr(principal, "id") else str(principal)
         event = self.chain.log_event(
@@ -792,15 +791,15 @@ class SovereignAuditLogger:
         )
         return event.curr_hash
 
-    def read_logs(self) -> List[Dict[str, Any]]:
+    def read_logs(self) -> list[dict[str, Any]]:
         return self.chain.read_logs()
 
-    def verify_integrity(self) -> Tuple[bool, str]:
+    def verify_integrity(self) -> tuple[bool, str]:
         valid = self.chain.verify_chain()
         msg = "Forensic Integrity Verified" if valid else "Tampering Detected"
         return valid, msg
 
-    def get_provider_status(self) -> Dict[str, Any]:
+    def get_provider_status(self) -> dict[str, Any]:
         """Diagnostic: Check key management capabilities."""
         status = self.chain.anchor.get_status()
         return {

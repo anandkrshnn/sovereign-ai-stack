@@ -40,7 +40,7 @@ callers (pipeline, CLI, tests) work without modification.
 from __future__ import annotations
 
 import logging
-from typing import Dict
+import re
 
 import torch
 import torch.nn.functional as F
@@ -102,13 +102,38 @@ class SovereignEvaluator:
     # Public API (schema unchanged from previous implementation)
     # ------------------------------------------------------------------
 
-    def evaluate(self, query: str, context: str, answer: str) -> Dict:
+    def evaluate(self, query: str, context: str, answer: str) -> dict:
         """
         Score grounding and faithfulness of *answer* given *context*.
 
         Optimized v0.1.0a5: Batch inference for grounding and faithfulness.
         Now includes Platt Calibration for higher precision.
         """
+        self._validate_inputs(query, context, answer)
+        if not context.strip() or not answer.strip():
+            return {
+                "grounding_score": 0.0,
+                "faithfulness_score": 0.0,
+                "overall_score": 0.0,
+                "passed": False,
+                "raw_scores": [0.0, 0.0],
+                "reason": "empty_context_or_answer",
+            }
+
+        # Deterministic contradiction guards catch high-impact claims that NLI
+        # models can miss when lexical overlap is high.
+        if self._has_numeric_or_entity_mismatch(context, answer) or self._has_date_order_violation(
+            context, answer
+        ):
+            return {
+                "grounding_score": 0.0,
+                "faithfulness_score": 0.0,
+                "overall_score": 0.0,
+                "passed": False,
+                "raw_scores": [0.0, 0.0],
+                "reason": "deterministic_consistency_check_failed",
+            }
+
         premises = [context, f"{query}\n\n{context}"]
         hypotheses = [answer, answer]
 
@@ -133,7 +158,7 @@ class SovereignEvaluator:
 
     def evaluate_with_threshold(
         self, query: str, context: str, answer: str, threshold: float = 0.85
-    ) -> Dict:
+    ) -> dict:
         """
         Evaluate and strictly enforce a cutoff threshold. If scores fall below,
         it logs the failure to low_confidence.log and fails-closed.
@@ -159,7 +184,45 @@ class SovereignEvaluator:
 
         return result
 
-    async def evaluate_async(self, query: str, context: str, answer: str) -> Dict:
+    def _validate_inputs(self, query: str, context: str, answer: str) -> None:
+        limits = self.config
+        if not all(isinstance(value, str) for value in (query, context, answer)):
+            raise TypeError("query, context, and answer must be strings")
+        if len(query) + len(context) > limits.max_input_chars:
+            raise ValueError("query and context exceed the configured input limit")
+        if len(answer) > limits.max_answer_chars:
+            raise ValueError("answer exceeds the configured input limit")
+
+    @staticmethod
+    def _has_numeric_or_entity_mismatch(context: str, answer: str) -> bool:
+        context_numbers = set(re.findall(r"\b\d+(?:[.,]\d+)?%?\b", context))
+        answer_numbers = set(re.findall(r"\b\d+(?:[.,]\d+)?%?\b", answer))
+        if answer_numbers - context_numbers:
+            return True
+        context_entities = set(re.findall(r"\b[A-Z][A-Za-z0-9-]{2,}\b", context))
+        answer_entities = set(re.findall(r"\b[A-Z][A-Za-z0-9-]{2,}\b", answer))
+        return bool(answer_entities - context_entities)
+
+    @staticmethod
+    def _has_date_order_violation(context: str, answer: str) -> bool:
+        months = (
+            "January|February|March|April|May|June|July|August|September|October|November|December"
+        )
+        pattern = rf"\b(?:{months})\s+\d{{1,2}}(?:st|nd|rd|th)?\b"
+        context_dates = re.findall(pattern, context)
+        answer_dates = re.findall(pattern, answer)
+        if len(context_dates) < 2 or not answer_dates:
+            return False
+        if not re.search(r"\b(prior to|before)\b", answer, re.IGNORECASE):
+            return False
+        # If the answer explicitly orders two dates, reject a reversed ordering.
+        positions = [context.lower().find(value.lower()) for value in context_dates]
+        answer_positions = [answer.lower().find(value.lower()) for value in answer_dates]
+        if len(answer_positions) >= 2 and positions[0] < positions[1]:
+            return answer_positions[0] > answer_positions[1]
+        return False
+
+    async def evaluate_async(self, query: str, context: str, answer: str) -> dict:
         """
         Asynchronously score grounding and faithfulness, releasing the GIL
         via a threadpool. Critical for high-throughput pipeline integration.
@@ -170,7 +233,7 @@ class SovereignEvaluator:
 
     async def evaluate_with_threshold_async(
         self, query: str, context: str, answer: str, threshold: float = 0.85
-    ) -> Dict:
+    ) -> dict:
         """
         Asynchronously evaluate and strictly enforce a cutoff threshold.
         """

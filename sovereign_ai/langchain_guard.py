@@ -27,17 +27,15 @@ class SovereignLangChainGuard(Runnable):
         )
         self.pipeline = SovereignPipeline(config=pipeline_config)
 
-    def invoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
-    ) -> Dict[str, Any]:
+    def invoke(self, input: dict[str, Any], config: RunnableConfig | None = None) -> dict[str, Any]:
         """Synchronous wrapper (not recommended for hardware/TPM paths, use ainvoke)."""
         import asyncio
 
         return asyncio.run(self.ainvoke(input, config))
 
     async def ainvoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, input: dict[str, Any], config: RunnableConfig | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         """
         Asynchronous wrapper executing the Airlock protocol.
         Expects a dictionary with at least 'input' (query) and optionally 'context'.

@@ -35,7 +35,7 @@ class AttestationQuote(BaseModel):
 
     type: EvidenceType = EvidenceType.TPM2_QUOTE
     quote_data: str = Field(..., description="Base64 encoded TPM2_Quote or SGX_Report")
-    pcr_values: Dict[int, str] = Field(..., description="PCR index to hash value mapping")
+    pcr_values: dict[int, str] = Field(..., description="PCR index to hash value mapping")
     firmware_version: str
     runtime_measurement: str = Field(..., description="SHA256 of the running binary/config")
     signature: str = Field(..., description="Digital signature of the quote (AIK/EK)")
@@ -43,5 +43,3 @@ class AttestationQuote(BaseModel):
 
 class SecurityHalt(Exception):
     """Raised when a security failure (e.g. attestation) requires halting operations."""
-
-    pass

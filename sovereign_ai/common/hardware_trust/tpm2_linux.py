@@ -59,7 +59,7 @@ class TPM2LinuxAnchor(SecureAnchor):
 
         self.tenant_id = tenant_id
         self.aik_handle = aik_handle
-        self._ctx: Optional[Any] = None
+        self._ctx: Any | None = None
         self.hardware_active = False
 
         # Verify hardware availability
@@ -135,7 +135,7 @@ class TPM2LinuxAnchor(SecureAnchor):
         try:
             ctx = self._get_context()
             handle = ctx.tr_from_tpm_public(self.aik_handle)
-            public_data, _, _ = ctx.read_public(handle)
+            _public_data, _, _ = ctx.read_public(handle)
 
             # In a full implementation, we'd use cryptography.hazmat.primitives.asymmetric.rsa
             # to parse the TPM2B_PUBLIC into a real public key object.
@@ -148,7 +148,7 @@ class TPM2LinuxAnchor(SecureAnchor):
         """Retrieves the public AIK from the TPM."""
         return b"-----BEGIN PUBLIC KEY-----\nTPM_AIK_PLACEHOLDER\n-----END PUBLIC KEY-----"
 
-    def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
+    def generate_quote(self, nonce: str, pcrs: list[int]) -> AttestationQuote:
         """
         Generates a native TPM2_Quote using Esys_Quote.
         """
@@ -350,4 +350,4 @@ class TPM2LinuxAnchor(SecureAnchor):
             pass
 
 
-__all__ = ["TPM2LinuxAnchor", "HAS_PYTSS"]
+__all__ = ["HAS_PYTSS", "TPM2LinuxAnchor"]

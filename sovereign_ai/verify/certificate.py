@@ -19,7 +19,7 @@ class ComplianceCertificate:
 
     @classmethod
     def from_evaluation(
-        cls, query: str, answer: str, eval_result: Dict, judge_model: str = "Qwen2.5-1.5B"
+        cls, query: str, answer: str, eval_result: dict, judge_model: str = "Qwen2.5-1.5B"
     ):
         cert_id = hashlib.sha256(
             f"{query}{answer}{datetime.now().isoformat()}".encode()

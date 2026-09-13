@@ -7,14 +7,14 @@ from sovereign_ai.common.airlock import NLIEntailmentAirlock
 
 class VerificationGate(ABC):
     @abstractmethod
-    async def verify(self, context: str, claim: str) -> Dict[str, Any]:
+    async def verify(self, context: str, claim: str) -> dict[str, Any]:
         pass
 
 
 class SafetyGuardrailGate(VerificationGate):
     """Simple toxic/harmful content check."""
 
-    async def verify(self, context: str, claim: str) -> Dict[str, Any]:
+    async def verify(self, context: str, claim: str) -> dict[str, Any]:
         # Implementation would use a safety-tuned model
         return {"gate": "safety", "passed": True, "score": 1.0}
 
@@ -26,10 +26,10 @@ class EnsembleAirlock:
     with safety and semantic checks.
     """
 
-    def __init__(self, gates: List[VerificationGate]):
+    def __init__(self, gates: list[VerificationGate]):
         self.gates = gates
 
-    async def verify_response(self, context: str, response: str) -> Dict[str, Any]:
+    async def verify_response(self, context: str, response: str) -> dict[str, Any]:
         # Split response into atomic claims (simple sentence split for MVP)
         claims = [s.strip() for s in response.split(".") if s.strip()]
 

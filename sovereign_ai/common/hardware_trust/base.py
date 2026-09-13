@@ -13,7 +13,6 @@ class SecureAnchor(ABC):
     @abstractmethod
     def sign_payload(self, payload: bytes) -> bytes:
         """Signs a payload using the anchor's private key."""
-        pass
 
     def sign(self, payload: bytes) -> bytes:
         """Alias for sign_payload for backward compatibility."""
@@ -22,32 +21,26 @@ class SecureAnchor(ABC):
     @abstractmethod
     def get_public_key_pem(self) -> bytes:
         """Returns the public key in PEM format."""
-        pass
 
     @abstractmethod
     def get_public_key(self) -> Any:
         """Returns the raw cryptography public key object."""
-        pass
 
     @abstractmethod
-    def generate_quote(self, nonce: str, pcrs: List[int]) -> AttestationQuote:
+    def generate_quote(self, nonce: str, pcrs: list[int]) -> AttestationQuote:
         """Generates a cryptographically signed hardware quote (RATS Evidence)."""
-        pass
 
     @abstractmethod
     def get_signing_algorithm(self) -> SigningAlgorithm:
         """Returns the algorithm used by this anchor."""
-        pass
 
     @abstractmethod
     def seal_key(self, plaintext_key: bytes) -> bytes:
         """Seals a plaintext key using the anchor's security boundaries."""
-        pass
 
     @abstractmethod
     def unseal_key(self, sealed_key: bytes) -> bytes:
         """Unseals a sealed key using the anchor's security boundaries."""
-        pass
 
     @property
     def algorithm(self) -> SigningAlgorithm:
@@ -58,7 +51,6 @@ class SecureAnchor(ABC):
     @abstractmethod
     def is_hardware(self) -> bool:
         """Returns True if this is a real hardware-anchored key."""
-        pass
 
     def get_attestation_statement(self) -> bytes:
         """
