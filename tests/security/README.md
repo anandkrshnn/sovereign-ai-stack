@@ -3,7 +3,7 @@
 Tests-only follow-up to PR #2, based on commit
 `111ca29bc1236312d2b02c97ba8f9b924493c735`.
 
-Verified local baseline: **12 failed safety expectations, 8 passing controls**.
+Original PR #3 baseline: **12 failed safety expectations, 8 passing controls**.
 All failures are assertion failures, not import/collection errors. The run used
 Python 3.13.11, Pydantic 2.14.1, cryptography 50.0.2, pytest 9.1.1, and
 pytest-asyncio 1.4.0. Black, isort, Ruff, and compilation checks also passed.
@@ -11,9 +11,26 @@ Other Python versions, the complete application suite, and GitHub CI for this
 new branch have not been validated by this local run.
 
 These tests assert required safe behavior. They are deliberately **not**
-marked `xfail` or skipped: the draft is expected to be red until implementation
-changes meet the contract. Do not merge this tests-only branch without deciding
-how to stage the corresponding fixes.
+marked `xfail` or skipped. The implementation follow-up preserves all original
+20 cases and adds positive trust/compatibility checks. V2 trust configuration,
+timeout uncertainty, and guaranteed-no-effect retries replace unsafe preview
+defaults; see the SDK contract for the explicit compatibility changes.
+
+## Implementation follow-up verification
+
+The original 20 cases and their loader are byte-for-byte unchanged from PR #3.
+The focused security command below now passes **34 tests**. A further **28
+existing conformance/new CLI cases** passed locally, for **62 total**. That
+combined run bypassed only the eager top-level `sovereign_ai/__init__.py` and
+parent test imports; it executed real public subpackages, simulator anchors,
+CLI commands, and the standalone verifier subprocess in a temporary directory.
+It was not a normal full-application pytest run.
+
+Black, isort, Ruff, and compilation checks passed for the 13 changed Python
+files. Targeted mypy passed for eight changed runtime modules with
+`--follow-imports=skip --ignore-missing-imports`; this is not a full-project
+typing result. No production identity provider, remote deduplication service,
+process-restart ledger, ML model, or TPM/HSM was validated.
 
 ## Run without ML or TPM dependencies
 
@@ -37,15 +54,17 @@ external webhook, n8n service, HSM, or TPM is exercised.
 
 - Evidence with only a self-supplied public key must fail closed, even when its
   signature, hashes, and nonce are internally consistent. An externally trusted
-  signer configuration and its positive acceptance tests still need an
-  implementation/API decision; these tests do not invent that API.
+  signer configuration is now an explicit tenant-scoped registry. Positive
+  acceptance, wrong-tenant rejection, and explicit-registry unknown-signer
+  rejection are covered in `test_hardening_compatibility.py`.
 - A changed or invalidly signed pending case-file request must not execute.
 - An ambiguous write timeout must not be blindly retried or certified as
   non-execution. The fixture deliberately commits its effect before timing out.
   Without remote deduplication/reconciliation, propagate `TimeoutError`, or
   return an explicit unknown status with a non-boolean execution value.
   The generic orchestrator is separately tested against timeout-after-effect
-  retries; its richer unknown-outcome evidence contract remains future work.
+  retries. It exposes an unknown state/event; durable signed unknown-outcome
+  retention remains a host integration requirement.
 - Approval must remain bound to exact arguments, tool, and tenant when objects
   are replaced between approval and execution. Freezing a model alone is
   insufficient.

@@ -22,6 +22,7 @@ class RunState(str, Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
     COMPENSATING = "compensating"
+    OUTCOME_UNKNOWN = "outcome_unknown"
 
 
 class ToolCallState(str, Enum):
@@ -32,6 +33,7 @@ class ToolCallState(str, Enum):
     FAILED = "failed"
     DENIED = "denied"
     TIMED_OUT = "timed_out"
+    OUTCOME_UNKNOWN = "outcome_unknown"
 
 
 class ContractModel(BaseModel):
@@ -88,6 +90,7 @@ class PolicyDecision(ContractModel):
     reason: str = Field(min_length=1)
     requires_approval: bool = False
     policy_version: str = "1"
+    consequence: str | None = None
 
 
 class VerificationResult(ContractModel):
@@ -103,6 +106,8 @@ class Approval(ContractModel):
     requested_at: datetime = Field(default_factory=_now)
     approved_by: str | None = None
     approved_at: datetime | None = None
+    request_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    expires_at: datetime | None = None
 
 
 class ArtifactRef(ContractModel):

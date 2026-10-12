@@ -7,8 +7,8 @@ from sovereign_ai.orchestration import (
     ToolCall,
     ToolCallState,
 )
-from sovereign_ai.orchestration.adapters import AdapterError, ToolAdapter
-from sovereign_ai.orchestration.models import Agent, VerificationResult
+from sovereign_ai.orchestration.adapters import RetryableAdapterError, ToolAdapter
+from sovereign_ai.orchestration.models import Agent
 
 
 class FakeAdapter(ToolAdapter):
@@ -21,7 +21,7 @@ class FakeAdapter(ToolAdapter):
     def execute(self, arguments, timeout_seconds):
         self.calls += 1
         if self.calls <= self.failures:
-            raise AdapterError("transient")
+            raise RetryableAdapterError("transient failure before any fixture effect")
         return {"value": arguments["value"]}
 
 

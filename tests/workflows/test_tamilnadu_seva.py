@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 import pytest
 
 from sovereign_ai.common.hardware_trust import SoftwareSimulatorAnchor
@@ -23,18 +20,27 @@ def request(**overrides):
     return CaseFileUpdate(**values)
 
 
+def trusted_report(flow, envelope, expected_nonce=None):
+    return verify_envelope(
+        envelope,
+        expected_nonce,
+        trusted_signers=flow.trusted_signers,
+        expected_tenant_id=flow.tenant_id,
+    )
+
+
 def test_approved_webhook_run_is_replayable_and_tamper_evident():
     flow = TamilNaduWorkflow(SoftwareSimulatorAnchor("tn-test"))
     pending = flow.submit(request())
     assert pending.policy_allowed and pending.approval_required and not pending.executed
     approved = flow.approve_and_execute(pending.run_id, "operator-1")
-    report = verify_envelope(approved, approved.nonce)
+    report = trusted_report(flow, approved, approved.nonce)
     assert report.valid is True and report.decision == "allowed"
     replay = WorkflowEvidenceEnvelope.model_validate_json(approved.model_dump_json())
-    replay_report = verify_envelope(replay)
+    replay_report = trusted_report(flow, replay)
     assert replay_report.valid is True and replay_report.decision == "allowed"
     tampered = approved.model_copy(update={"result": {"updated": "different"}})
-    tampered_report = verify_envelope(tampered)
+    tampered_report = trusted_report(flow, tampered)
     assert not tampered_report.valid
     assert tampered_report.decision == "invalid"
 
@@ -45,14 +51,14 @@ def test_destructive_action_is_denied_without_execution():
     assert not pending.policy_allowed
     assert not pending.executed
     assert not flow._pending
-    report = verify_envelope(pending)
+    report = trusted_report(flow, pending)
     assert report.valid is True
     assert report.decision == "denied"
     assert report.executed is False
     assert report.policy_allowed is False
 
 
-def test_webhook_timeout_is_retried_and_blocked():
+def test_webhook_timeout_is_unknown_without_blind_retry():
     attempts = []
 
     def timeout(_payload, timeout_seconds):
@@ -62,13 +68,13 @@ def test_webhook_timeout_is_retried_and_blocked():
     flow = TamilNaduWorkflow(SoftwareSimulatorAnchor("tn-timeout"), webhook=timeout)
     pending = flow.submit(request())
     result = flow.approve_and_execute(pending.run_id, "operator-1")
-    assert attempts == [30, 30]
-    assert result.result["status"] == "blocked"
-    assert not result.executed
-    report = verify_envelope(result)
+    assert attempts == [30]
+    assert result.result["status"] == "unknown"
+    assert result.executed is None
+    report = trusted_report(flow, result)
     assert report.valid is True
-    assert report.decision == "blocked"
-    assert report.executed is False
+    assert report.decision == "unknown"
+    assert report.executed is None
 
 
 @pytest.mark.parametrize(
@@ -102,13 +108,13 @@ def test_twenty_case_workflow_fixture(case, expected_allowed):
     if not expected_allowed:
         assert not evidence.policy_allowed
         assert not evidence.executed
-        report = verify_envelope(evidence)
+        report = trusted_report(flow, evidence)
         assert report.valid is True
         assert report.decision == "denied"
         assert report.executed is False
     else:
         completed = flow.approve_and_execute(evidence.run_id, "fixture-operator")
-        report = verify_envelope(completed)
+        report = trusted_report(flow, completed)
         assert report.valid is True
         assert report.decision == "allowed"
         assert report.executed is True

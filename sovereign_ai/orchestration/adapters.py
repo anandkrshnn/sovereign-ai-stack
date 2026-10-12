@@ -9,6 +9,13 @@ class AdapterError(RuntimeError):
     """A tool adapter failed without producing a trusted result."""
 
 
+class RetryableAdapterError(AdapterError):
+    """The adapter guarantees this attempt had no effect and can safely retry.
+
+    Never raise this for a lost response, transport timeout, or partial write.
+    """
+
+
 class ToolAdapter(ABC):
     name: str
 
