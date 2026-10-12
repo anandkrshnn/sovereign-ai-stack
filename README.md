@@ -32,7 +32,7 @@ python -m pip install -e .
 
 # Run the deterministic workflow and standalone evidence verifier
 python -m pytest -q tests/workflows/test_tamilnadu_seva.py
-python verify.py path/to/evidence.json
+python verify.py path/to/evidence.json --trusted-keys trusted-signers.json --tenant default
 ```
 
 *Note: Demo applications and UI wrappers have been removed to focus on core verification primitives. Integrate `SovereignPipeline` directly via Python or use the CLI.*
@@ -44,6 +44,23 @@ python verify.py path/to/evidence.json
 - Release artifacts are built from tagged commits; hardware-dependent validation remains separate from simulator tests (OPA, Ollama, n8n, and TPM hardware validation are not claimed as validated here).
 
 Keep [LIMITATIONS.md](LIMITATIONS.md) prominent when evaluating this research preview.
+
+## Trust-boundary contract
+
+Portable envelopes now use `tn-seva.case-file.v2`: tenant, policy version, exact
+request digest, approval binding, and three-valued execution (`true`, `false`,
+or `null` for unknown) are signed. V1 envelopes are rejected; regenerate them
+rather than inferring missing authorization scope.
+
+Verifier keys must come from an independently provisioned tenant registry,
+never from the evidence being checked. See
+[the workflow guide](docs/TAMILNADU_SEVA_WORKFLOW.md) for the development-only
+CLI and [the SDK contract](docs/INTEGRATION_CONTRACT.md) for compatibility changes.
+
+These safeguards are in-process, not restart-safe exactly-once delivery. Human
+identity authentication belongs to the host; a runtime-signed principal string
+is not an independent operator signature. Production principal authentication,
+durable execution/reconciliation, and TPM/HSM validation remain prerequisites.
 
 ## Product boundary
 

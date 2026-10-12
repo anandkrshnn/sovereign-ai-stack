@@ -1,6 +1,12 @@
 """Evidence-carrying, deterministic agent orchestration primitives."""
 
-from .adapters import CliToolAdapter, HttpToolAdapter, McpToolAdapter, N8nWebhookAdapter
+from .adapters import (
+    CliToolAdapter,
+    HttpToolAdapter,
+    McpToolAdapter,
+    N8nWebhookAdapter,
+    RetryableAdapterError,
+)
 from .evidence import AuditEvidenceRecorder
 from .models import (
     Agent,
@@ -34,6 +40,7 @@ __all__ = [
     "OrchestratorEvent",
     "Policy",
     "PolicyDecision",
+    "RetryableAdapterError",
     "Run",
     "RunState",
     "Step",

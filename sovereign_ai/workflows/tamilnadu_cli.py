@@ -1,6 +1,7 @@
 """Minimal operator CLI for the Tamil Nadu workflow (simulator only)."""
 
 import json
+import os
 from pathlib import Path
 
 import click
@@ -23,6 +24,17 @@ def _request(destructive: bool = False) -> CaseFileUpdate:
 @click.group()
 def main() -> None:
     """Run the constrained Tamil Nadu case-file workflow."""
+    if os.getenv("SOVEREIGN_ENV", "").strip().lower() in {"prod", "production"}:
+        raise click.ClickException("This simulator CLI is development-only")
+
+
+@main.command("export-trust")
+@click.option("--output", type=click.Path(path_type=Path), required=True)
+def export_trust(output: Path) -> None:
+    """Export public keys from the configured development anchor, not from evidence."""
+    flow = TamilNaduWorkflow(SoftwareSimulatorAnchor("tn-cli"))
+    output.write_text(json.dumps(flow.trusted_signers, indent=2), encoding="utf-8")
+    click.echo("Exported public-key registry; protect it independently of evidence files")
 
 
 @main.command()
@@ -42,7 +54,7 @@ def submit(output: Path, deny: bool) -> None:
 def approve(input_path: Path, output: Path, principal: str) -> None:
     pending = WorkflowEvidenceEnvelope.model_validate_json(input_path.read_text(encoding="utf-8"))
     flow = TamilNaduWorkflow(SoftwareSimulatorAnchor("tn-cli"))
-    flow._pending[str(pending.run_id)] = pending
+    flow.load_pending(pending)
     envelope = flow.approve_and_execute(pending.run_id, principal)
     output.write_text(envelope.model_dump_json(indent=2), encoding="utf-8")
     click.echo(f"completed run {envelope.run_id}; executed={envelope.executed}")
