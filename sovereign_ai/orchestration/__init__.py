@@ -8,10 +8,12 @@ from .adapters import (
     RetryableAdapterError,
 )
 from .evidence import AuditEvidenceRecorder
+from .journal import AttemptContext, JournalConflict, JournalError, SQLiteExecutionJournal
 from .models import (
     Agent,
     Approval,
     ArtifactRef,
+    AttemptEvidenceBundle,
     EvidenceBundle,
     PolicyDecision,
     Run,
@@ -30,11 +32,15 @@ __all__ = [
     "AllowListPolicy",
     "Approval",
     "ArtifactRef",
+    "AttemptContext",
+    "AttemptEvidenceBundle",
     "AuditEvidenceRecorder",
     "CliToolAdapter",
     "DeterministicOrchestrator",
     "EvidenceBundle",
     "HttpToolAdapter",
+    "JournalConflict",
+    "JournalError",
     "McpToolAdapter",
     "N8nWebhookAdapter",
     "OrchestratorEvent",
@@ -43,6 +49,7 @@ __all__ = [
     "RetryableAdapterError",
     "Run",
     "RunState",
+    "SQLiteExecutionJournal",
     "Step",
     "Task",
     "ToolAdapter",

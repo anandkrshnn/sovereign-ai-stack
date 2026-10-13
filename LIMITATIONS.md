@@ -1,5 +1,33 @@
 # LIMITATIONS: Sovereign AI Stack (v2.0)
 
+## Opt-in local execution journal
+
+`SQLiteExecutionJournal` is a first, single-host POSIX recovery slice. It must be
+explicitly configured on `DeterministicOrchestrator`; the default in-memory
+execution cache is still volatile.
+
+It requires one active journal owner, an exclusive OS process lock, a trusted
+local filesystem, and SQLite WAL/FULL read-back. It preserves interrupted
+in-flight work as unknown and does not redispatch it. Reserved-only recovery is
+distinct from ambiguous execution and still requires the owner-generation
+dispatch barrier. Do not use hard-link aliases, delete/replace the active
+database or lock file, or deploy it on a network/shared filesystem.
+Journal objects/connections must not be inherited for use by forked children;
+process-identity checks reject that use before touching a transaction or lock.
+
+This slice does not implement distributed failover/fencing, reconciliation,
+attempt-bound no-effect retries, a late-evidence reducer, durable approval
+storage, exactly-once delivery, or automatic resolution of unknown outcomes.
+No real-provider capability or hardware/power-loss guarantee is established
+by the local process-kill fixture.
+
+The host must provide an attempt-aware adapter and authenticate principals;
+host-local binding metadata and unkeyed content digests are not independent
+trust roots. The process lock coordinates cooperating journal owners, not a
+host administrator or arbitrary direct database writers. External evidence-hook
+delivery is not atomic with the terminal journal commit. Semantic task rejection
+does not prove a confirmed remote write had no effect.
+
 ## Technical Limitations of the NLI Gate
 
 The Natural Language Inference (NLI) Gate relies on a cross-encoder model to verify text. It is a probabilistic filter, not a deterministic rule engine. The following are fundamental architectural limitations:

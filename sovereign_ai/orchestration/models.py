@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -128,3 +128,15 @@ class EvidenceBundle(ContractModel):
     artifacts: list[ArtifactRef] = Field(default_factory=list)
     recorded_at: datetime = Field(default_factory=_now)
     record_hash: str | None = None
+
+
+class AttemptEvidenceBundle(EvidenceBundle):
+    """Host-local attempt association, not proof of independent remote trust."""
+
+    version: Literal["2"] = "2"
+    tenant_id: str = Field(min_length=1)
+    tool_name: str = Field(min_length=1)
+    operation_key: str = Field(min_length=1)
+    request_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    attempt_id: UUID
+    owner_generation: int = Field(gt=0, strict=True)

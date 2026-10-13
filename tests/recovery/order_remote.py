@@ -31,7 +31,8 @@ class FakeOrderAPI:
             db.executescript("""
                 CREATE TABLE requests (
                     id INTEGER PRIMARY KEY, tenant TEXT, operation_key TEXT,
-                    digest TEXT, authenticated INTEGER NOT NULL, order_id TEXT
+                    digest TEXT, authenticated INTEGER NOT NULL, order_id TEXT,
+                    attempt_id TEXT, request_digest TEXT, owner_generation INTEGER
                 );
                 CREATE TABLE orders (
                     id TEXT PRIMARY KEY, tenant TEXT NOT NULL,
@@ -54,18 +55,32 @@ class FakeOrderAPI:
                     if not 0 < length <= 65536:
                         raise ValueError("invalid fixture body size")
                     body = json.loads(self.rfile.read(length))
+                    execution = body.get("execution")
+                    if execution is not None:
+                        body = body["arguments"]
+                        if (
+                            execution["tenant_id"] != body["tenant_id"]
+                            or execution["operation_key"] != body["operation_key"]
+                            or execution["downstream_key"] != body["operation_key"]
+                            or execution["tool_name"] != "orders.create"
+                        ):
+                            raise ValueError("unbound fixture attempt metadata")
                     authenticated = self.headers.get("Authorization") == f"Bearer {FIXTURE_TOKEN}"
                     with remote.connect() as db:
                         # Serialize fixture deduplication with request/effect persistence.
                         db.execute("BEGIN IMMEDIATE")
                         cursor = db.execute(
                             "INSERT INTO requests "
-                            "(tenant,operation_key,digest,authenticated) VALUES (?,?,?,?)",
+                            "(tenant,operation_key,digest,authenticated,attempt_id,"
+                            "request_digest,owner_generation) VALUES (?,?,?,?,?,?,?)",
                             (
                                 body["tenant_id"],
                                 body["operation_key"],
                                 body["payload_digest"],
                                 int(authenticated),
+                                execution["attempt_id"] if execution else None,
+                                execution["request_digest"] if execution else None,
+                                execution["owner_generation"] if execution else None,
                             ),
                         )
                         request_id = cursor.lastrowid
@@ -107,6 +122,8 @@ class FakeOrderAPI:
                                         "payload_digest": body["payload_digest"],
                                         "order_id": order_id,
                                     }
+                                    if execution is not None:
+                                        receipt.update(execution)
                     # Context-manager commit returned before this handshake.
                     if status == 201:
                         remote.committed.set()

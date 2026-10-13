@@ -5,11 +5,18 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from dataclasses import asdict
 from pathlib import Path
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from sovereign_ai.orchestration import AllowListPolicy, DeterministicOrchestrator, RunState
+from sovereign_ai.orchestration import (
+    AllowListPolicy,
+    AttemptContext,
+    DeterministicOrchestrator,
+    RunState,
+    SQLiteExecutionJournal,
+)
 from sovereign_ai.orchestration.adapters import ToolAdapter
 from sovereign_ai.orchestration.models import EvidenceBundle, Run, Step, Task
 from sovereign_ai.orchestration.runner import OrchestratorEvent
@@ -23,9 +30,21 @@ class OrderAdapter(ToolAdapter):
         self.receipts: list[dict] = []
 
     def execute(self, arguments, timeout_seconds):
+        return self._request(dict(arguments), arguments, timeout_seconds)
+
+    def execute_attempt(self, arguments, timeout_seconds, context: AttemptContext):
+        receipt = self._request(
+            {"arguments": dict(arguments), "execution": asdict(context)},
+            arguments,
+            timeout_seconds,
+        )
+        context.validate_receipt(receipt)
+        return receipt
+
+    def _request(self, body, arguments, timeout_seconds):
         request = Request(
             self.url,
-            data=json.dumps(dict(arguments)).encode(),
+            data=json.dumps(body).encode(),
             headers={
                 "Authorization": f"Bearer {os.environ['ORDER_TEST_GATEWAY_TOKEN']}",
                 "Content-Type": "application/json",
@@ -59,14 +78,15 @@ def main():
     adapter = OrderAdapter(options.url)
     events: list[OrchestratorEvent] = []
     evidence: list[EvidenceBundle] = []
+    journal = SQLiteExecutionJournal(options.manifest.parent / "execution.sqlite")
     runner = DeterministicOrchestrator(
         {adapter.name: adapter},
         AllowListPolicy({adapter.name}, tool_consequences={adapter.name: "write"}),
         emit=events.append,
         record_evidence=evidence.append,
+        journal=journal,
     )
-    # This is the actual existing constructor. No test-only journal is installed.
-    # The journal implementation must wire its real persistent configuration here.
+    # Actual application journal, separate from remote state and caller intent.
 
     def submit(run_id):
         run = Run(id=run_id, task_id=task.id)
@@ -81,8 +101,11 @@ def main():
             run = runner.run(task, [step], run)
         return run
 
-    run = submit(intent["run_id"])
-    repeated = submit(uuid4()) if options.repeat_in_process else None
+    try:
+        run = submit(intent["run_id"])
+        repeated = submit(uuid4()) if options.repeat_in_process else None
+    finally:
+        journal.close()
     report = {
         "pid": os.getpid(),
         "state": run.state.value,

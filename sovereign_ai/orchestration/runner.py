@@ -10,10 +10,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from threading import RLock
 from typing import Any
+from uuid import UUID
 
 from .adapters import RetryableAdapterError, ToolAdapter
+from .journal import JournalConflict, SQLiteExecutionJournal
 from .models import (
     Approval,
+    AttemptEvidenceBundle,
     EvidenceBundle,
     PolicyDecision,
     Run,
@@ -55,6 +58,7 @@ class DeterministicOrchestrator:
         record_evidence: Callable[[EvidenceBundle], None] | None = None,
         emit: Callable[[OrchestratorEvent], None] | None = None,
         approval_ttl_seconds: float = 300,
+        journal: SQLiteExecutionJournal | None = None,
     ):
         self.adapters = dict(adapters)
         self.policy = policy
@@ -65,6 +69,7 @@ class DeterministicOrchestrator:
         )
         self.record_evidence = record_evidence
         self.emit = emit
+        self.journal = journal
         if not 0 < approval_ttl_seconds <= 3600:
             raise ValueError("approval_ttl_seconds must be between 0 and 3600")
         self.approval_ttl_seconds = approval_ttl_seconds
@@ -213,6 +218,8 @@ class DeterministicOrchestrator:
                 "policy_consequence": decision.consequence,
             }
         )
+        if self.journal is not None:
+            return self._execute_durably(task, run, step, decision, request_digest)
         with self._execution_lock:
             cached = self._idempotent_results.get(key)
             if cached is not None and cached.request_digest != request_digest:
@@ -298,6 +305,108 @@ class DeterministicOrchestrator:
             verification=verification,
         )
         evidence.record_hash = _digest(evidence.model_dump(mode="json"))
+        if self.record_evidence:
+            self.record_evidence(evidence)
+        self._event("tool.succeeded", run, step, evidence=evidence.model_dump(mode="json"))
+        return output
+
+    def _execute_durably(
+        self, task: Task, run: Run, step: Step, decision: PolicyDecision, request_digest: str
+    ) -> dict[str, Any] | None:
+        assert self.journal is not None
+        call = step.tool_call
+        adapter = self.adapters.get(call.tool_name)
+        try:
+            record = self.journal.prepare(
+                (task.tenant_id, call.tool_name, call.idempotency_key), request_digest
+            )
+        except JournalConflict:
+            call.state = ToolCallState.DENIED
+            run.state = RunState.FAILED
+            run.error = "idempotency_input_conflict"
+            self._event("step.denied", run, step, reason=run.error)
+            return None
+        except Exception as exc:
+            self._unknown(run, step, f"journal_unavailable:{exc}")
+            return None
+        context = record.context
+        if record.state in {"in_flight", "outcome_unknown"}:
+            self._unknown(run, step, "prior_execution_in_flight_or_unknown")
+            return None
+        if record.state != "succeeded" and (
+            adapter is None or type(adapter).execute_attempt is ToolAdapter.execute_attempt
+        ):
+            call.state = ToolCallState.DENIED
+            run.state = RunState.FAILED
+            run.error = "attempt_bound_adapter_required"
+            self._event("step.denied", run, step, reason=run.error)
+            return None
+        try:
+            if record.state == "succeeded":
+                if record.output is None or record.evidence is None:
+                    raise ValueError("missing_durable_confirmation")
+                output = deepcopy(record.output)
+                self.journal.validate_confirmation(context, output, record.evidence)
+            else:
+                assert adapter is not None
+                if not self.journal.begin_dispatch(context):
+                    self._unknown(run, step, "dispatch_barrier_not_owned")
+                    return None
+                run.attempts += 1
+                call.state = ToolCallState.RUNNING
+                self._event(
+                    "tool.started",
+                    run,
+                    step,
+                    attempt_id=context.attempt_id,
+                    owner_generation=context.owner_generation,
+                )
+                output = deepcopy(
+                    adapter.execute_attempt(deepcopy(call.arguments), call.timeout_seconds, context)
+                )
+                if not isinstance(output, dict):
+                    raise TypeError("Adapter response must be a JSON object")
+                _digest(output)
+                context.validate_receipt(output)
+            verification = self.verify(
+                task.model_copy(deep=True), step.model_copy(deep=True), deepcopy(output)
+            )
+            evidence = AttemptEvidenceBundle(
+                tenant_id=task.tenant_id,
+                tool_name=call.tool_name,
+                operation_key=call.idempotency_key,
+                request_digest=request_digest,
+                attempt_id=UUID(context.attempt_id),
+                owner_generation=context.owner_generation,
+                run_id=run.id,
+                step_id=step.id,
+                tool_call_id=call.id,
+                input_hash=_digest(call.arguments),
+                output_hash=_digest(output),
+                policy=decision,
+                verification=verification,
+            )
+            evidence.record_hash = _digest(evidence.model_dump(mode="json"))
+            if record.state != "succeeded" and not self.journal.complete(
+                context, output, evidence.model_dump(mode="json")
+            ):
+                raise ValueError("completion_not_owned")
+        except Exception as exc:
+            # Even legacy RetryableAdapterError lacks attempt-bound terminal proof.
+            # No safe-retry or reconciliation capability exists in this first slice.
+            if record.state != "succeeded":
+                try:
+                    self.journal.mark_unknown(context, str(exc))
+                except Exception:
+                    pass  # The committed in_flight barrier remains recoverable as unknown.
+            self._unknown(run, step, str(exc))
+            return None
+        call.state = ToolCallState.SUCCEEDED
+        if not verification.passed:
+            run.state = RunState.FAILED
+            run.error = verification.reason
+            self._event("verification.failed", run, step, reason=verification.reason)
+            return None
         if self.record_evidence:
             self.record_evidence(evidence)
         self._event("tool.succeeded", run, step, evidence=evidence.model_dump(mode="json"))
