@@ -129,6 +129,51 @@ A passing run establishes this bounded Linux/Python configuration only, not the
 full application suite, all supported Python versions, hardware power-loss
 behavior, real-provider recovery, or independent human review.
 
+## Bounded generated sequence layer
+
+`test_journal_sequences.py` exercises the real journal and runner with an
+in-process observed adapter and a separate expected-state model. The budget is
+50 Hypothesis examples with up to 20 rule steps per example; this is a finite
+regression campaign, not exhaustive exploration or a safety proof.
+
+Rules cover repeated reservations, conflicting digests, current/retained/tampered
+dispatch contexts, ambiguous attempts, owner close/reopen, live-owner exclusion,
+late mock completion rejection while unknown, and repeated runner submissions
+with success, response loss, or unbound receipts.
+Preconditions forbid invalid actions. One immutable tenant/tool/key/digest is
+used per example, so at most one authorization and mock adapter invocation are
+permitted. Persisted operation/attempt rows, generation, transition counts, and
+evidence are checked independently after each rule.
+
+Close/reopen is an in-process recovery exercise, not SIGKILL, lease transfer,
+power-loss, HTTP, or provider evidence. Before reopening, interrupted work may
+remain `in_flight`; after recovery it must be unknown. No late-receipt reducer,
+reconciliation, or replacement attempt is introduced. The six existing real
+HTTP/SIGKILL configurations and their assertions are unchanged.
+
+Fixed pre/post-barrier sequences keep critical boundaries covered regardless
+of generated rule selection. Two test-only sensitivity mutations check that
+the oracle rejects repeated authorization and an uncommitted barrier; they do
+not modify runtime code or establish general mutation-test coverage.
+
+Hypothesis is declared in the dev extra and collected by the existing dedicated
+CI job. Default settings are deterministic for a fixed Hypothesis version/test,
+disable the example database, and print a reproduction blob on failure.
+
+```sh
+python -m pytest tests/recovery/test_journal_sequences.py \
+  -q -s --timeout=120 --hypothesis-show-statistics
+python -m pytest tests/recovery/test_journal_sequences.py \
+  --hypothesis-seed=20261013 -q -s --timeout=120 --hypothesis-show-statistics
+```
+
+Keep the minimized action sequence, reported action trace, reproduction blob
+when emitted, dependency versions, and the replay command from a failure.
+An explicit seed selects an additional campaign; it cannot reproduce arbitrary
+process scheduling and is not a substitute for the minimized reproducer.
+Every discovered counterexample should become a fixed regression before any
+runtime fix. Independent human review and the real-API milestone remain open.
+
 ## Harness boundaries
 
 `order_remote.py` serves a loopback HTTP API using a separate persistent SQLite
