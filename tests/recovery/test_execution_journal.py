@@ -2,7 +2,9 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
+from http.client import RemoteDisconnected
 from multiprocessing import get_context
+from urllib.error import HTTPError, URLError
 from uuid import uuid4
 
 import pytest
@@ -234,7 +236,23 @@ def test_unbound_receipt_is_unknown_and_never_retried(tmp_path, corrupt):
 
 
 @pytest.mark.parametrize(
-    "error", [TimeoutError("lost response"), RetryableAdapterError("legacy unbound no-effect hint")]
+    "error",
+    [
+        TimeoutError("lost response"),
+        RetryableAdapterError("legacy unbound no-effect hint"),
+        HTTPError("http://fixture.invalid/orders", 500, "server error", None, None),
+        RemoteDisconnected("response dropped"),
+        ConnectionResetError("reset after send"),
+        URLError("connection failed"),
+    ],
+    ids=[
+        "timeout",
+        "legacy-retry-hint",
+        "http-500",
+        "dropped-response",
+        "connection-reset",
+        "url-error",
+    ],
 )
 def test_durable_adapter_errors_do_not_authorize_retries(tmp_path, error):
     adapter = BoundAdapter(error=error)
@@ -244,6 +262,7 @@ def test_durable_adapter_errors_do_not_authorize_retries(tmp_path, error):
         assert run.state is RunState.OUTCOME_UNKNOWN
         assert run.attempts == adapter.calls == 1
         assert journal.get(KEY).state == "outcome_unknown"
+        assert journal.get(KEY).evidence is None
 
 
 def test_approval_binding_precedes_journal_reservation(tmp_path):

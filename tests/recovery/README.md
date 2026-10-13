@@ -5,8 +5,10 @@ Opt-in journal implementation slice based on tests-only PR #6, commit
 Owned implementation dependency: [issue #5](https://github.com/anandkrshnn/sovereign-ai-stack/issues/5),
 assigned to `anandkrshnn`. The original red baseline remains recorded in
 `RESULTS.md`; it is historical, not the implementation's current result.
-Keep the implementation PR draft for review. Existing trust-regression
-assertions, workflows, dependency declarations, and the root README are unchanged.
+Keep the implementation PR draft for review. Existing trust-regression assertions,
+runtime code, dependency declarations, the original CI workflow, and the root
+README are unchanged by the CI follow-up. The dedicated order-recovery workflow
+is separate from the original main-only workflow.
 
 ## Coverage
 
@@ -40,6 +42,10 @@ The opt-in journal uses a trusted local POSIX filesystem and one active process:
 - Startup obtains an exclusive process lock before changing recovery state.
   A second live owner fails rather than stealing a lease or marking live work
   interrupted.
+  The advisory lock lasts for the owner's lifetime: a paused or hung owner that
+  still holds it blocks takeover. This permits one cooperating owning process
+  per journal, not distributed lease transfer. Calls within that process may
+  still be concurrent and require the transaction/CAS controls.
   Journal objects also reject use by a forked child; a fresh process must obtain
   its own exclusive owner after the old host exits.
 - WAL and FULL synchronous mode are enabled and read back. An unsupported
@@ -75,12 +81,53 @@ fails. Approvals remain host-local and are rechecked normally on resubmission.
 This is not distributed fencing, authenticated storage, a durable workflow
 engine, or power-loss validation.
 
-`test_execution_journal.py` adds focused unit/runner contracts, including
+`test_execution_journal.py` adds local invariant/error controls, including
 actual POSIX child SIGKILL before/after the barrier, exclusive ownership, stale
 generations, concurrent claims, conflicts, receipt bindings, cached-evidence
 corruption, unsupported adapters, approval binding, and simulated storage
 failures. Mock-receipt tests are not HTTP or provider evidence; the six separate
 HTTP configurations still use fresh ordinary-import worker processes.
+Injected HTTP 500, dropped-response, connection-reset, and URL errors assert one
+adapter invocation, persisted unknown, and no success evidence. They exercise the
+runner's exception boundary; they are not network fault campaigns.
+
+### Coverage labels
+
+Report the suite as three distinct groups: **local invariant/error controls**,
+**HTTP crash/timeout contracts**, and **unchanged regressions**. Never label the
+local control count as completed Phase 1 cases. `IMPLEMENTATION_RESULTS.md`
+records the historical PR #7 run; subsequent CI/local runs have their own counts.
+
+The live-owner exclusion test is not T05's pause/transfer/resume scenario and
+does not establish full T08/T24 racing-recovery coverage. Those contracts remain
+deferred pending an explicit single-host applicability decision or a separately
+designed ownership model. Rejection of a second owner is a tested boundary,
+not a claim that these named contracts passed.
+
+## Dedicated recovery CI
+
+`.github/workflows/order-recovery.yml` runs on relevant pull requests regardless
+of their target branch, including the stacked non-main base. It also runs on
+relevant pushes to `main`, the journal branch, and `ci/order-recovery-*` branches.
+Manual dispatch is declared; GitHub makes that trigger available once the
+workflow exists on the default branch. It is not a workaround for this stack's
+unmerged workflow.
+
+The job uses Ubuntu and Python 3.11, caches pip downloads (including CPU Torch),
+installs the existing `verify,bridge,agent,dev` extras, and checks dependency
+consistency. CPU Torch 2.8.0 is pinned for this CI job only; other dependencies
+remain governed by the existing unpinned project declarations. Freeze/runtime
+artifacts record each actual resolution; this is not a locked environment.
+
+The job runs `tests/recovery`, `tests/security`, the runner regressions, and the
+two Tamil Nadu workflow/CLI regression files. A per-test timeout and job watchdog
+bound hangs. JUnit, dependency versions, and fixture diagnostics are retained
+for seven days, including on failure. This fixture uses no real-provider secrets
+and downloads no models. No `pull_request_target` or write token is used.
+
+A passing run establishes this bounded Linux/Python configuration only, not the
+full application suite, all supported Python versions, hardware power-loss
+behavior, real-provider recovery, or independent human review.
 
 ## Harness boundaries
 
