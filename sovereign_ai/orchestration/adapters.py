@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any
 
+from .journal import AttemptContext
+
 
 class AdapterError(RuntimeError):
     """A tool adapter failed without producing a trusted result."""
@@ -22,6 +24,16 @@ class ToolAdapter(ABC):
     @abstractmethod
     def execute(self, arguments: Mapping[str, Any], timeout_seconds: float) -> dict[str, Any]:
         """Execute one bounded call and return JSON-compatible output."""
+
+    def execute_attempt(
+        self, arguments: Mapping[str, Any], timeout_seconds: float, context: AttemptContext
+    ) -> dict[str, Any]:
+        """Normalize a terminal remote response bound to the host attempt context.
+
+        Durable mode rejects adapters without this capability before dispatch.
+        Context is host metadata, not a mutation of caller-approved arguments.
+        """
+        raise NotImplementedError("adapter_has_no_attempt_bound_execution")
 
 
 class HttpToolAdapter(ToolAdapter):

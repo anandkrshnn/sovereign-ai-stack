@@ -23,6 +23,13 @@ def test_T20_normal_success(tmp_path, deduplicate):
         receipt = result["receipts"][0]
         for field in ("tenant_id", "operation_key", "payload_digest"):
             assert receipt[field] == controller.arguments[field]
+        persisted = controller.journal_observation()
+        evidence = json.loads(persisted["evidence_json"])
+        assert persisted["state"] == "succeeded"
+        assert persisted["attempt_count"] == 1
+        assert receipt["attempt_id"] == evidence["attempt_id"] == persisted["attempt_id"]
+        assert evidence["owner_generation"] == persisted["owner_generation"]
+        assert evidence == result["evidence"][0]
         print("T20", {"deduplicate": deduplicate, **counts, "state": result["state"]})
 
 
@@ -40,12 +47,21 @@ def test_T07_held_response_SIGKILL_restart(tmp_path, deduplicate):
         before = remote.counts()
         assert before["dispatches"] == before["orders"] == 1, before
         assert not original["report"].exists(), "response was not actually held"
+        persisted_before = controller.journal_observation()
+        assert persisted_before["state"] == "in_flight"
+        assert persisted_before["attempt_count"] == 1
         kill = controller.kill(original)
         # Release only after verified death; no receipt can reach the dead worker.
         remote.release_response.set()
         restarted = controller.start()
         result = controller.result(restarted)
         after = remote.counts()
+        persisted_after = controller.journal_observation()
+        assert persisted_after["state"] == "outcome_unknown"
+        assert persisted_after["attempt_id"] == persisted_before["attempt_id"]
+        assert persisted_after["attempt_count"] == 1
+        assert persisted_after["owner_generation"] > persisted_before["owner_generation"]
+        assert persisted_after["evidence_json"] is None
         observations = {
             "deduplicate": deduplicate,
             "kill": kill,
@@ -91,4 +107,8 @@ def test_T21_live_timeout_after_commit(tmp_path, deduplicate):
         assert counts["dispatches"] == counts["orders"] == 1, counts
         assert counts["duplicate_effects"] == counts["unauthorized"] == 0, counts
         assert result["receipts"] == result["evidence"] == [], result
+        persisted = controller.journal_observation()
+        assert persisted["state"] == "outcome_unknown"
+        assert persisted["attempt_count"] == 1
+        assert persisted["evidence_json"] is None
         print("T21", {"deduplicate": deduplicate, **counts, "state": result["state"]})

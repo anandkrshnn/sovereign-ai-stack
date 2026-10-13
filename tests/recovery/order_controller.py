@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import signal
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -112,6 +113,21 @@ class OrderController:
         process.wait(timeout=5)
         assert process.returncode == -signal.SIGKILL
         return {"pid": process.pid, "signal": "SIGKILL", "returncode": process.returncode}
+
+    def journal_observation(self) -> dict:
+        database = self.directory / "execution.sqlite"
+        with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as db:
+            db.row_factory = sqlite3.Row
+            row = db.execute(
+                "SELECT o.*,a.output_json,a.evidence_json FROM operations o "
+                "JOIN attempts a ON a.attempt_id=o.attempt_id "
+                "WHERE o.tenant=? AND o.tool=? AND o.operation_key=?",
+                ("fixture-tenant", "orders.create", self.arguments["operation_key"]),
+            ).fetchone()
+            assert row is not None, "actual application journal has no operation"
+            observation = dict(row)
+            observation["attempt_count"] = db.execute("SELECT count(*) FROM attempts").fetchone()[0]
+            return observation
 
     def __enter__(self):
         return self
