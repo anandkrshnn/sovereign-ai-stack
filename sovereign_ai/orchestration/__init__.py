@@ -24,7 +24,13 @@ from .models import (
     ToolCallState,
     VerificationResult,
 )
-from .policy import AllowListPolicy, Policy
+from .policy import (
+    AllowListPolicy,
+    Policy,
+    consequence_requires_journal,
+    is_known_consequence,
+)
+from .product import ProductOrchestrator, VolatileOrchestrator
 from .runner import DeterministicOrchestrator, OrchestratorEvent, ToolAdapter
 
 __all__ = [
@@ -46,6 +52,7 @@ __all__ = [
     "OrchestratorEvent",
     "Policy",
     "PolicyDecision",
+    "ProductOrchestrator",
     "RetryableAdapterError",
     "Run",
     "RunState",
@@ -56,4 +63,7 @@ __all__ = [
     "ToolCall",
     "ToolCallState",
     "VerificationResult",
+    "VolatileOrchestrator",
+    "consequence_requires_journal",
+    "is_known_consequence",
 ]

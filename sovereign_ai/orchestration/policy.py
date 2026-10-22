@@ -8,6 +8,20 @@ from .models import PolicyDecision, Step, Task, ToolCall
 _CONSEQUENCES = {"read": 0, "write": 1, "destructive": 2}
 
 
+def is_known_consequence(consequence: str) -> bool:
+    """Whether a value belongs to the host consequence classification."""
+    return isinstance(consequence, str) and consequence in _CONSEQUENCES
+
+
+def consequence_requires_journal(consequence: str) -> bool:
+    """Whether the existing host classification describes a remote mutation."""
+    return (
+        isinstance(consequence, str)
+        and consequence in _CONSEQUENCES
+        and _CONSEQUENCES[consequence] >= _CONSEQUENCES["write"]
+    )
+
+
 class Policy(ABC):
     @abstractmethod
     def decide(self, task: Task, tool_call: ToolCall) -> PolicyDecision:

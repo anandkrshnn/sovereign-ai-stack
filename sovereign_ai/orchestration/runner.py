@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
@@ -26,7 +27,10 @@ from .models import (
     ToolCallState,
     VerificationResult,
 )
-from .policy import Policy
+from .policy import Policy, consequence_requires_journal
+
+logger = logging.getLogger(__name__)
+_VOLATILE_WARNING_EMITTED = False
 
 
 @dataclass(frozen=True)
@@ -59,6 +63,7 @@ class DeterministicOrchestrator:
         emit: Callable[[OrchestratorEvent], None] | None = None,
         approval_ttl_seconds: float = 300,
         journal: SQLiteExecutionJournal | None = None,
+        _require_durable_writes: bool = False,
     ):
         self.adapters = dict(adapters)
         self.policy = policy
@@ -70,6 +75,16 @@ class DeterministicOrchestrator:
         self.record_evidence = record_evidence
         self.emit = emit
         self.journal = journal
+        self._require_durable_writes = _require_durable_writes
+        global _VOLATILE_WARNING_EMITTED
+        if journal is None and not _require_durable_writes and not _VOLATILE_WARNING_EMITTED:
+            # The low-level runner keeps its legacy volatile behavior, but make
+            # possible write use visible. Product code should use ProductOrchestrator.
+            logger.warning(
+                "DeterministicOrchestrator has no durable journal; volatile execution is "
+                "not supported for product writes"
+            )
+            _VOLATILE_WARNING_EMITTED = True
         if not 0 < approval_ttl_seconds <= 3600:
             raise ValueError("approval_ttl_seconds must be between 0 and 3600")
         self.approval_ttl_seconds = approval_ttl_seconds
@@ -210,6 +225,18 @@ class DeterministicOrchestrator:
         self, task: Task, run: Run, step: Step, decision: PolicyDecision
     ) -> dict[str, Any] | None:
         call = step.tool_call
+        adapter = self.adapters.get(call.tool_name)
+        if (
+            self._require_durable_writes
+            and self.journal is None
+            and consequence_requires_journal(decision.consequence or "")
+            and adapter is not None
+        ):
+            call.state = ToolCallState.DENIED
+            run.state = RunState.FAILED
+            run.error = "durable_journal_required_for_write"
+            self._event("step.denied", run, step, reason=run.error)
+            return None
         key = (task.tenant_id, call.tool_name, call.idempotency_key)
         request_digest = _digest(
             {
@@ -243,7 +270,6 @@ class DeterministicOrchestrator:
                     request_digest, ToolCallState.RUNNING
                 )
         if cached is None:
-            adapter = self.adapters.get(call.tool_name)
             if not adapter:
                 with self._execution_lock:
                     del self._idempotent_results[key]
