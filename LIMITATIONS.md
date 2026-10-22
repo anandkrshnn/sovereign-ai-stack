@@ -1,10 +1,26 @@
 # LIMITATIONS: Sovereign AI Stack (v2.0)
 
-## Opt-in local execution journal
+## Experimental tool-write admission and local execution journal
 
-`SQLiteExecutionJournal` is a first, single-host POSIX recovery slice. It must be
-explicitly configured on `DeterministicOrchestrator`; the default in-memory
-execution cache is still volatile.
+For the experimental generic adapter runner, the product-facing
+`ProductOrchestrator` requires an explicit trusted consequence for every
+allowlisted tool. It refuses construction if any configured write or
+destructive tool lacks a journal. At dispatch it also denies a write step
+without a journal before invoking its adapter. Read-only tool configurations
+may omit the journal.
+
+The journal is a first, single-host POSIX recovery slice. `DeterministicOrchestrator`
+retains its in-memory behavior for low-level compatibility and is not supported
+for product writes. The explicit `VolatileOrchestrator` is test/development
+only, emits a warning, and cannot be selected through `ProductOrchestrator`.
+Legacy low-level construction without a journal emits a warning as well.
+
+The supported configuration is scoped only to writes executed through
+`ProductOrchestrator` with `SQLiteExecutionJournal` and a supported
+attempt-bound adapter. It is not a general write interceptor, credential
+broker, or protection against code that bypasses this entry point. See
+[`docs/WRITE_ADMISSION.md`](docs/WRITE_ADMISSION.md) for the route inventory
+and explicit exclusions.
 
 It requires one active journal owner, an exclusive OS process lock, a trusted
 local filesystem, and SQLite WAL/FULL read-back. It preserves interrupted
@@ -27,6 +43,16 @@ trust roots. The process lock coordinates cooperating journal owners, not a
 host administrator or arbitrary direct database writers. External evidence-hook
 delivery is not atomic with the terminal journal commit. Semantic task rejection
 does not prove a confirmed remote write had no effect.
+
+## Write-admission route boundary
+
+This gate does not cover the separate Tamil Nadu evidence workflow and its
+optional direct webhook callback, arbitrary direct adapter calls, local
+vector-store ingestion, or tools invoked directly by an external host. Those
+paths are either non-durable simulators/verification flows or explicitly
+unsupported for durable product writes. The LangChain guard verifies model
+output; it does not intercept tools executed outside this runner. None of these
+statements claims that remote credentials are held outside an agent or host.
 
 ## Technical Limitations of the NLI Gate
 

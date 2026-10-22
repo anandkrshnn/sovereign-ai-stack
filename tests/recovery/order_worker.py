@@ -13,7 +13,7 @@ from uuid import uuid4
 from sovereign_ai.orchestration import (
     AllowListPolicy,
     AttemptContext,
-    DeterministicOrchestrator,
+    ProductOrchestrator,
     RunState,
     SQLiteExecutionJournal,
 )
@@ -79,7 +79,7 @@ def main():
     events: list[OrchestratorEvent] = []
     evidence: list[EvidenceBundle] = []
     journal = SQLiteExecutionJournal(options.manifest.parent / "execution.sqlite")
-    runner = DeterministicOrchestrator(
+    runner = ProductOrchestrator(
         {adapter.name: adapter},
         AllowListPolicy({adapter.name}, tool_consequences={adapter.name: "write"}),
         emit=events.append,

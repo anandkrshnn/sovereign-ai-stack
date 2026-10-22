@@ -39,11 +39,27 @@ python verify.py path/to/evidence.json --trusted-keys trusted-signers.json --ten
 
 ## Repository Status
 - Focused on the frozen Tamil Nadu case-file update vertical slice (one case-file update path + portable envelope + independent verifier).
-- The sprawling agent orchestration module has been entirely deleted; external tools (n8n, MCP hosts, UI builders) remain external integrations, not security boundaries.
+- The Tamil Nadu case-file workflow is separate from the experimental `sovereign_ai.orchestration` adapter runner; neither workflow envelopes nor external hosts such as n8n/MCP provide a write-security boundary by themselves.
 - CI blocks merges on formatting, typing, tests, dependency, SAST, secret, and filesystem scan failures.
 - Release artifacts are built from tagged commits; hardware-dependent validation remains separate from simulator tests (OPA, Ollama, n8n, and TPM hardware validation are not claimed as validated here).
 
 Keep [LIMITATIONS.md](LIMITATIONS.md) prominent when evaluating this research preview.
+
+## Experimental tool-write admission
+
+For the experimental adapter runner, use `ProductOrchestrator`. It requires an
+explicit trusted consequence for every allowlisted tool and a
+`SQLiteExecutionJournal` for any configured write or destructive tool. A
+read-only product configuration can omit the journal; a step that escalates to
+a write is still rejected before adapter dispatch. See
+[the write-admission route inventory](docs/WRITE_ADMISSION.md).
+
+`DeterministicOrchestrator` remains a low-level compatibility API and its
+in-memory mode is not supported for product writes. `VolatileOrchestrator` is
+an explicit, warning-emitting test/development option, not a product
+configuration. This single-host write-admission boundary does not make the
+Tamil Nadu workflow, direct adapter calls, external hosts, or other database
+writes durable, and does not address who holds remote credentials.
 
 ## Trust-boundary contract
 
