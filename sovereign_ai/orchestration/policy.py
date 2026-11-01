@@ -22,6 +22,11 @@ def consequence_requires_journal(consequence: str) -> bool:
     )
 
 
+def strongest_consequence(*consequences: str) -> str:
+    """Combine already validated consequences using the host's existing ordering."""
+    return max(consequences, key=_CONSEQUENCES.__getitem__)
+
+
 class Policy(ABC):
     @abstractmethod
     def decide(self, task: Task, tool_call: ToolCall) -> PolicyDecision:
