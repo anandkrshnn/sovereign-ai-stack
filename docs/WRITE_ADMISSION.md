@@ -21,6 +21,13 @@ absent. This is defense in depth for a read-configured tool whose host step
 consequence is escalated to a write. Caller-provided consequence hints cannot
 downgrade the host/policy classification.
 
+An accepted `AllowListPolicy` subclass may add restrictions, but cannot waive
+the product boundary. Before approval, `ProductOrchestrator` independently
+applies the base allowlist/host classification and combines it with any
+stronger subclass decision. Host- or registry-classified writes still require
+approval and a journal even if the subclass reports `read` or omits its
+consequence. The dispatch guard also checks the host step independently.
+
 Writes with a journal still require the existing attempt-bound adapter
 capability and single-host POSIX SQLite constraints. This does not claim
 provider validation, production readiness, exactly-once delivery, reconciliation,

@@ -114,6 +114,9 @@ class DeterministicOrchestrator:
         approval.approved_by = principal
         approval.approved_at = datetime.now(timezone.utc)
 
+    def _decide_step(self, task: Task, step: Step) -> PolicyDecision:
+        return self.policy.decide_step(task, step)
+
     def run(self, task: Task, steps: list[Step], run: Run | None = None) -> Run:
         run = run or Run(task_id=task.id)
         if run.task_id != task.id:
@@ -134,7 +137,7 @@ class DeterministicOrchestrator:
             # Freeze this dispatch's inputs against caller/event-hook mutation.
             execution_task = task.model_copy(deep=True)
             step = original_step.model_copy(deep=True)
-            decision = self.policy.decide_step(execution_task, step)
+            decision = self._decide_step(execution_task, step)
             self._event("policy.decided", run, step, decision=decision.model_dump())
             if not decision.allowed:
                 step.tool_call.state = ToolCallState.DENIED
@@ -229,7 +232,10 @@ class DeterministicOrchestrator:
         if (
             self._require_durable_writes
             and self.journal is None
-            and consequence_requires_journal(decision.consequence or "")
+            and (
+                consequence_requires_journal(step.consequence)
+                or consequence_requires_journal(decision.consequence or "")
+            )
             and adapter is not None
         ):
             call.state = ToolCallState.DENIED

@@ -237,3 +237,118 @@ def test_volatile_mode_is_named_warned_and_not_a_product_configuration(caplog):
     assert "test/development only" in caplog.text
     with pytest.raises(TypeError, match="allow_volatile_for_testing"):
         ProductOrchestrator({TOOL: adapter}, policy, allow_volatile_for_testing=True)
+
+
+@pytest.mark.parametrize("host_consequence", ["write", "destructive"])
+@pytest.mark.parametrize("reported_consequence", ["read", None])
+def test_policy_override_cannot_dispatch_host_write_without_journal(
+    tmp_path, host_consequence, reported_consequence
+):
+    class UnderclassifyingPolicy(AllowListPolicy):
+        def decide_step(self, task, step):
+            return self.decide(task, step.tool_call).model_copy(
+                update={"consequence": reported_consequence, "requires_approval": False}
+            )
+
+    with FakeOrderAPI(tmp_path / "remote.sqlite", deduplicate=False) as remote:
+        adapter = FixtureOrderAdapter(remote.url)
+        policy = UnderclassifyingPolicy({TOOL}, tool_consequences={TOOL: "read"})
+        runner = ProductOrchestrator({TOOL: adapter}, policy)
+        task, step = make_task_and_step(consequence=host_consequence)
+
+        result = run_after_approval(runner, task, step)
+
+        assert result.state is RunState.FAILED
+        assert result.error == "durable_journal_required_for_write"
+        assert step.tool_call.state is ToolCallState.DENIED
+        assert adapter.calls == 0
+        assert remote.counts() == {
+            "arrivals": 0,
+            "dispatches": 0,
+            "unauthorized": 0,
+            "orders": 0,
+            "duplicate_effects": 0,
+        }
+
+
+@pytest.mark.parametrize("classification_source", ["host", "registry"])
+@pytest.mark.parametrize("trusted_consequence", ["write", "destructive"])
+@pytest.mark.parametrize("reported_consequence", ["read", None])
+def test_policy_override_cannot_remove_mandatory_write_approval(
+    tmp_path, classification_source, trusted_consequence, reported_consequence
+):
+    class UnderclassifyingPolicy(AllowListPolicy):
+        def decide_step(self, task, step):
+            return self.decide(task, step.tool_call).model_copy(
+                update={"consequence": reported_consequence, "requires_approval": False}
+            )
+
+    with (
+        FakeOrderAPI(tmp_path / "remote.sqlite", deduplicate=False) as remote,
+        SQLiteExecutionJournal(tmp_path / "execution.sqlite") as journal,
+    ):
+        adapter = FixtureOrderAdapter(remote.url)
+        registry = trusted_consequence if classification_source == "registry" else "read"
+        host = trusted_consequence if classification_source == "host" else "read"
+        policy = UnderclassifyingPolicy({TOOL}, tool_consequences={TOOL: registry})
+        events = []
+        runner = ProductOrchestrator({TOOL: adapter}, policy, journal=journal, emit=events.append)
+        task, step = make_task_and_step(consequence=host)
+
+        result = runner.run(task, [step])
+
+        assert result.state is RunState.WAITING_APPROVAL
+        decision = next(event for event in events if event.event_type == "policy.decided")
+        assert decision.data["decision"]["consequence"] == trusted_consequence
+        assert decision.data["decision"]["requires_approval"] is True
+        assert adapter.calls == 0
+        assert remote.counts()["arrivals"] == remote.counts()["dispatches"] == 0
+        assert remote.counts()["orders"] == 0
+        assert journal.get((TENANT, TOOL, step.tool_call.idempotency_key)) is None
+        approval = next(event for event in events if event.event_type == "approval.requested")
+        runner.approve(approval.data["approval_id"], "fixture-host")
+
+        result = runner.run(task, [step], result)
+
+        assert result.state is RunState.SUCCEEDED
+        assert adapter.calls == 1
+        assert remote.counts()["dispatches"] == remote.counts()["orders"] == 1
+
+
+@pytest.mark.parametrize(
+    ("override", "expected_state", "expected_consequence"),
+    [
+        ({"allowed": False, "reason": "extra_host_restriction"}, RunState.FAILED, None),
+        ({"requires_approval": True}, RunState.WAITING_APPROVAL, "read"),
+        ({"consequence": "destructive"}, RunState.WAITING_APPROVAL, "destructive"),
+        ({"consequence": "unrecognized"}, RunState.FAILED, None),
+    ],
+)
+def test_product_preserves_stricter_policy_decisions_and_rejects_unknown_classification(
+    override, expected_state, expected_consequence
+):
+    class ExtendedPolicy(AllowListPolicy):
+        def decide_step(self, task, step):
+            return self.decide(task, step.tool_call).model_copy(update=override)
+
+    adapter = FixtureReadAdapter()
+    policy = ExtendedPolicy({adapter.name}, tool_consequences={adapter.name: "read"})
+    events = []
+    runner = ProductOrchestrator({adapter.name: adapter}, policy, emit=events.append)
+    task = Task(tenant_id=TENANT, agent_id=uuid4(), idempotency_key=f"task-{uuid4()}")
+    step = Step(
+        name="read fixture orders",
+        consequence="read",
+        tool_call=ToolCall(tool_name=adapter.name, idempotency_key=f"read-{uuid4()}"),
+    )
+
+    result = runner.run(task, [step])
+
+    assert result.state is expected_state
+    assert adapter.calls == 0
+    if expected_consequence is not None:
+        decision = next(event for event in events if event.event_type == "policy.decided")
+        assert decision.data["decision"]["consequence"] == expected_consequence
+        assert decision.data["decision"]["requires_approval"] is True
+    else:
+        assert result.error == override.get("reason", "unknown_host_consequence")

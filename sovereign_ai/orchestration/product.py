@@ -6,12 +6,13 @@ from typing import Any
 
 from .adapters import ToolAdapter
 from .journal import SQLiteExecutionJournal
-from .models import EvidenceBundle, Step, Task, VerificationResult
+from .models import EvidenceBundle, PolicyDecision, Step, Task, VerificationResult
 from .policy import (
     AllowListPolicy,
     Policy,
     consequence_requires_journal,
     is_known_consequence,
+    strongest_consequence,
 )
 from .runner import DeterministicOrchestrator, OrchestratorEvent
 
@@ -64,6 +65,44 @@ class ProductOrchestrator(DeterministicOrchestrator):
             approval_ttl_seconds=approval_ttl_seconds,
             journal=journal,
             _require_durable_writes=True,
+        )
+
+    def _decide_step(self, task: Task, step: Step) -> PolicyDecision:
+        # A supported policy extension may strengthen the product boundary, not
+        # replace host classification or waive its mandatory approval.
+        policy = self.policy
+        if not isinstance(policy, AllowListPolicy):
+            return PolicyDecision(allowed=False, reason="product_requires_allow_list_policy")
+        mandatory = AllowListPolicy(
+            set(policy.allowed_tools),
+            approval_consequences=set(policy.approval_consequences),
+            tool_consequences=policy.tool_consequences,
+        ).decide_step(task, step)
+        if not mandatory.allowed:
+            return mandatory
+        decision = super()._decide_step(task, step)
+        if not decision.allowed:
+            return decision
+        if decision.consequence is not None and not is_known_consequence(decision.consequence):
+            return PolicyDecision(allowed=False, reason="unknown_host_consequence")
+        consequence = strongest_consequence(
+            mandatory.consequence or "read", decision.consequence or "read"
+        )
+        requires_approval = (
+            mandatory.requires_approval
+            or decision.requires_approval
+            or consequence_requires_journal(consequence)
+        )
+        return decision.model_copy(
+            update={
+                "consequence": consequence,
+                "requires_approval": requires_approval,
+                "reason": (
+                    "approval_required_for_consequence"
+                    if requires_approval and not decision.requires_approval
+                    else decision.reason
+                ),
+            }
         )
 
 
